@@ -137,7 +137,7 @@ def setup_handlers(
     async def garment_photo_handler(message, state: FSMContext, album=None):
         # album передается из middleware через data, если это альбом
         await try_on_processing.handle_garment_photo(
-            message, state, bot, storage_service, try_on_service, album, lang
+            message, state, bot, try_on_service, album, lang
         )
     router.message.register(
         garment_photo_handler,

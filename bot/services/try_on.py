@@ -11,7 +11,6 @@ from google.auth.transport.requests import Request
 from loguru import logger
 
 from bot.core.config import Settings
-from bot.services.storage import CloudStorageService
 
 
 class VertexTryOnService:
@@ -78,7 +77,7 @@ class VertexTryOnService:
     def _build_request_body(
         self,
         person_gcs_uri: str,
-        garment_gcs_uri: str,
+        garment_bytes: bytes,
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = True,
@@ -90,11 +89,12 @@ class VertexTryOnService:
         seed: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        Создать тело запроса для API с использованием GCS URI.
+        Создать тело запроса для API.
+        Модель передается через GCS URI, одежда - через base64.
 
         Args:
             person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
-            garment_gcs_uri: URI изображения одежды в GCS (gs://bucket/path)
+            garment_bytes: Байты изображения одежды
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
             add_watermark: Добавлять водяной знак (по умолчанию: True)
@@ -108,6 +108,9 @@ class VertexTryOnService:
         Returns:
             Словарь с телом запроса
         """
+        # Кодируем фото одежды в base64
+        garment_base64 = base64.b64encode(garment_bytes).decode('utf-8')
+        
         request_body = {
             "instances": [
                 {
@@ -119,7 +122,7 @@ class VertexTryOnService:
                     "productImages": [
                         {
                             "image": {
-                                "gcsUri": garment_gcs_uri
+                                "bytesBase64Encoded": garment_base64
                             }
                         }
                     ]
@@ -153,38 +156,38 @@ class VertexTryOnService:
     async def generate_try_on(
         self,
         person_gcs_uri: str,
-        garment_gcs_uri: str,
-        storage_service: CloudStorageService,
+        garment_bytes: bytes,
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = True,
-    ) -> str:
+    ) -> bytes:
         """
-        Генерировать изображение примерки асинхронно (используя GCS URI).
+        Генерировать изображение примерки асинхронно.
+        Модель передается через GCS URI, одежда - через base64.
+        Результат возвращается в виде байтов без сохранения в облако.
 
         Args:
             person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
-            garment_gcs_uri: URI изображения одежды в GCS (gs://bucket/path)
-            storage_service: Сервис для загрузки результата в GCS
+            garment_bytes: Байты изображения одежды
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
             add_watermark: Добавлять водяной знак (по умолчанию: True)
 
         Returns:
-            Публичная ссылка на результат в GCS (gs://bucket/path)
+            Байты результата примерки
 
         Raises:
             ValueError: Если ответ API не содержит predictions
             RuntimeError: При ошибке запроса к API или обработки ответа
         """
         logger.info("=" * 60)
-        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI")
+        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON (одежда через base64)")
         logger.info("=" * 60)
         
         access_token = self._get_access_token()
         request_body = self._build_request_body(
             person_gcs_uri=person_gcs_uri,
-            garment_gcs_uri=garment_gcs_uri,
+            garment_bytes=garment_bytes,
             base_steps=base_steps,
             sample_count=sample_count,
             add_watermark=add_watermark,
@@ -196,9 +199,9 @@ class VertexTryOnService:
         }
 
         api_url = self._get_api_url()
-        logger.info(f"Отправка ОДНОГО запроса к Vertex AI API: {api_url}")
+        logger.info(f"Отправка запроса к Vertex AI API: {api_url}")
         logger.info(f"Person GCS URI: {person_gcs_uri}")
-        logger.info(f"Garment GCS URI: {garment_gcs_uri}")
+        logger.info(f"Garment: передано через base64 ({len(garment_bytes)} байт)")
 
         # Используем синхронный requests через asyncio.to_thread, как в старой версии
         def _make_request() -> dict:
@@ -241,27 +244,8 @@ class VertexTryOnService:
             image_base64 = first_prediction["bytesBase64Encoded"]
             image_bytes = base64.b64decode(image_base64)
 
-            # Определяем расширение файла на основе mimeType
-            mime_type = first_prediction.get("mimeType", "image/png")
-            extension = "png" if mime_type == "image/png" else "jpg"
-
-            # Генерируем уникальное имя файла
-            import uuid
-            from datetime import datetime
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            unique_id = str(uuid.uuid4())[:8]
-            destination_path = f"try_on_results/{timestamp}_{unique_id}.{extension}"
-
-            # Загружаем результат в GCS
-            logger.info(f"Загрузка результата в GCS: {destination_path}")
-            gs_uri = await storage_service.upload_file(
-                file_bytes=image_bytes,
-                destination_path=destination_path,
-                content_type=mime_type,
-            )
-
-            logger.success(f"Результат успешно загружен: {gs_uri}")
-            return gs_uri
+            logger.success(f"Результат успешно получен ({len(image_bytes)} байт)")
+            return image_bytes
 
         except requests.exceptions.RequestException as e:
             error_detail = "Неизвестная ошибка"

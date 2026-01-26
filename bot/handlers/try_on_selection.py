@@ -78,7 +78,7 @@ async def handle_model_selection_for_try_on(
             chat_id=callback.from_user.id,
             text=(
                 "📸 Пришлите фото одежды (до 5 штук).\n\n"
-                "Можно отправить одно фото или несколько фото одним альбомом."
+                "Можно отправить одно фото или несколько фото одним сообщением."
             ),
             reply_markup=get_back_keyboard(lang),
         )

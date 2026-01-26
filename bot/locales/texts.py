@@ -7,11 +7,11 @@ TEXTS = {
     },
     "menu_add_model": {
         "ru": "➕ Добавить ваше фото",
-        "en": "➕ Add Model",
+        "en": "➕ Add My Photo",
     },
     "menu_my_models": {
         "ru": "👤 Мои фото",
-        "en": "👤 My Models",
+        "en": "👤 My Photos",
     },
     "menu_try_on": {
         "ru": "👔 Примерка",
@@ -22,28 +22,28 @@ TEXTS = {
         "en": "🔄 New Try On",
     },
     "upload_model_instr": {
-        "ru": "📸 Отправьте ваше фото (человека).\n\nФото должно быть четким, с хорошим освещением.",
-        "en": "📸 Send a photo of the model (person).\n\nThe photo should be clear with good lighting.",
+        "ru": "📸 Отправьте ваше фото.\n\nФото должно быть четким, с хорошим освещением.",
+        "en": "📸 Send your photo.\n\nThe photo should be clear with good lighting.",
     },
     "model_saved": {
         "ru": "✅ Фото успешно сохранено!",
-        "en": "✅ Model saved successfully!",
+        "en": "✅ Photo saved successfully!",
     },
     "model_upload_error": {
         "ru": "❌ Ошибка при загрузке фото. Попробуйте еще раз.",
-        "en": "❌ Error uploading model. Please try again.",
+        "en": "❌ Error uploading photo. Please try again.",
     },
     "models_list_empty": {
         "ru": "📭 У вас нет сохраненных фото.\n\nДобавьте первое фото через меню.",
-        "en": "📭 Models list is empty.\n\nAdd your first model from the menu.",
+        "en": "📭 You have no saved photos.\n\nAdd your first photo from the menu.",
     },
     "model_deleted": {
         "ru": "🗑 Фото удалено.",
-        "en": "🗑 Model deleted.",
+        "en": "🗑 Photo deleted.",
     },
     "delete_error": {
         "ru": "❌ Ошибка при удалении фото.",
-        "en": "❌ Error deleting model.",
+        "en": "❌ Error deleting photo.",
     },
     "back": {
         "ru": "🔙 Назад",
@@ -75,7 +75,7 @@ TEXTS = {
     },
     "try_on_select_model_or_photo": {
         "ru": "👤 Выберите фото для примерки или пришлите ваше фото:",
-        "en": "👤 Choose a model for try-on or send your photo:",
+        "en": "👤 Choose your photo for try-on or send your photo:",
     },
     "try_on_send_photo": {
         "ru": "📸 Пришлите ваше фото для примерки:",

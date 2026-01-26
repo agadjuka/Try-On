@@ -9,7 +9,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import InputMediaPhoto, Message, BufferedInputFile
 from loguru import logger
 
-from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
 from bot.keyboards.user_kb import get_try_on_result_keyboard, get_main_menu_keyboard
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
@@ -22,11 +21,11 @@ async def process_single_garment(
     photo_count: int,
     user_id: str,
     model_gcs_uri: str,
-    storage_service: CloudStorageService,
     try_on_service: VertexTryOnService,
 ) -> Optional[bytes]:
     """
     Обработать одно фото одежды.
+    Фото одежды передается напрямую через base64, без сохранения в облако.
 
     Args:
         garment_msg: Сообщение с фото одежды
@@ -35,7 +34,6 @@ async def process_single_garment(
         photo_count: Общее количество фото
         user_id: ID пользователя
         model_gcs_uri: URI модели в GCS
-        storage_service: Сервис для работы с GCS
         try_on_service: Сервис для генерации примерки
 
     Returns:
@@ -50,37 +48,20 @@ async def process_single_garment(
 
         # Скачиваем фото одежды
         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
-
-        # Генерируем уникальный путь в GCS
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        destination_path = (
-            f"bot_uploads/garments/{user_id}_{timestamp}_{index}.jpg"
-        )
-
-        # Загружаем фото одежды в Cloud Storage
         logger.info(
-            f"Загрузка фото одежды {index + 1}/{photo_count} в GCS: {destination_path}"
-        )
-        garment_gcs_uri = await storage_service.upload_image(
-            file_bytes=photo_bytes,
-            destination_path=destination_path,
+            f"Получено фото одежды {index + 1}/{photo_count} ({len(photo_bytes)} байт)"
         )
 
-        # Генерируем примерку
+        # Генерируем примерку напрямую, без сохранения в облако
         logger.info(
-            f"Начало генерации примерки {index + 1}/{photo_count} "
-            f"(garment: {garment_gcs_uri})"
+            f"Начало генерации примерки {index + 1}/{photo_count}"
         )
-        result_gcs_uri = await try_on_service.generate_try_on(
+        result_bytes = await try_on_service.generate_try_on(
             person_gcs_uri=model_gcs_uri,
-            garment_gcs_uri=garment_gcs_uri,
-            storage_service=storage_service,
+            garment_bytes=photo_bytes,
         )
-
-        # Скачиваем результат из GCS
-        result_bytes = await storage_service.download_file(result_gcs_uri)
         logger.info(
-            f"Примерка {index + 1}/{photo_count} успешно сгенерирована"
+            f"Примерка {index + 1}/{photo_count} успешно сгенерирована ({len(result_bytes)} байт)"
         )
 
         return result_bytes
@@ -169,7 +150,6 @@ async def handle_garment_photo(
     message: Message,
     state: FSMContext,
     bot: Bot,
-    storage_service: CloudStorageService,
     try_on_service: VertexTryOnService,
     album: Optional[List[Message]] = None,
     lang: str = "ru",
@@ -247,7 +227,6 @@ async def handle_garment_photo(
                 photo_count=photo_count,
                 user_id=user_id,
                 model_gcs_uri=model_gcs_uri,
-                storage_service=storage_service,
                 try_on_service=try_on_service,
             )
             for idx, msg in enumerate(garment_messages)
