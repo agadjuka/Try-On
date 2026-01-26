@@ -1,3 +1,16 @@
+﻿# Core dependencies
 python-dotenv>=1.0.0,<2.0.0
-requests>=2.31.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+loguru>=0.7.0
+
+# Google Cloud
+google-cloud-storage>=2.10.0
+google-cloud-firestore>=2.11.0
 google-auth>=2.23.0
+
+# Telegram Bot (для будущего использования)
+aiogram>=3.0.0
+
+# Utilities
+requests>=2.31.0
