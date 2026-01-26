@@ -1,6 +1,7 @@
 """Простой Telegram-бот для тестирования Virtual Try-On сервисов."""
 
 import asyncio
+import base64
 from io import BytesIO
 from datetime import datetime
 
@@ -113,19 +114,11 @@ async def handle_model_photo(
         await message.answer("Загружаю фото модели...")
         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
         
-        # Генерируем уникальный путь в GCS
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        user_id = message.from_user.id
-        destination_path = f"bot_uploads/models/{user_id}_{timestamp}.jpg"
+        # Кодируем в base64 (как в старой версии)
+        photo_base64 = base64.b64encode(photo_bytes).decode("utf-8")
         
-        # Загружаем в GCS
-        gcs_uri = await storage_service.upload_image(
-            file_bytes=photo_bytes,
-            destination_path=destination_path,
-        )
-        
-        # Сохраняем URI в FSM
-        await state.update_data(model_gcs_uri=gcs_uri)
+        # Сохраняем base64 в FSM (не загружаем в GCS перед запросом)
+        await state.update_data(model_base64=photo_base64)
         
         # Переключаем состояние
         await state.set_state(GenStates.waiting_for_garment)
@@ -163,9 +156,9 @@ async def handle_garment_photo(
     try:
         # Получаем данные из FSM
         data = await state.get_data()
-        model_gcs_uri = data.get("model_gcs_uri")
+        model_base64 = data.get("model_base64")
         
-        if not model_gcs_uri:
+        if not model_base64:
             await message.answer(
                 "Не найдено фото модели. Нажми /start для начала."
             )
@@ -173,6 +166,13 @@ async def handle_garment_photo(
             return
 
         # Защита от повторных вызовов: проверяем, не идет ли уже обработка
+        if data.get("processing", False):
+            await message.answer(
+                "Генерация уже выполняется. Пожалуйста, подожди..."
+            )
+            return
+
+        # Защита от повторных вызовов: проверяем еще раз после получения данных
         if data.get("processing", False):
             await message.answer(
                 "Генерация уже выполняется. Пожалуйста, подожди..."
@@ -193,23 +193,24 @@ async def handle_garment_photo(
         # Скачиваем фото одежды
         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
         
-        # Генерируем уникальный путь в GCS
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        user_id = message.from_user.id
-        destination_path = f"bot_uploads/garments/{user_id}_{timestamp}.jpg"
+        # Кодируем в base64 (как в старой версии)
+        garment_base64 = base64.b64encode(photo_bytes).decode("utf-8")
         
-        # Загружаем в GCS
-        garment_gcs_uri = await storage_service.upload_image(
-            file_bytes=photo_bytes,
-            destination_path=destination_path,
-        )
+        # Логируем перед вызовом API
+        logger.info("=" * 60)
+        logger.info("ВЫЗОВ generate_try_on - ОДИН РАЗ")
+        logger.info("=" * 60)
         
-        # Генерируем try-on
+        # Генерируем try-on используя base64 (как в старой версии)
         result_gcs_uri = await try_on_service.generate_try_on(
-            person_gcs_uri=model_gcs_uri,
-            garment_gcs_uri=garment_gcs_uri,
+            person_image_base64=model_base64,
+            product_image_base64=garment_base64,
             storage_service=storage_service,
         )
+        
+        logger.info("=" * 60)
+        logger.info("generate_try_on ЗАВЕРШЕН УСПЕШНО")
+        logger.info("=" * 60)
         
         # Скачиваем результат из GCS
         result_bytes = await storage_service.download_file(result_gcs_uri)

@@ -68,3 +68,56 @@
 2026-01-26 16:06:23 | INFO     | __main__:main:24 - Проверка подключения к Firestore...
 2026-01-26 16:06:24 | ERROR    | bot.database.repo:check_connection:63 - Ошибка подключения к Firestore: 404 The database (default) does not exist for project carrental-480202 Please visit https://console.cloud.google.com/datastore/setup?project=carrental-480202 to add a Cloud Datastore or Cloud Firestore database. 
 2026-01-26 16:06:24 | ERROR    | __main__:main:29 - Не удалось подключиться к Firestore
+2026-01-26 16:11:24 | INFO     | __main__:main:285 - Запуск тестового бота...
+2026-01-26 16:11:24 | INFO     | __main__:main:310 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:11:24 | INFO     | __main__:main:350 - Проверка подключения к Telegram API...
+2026-01-26 16:11:25 | SUCCESS  | __main__:main:353 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:11:25 | INFO     | __main__:main:354 - Бот запущен и готов к работе
+2026-01-26 16:11:35 | DEBUG    | bot.services.try_on:_get_access_token:66 - Access token получен через Application Default Credentials
+2026-01-26 16:11:35 | INFO     | bot.services.try_on:generate_try_on:194 - Отправка запроса к Vertex AI API: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:11:35 | DEBUG    | bot.services.try_on:generate_try_on:195 - Person image size (base64): 100708 символов
+2026-01-26 16:11:35 | DEBUG    | bot.services.try_on:generate_try_on:196 - Product image size (base64): 127472 символов
+2026-01-26 16:11:36 | ERROR    | bot.services.try_on:generate_try_on:264 - Ошибка при запросе к API (HTTP 429): 429, message='Too Many Requests', url='https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict'
+2026-01-26 16:11:36 | ERROR    | __main__:handle_garment_photo:227 - Ошибка API при генерации: Ошибка API: HTTP 429. Детали: 429, message='Too Many Requests', url='https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict'
+2026-01-26 16:13:54 | INFO     | __main__:main:285 - Запуск тестового бота...
+2026-01-26 16:13:54 | INFO     | __main__:main:310 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:13:54 | INFO     | __main__:main:350 - Проверка подключения к Telegram API...
+2026-01-26 16:13:55 | SUCCESS  | __main__:main:353 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:13:55 | INFO     | __main__:main:354 - Бот запущен и готов к работе
+2026-01-26 16:14:04 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:14:04 | INFO     | bot.services.try_on:generate_try_on:195 - Отправка запроса к Vertex AI API: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:14:04 | DEBUG    | bot.services.try_on:generate_try_on:196 - Person image size (base64): 100708 символов
+2026-01-26 16:14:04 | DEBUG    | bot.services.try_on:generate_try_on:197 - Product image size (base64): 127472 символов
+2026-01-26 16:14:04 | ERROR    | bot.services.try_on:generate_try_on:267 - Детали ошибки: {
+  "error": {
+    "code": 429,
+    "message": "Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: virtual-try-on-001. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.",
+    "status": "RESOURCE_EXHAUSTED"
+  }
+}
+2026-01-26 16:14:04 | ERROR    | bot.services.try_on:generate_try_on:272 - Ошибка при запросе к API: 429 Client Error: Too Many Requests for url: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:14:04 | ERROR    | __main__:handle_garment_photo:227 - Ошибка API при генерации: Ошибка API: 429 Client Error: Too Many Requests for url: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 429, 'message': 'Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: virtual-try-on-001. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-26 16:15:34 | INFO     | __main__:main:301 - Запуск тестового бота...
+2026-01-26 16:15:34 | INFO     | __main__:main:326 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:15:34 | INFO     | __main__:main:366 - Проверка подключения к Telegram API...
+2026-01-26 16:15:35 | SUCCESS  | __main__:main:369 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:15:35 | INFO     | __main__:main:370 - Бот запущен и готов к работе
+2026-01-26 16:15:51 | INFO     | __main__:handle_garment_photo:200 - ============================================================
+2026-01-26 16:15:51 | INFO     | __main__:handle_garment_photo:201 - ВЫЗОВ generate_try_on - ОДИН РАЗ
+2026-01-26 16:15:51 | INFO     | __main__:handle_garment_photo:202 - ============================================================
+2026-01-26 16:15:51 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 16:15:51 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON
+2026-01-26 16:15:51 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 16:15:52 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:15:52 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:15:52 | DEBUG    | bot.services.try_on:generate_try_on:201 - Person image size (base64): 100708 символов
+2026-01-26 16:15:52 | DEBUG    | bot.services.try_on:generate_try_on:202 - Product image size (base64): 127472 символов
+2026-01-26 16:15:53 | ERROR    | bot.services.try_on:generate_try_on:272 - Детали ошибки: {
+  "error": {
+    "code": 429,
+    "message": "Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: virtual-try-on-001. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.",
+    "status": "RESOURCE_EXHAUSTED"
+  }
+}
+2026-01-26 16:15:53 | ERROR    | bot.services.try_on:generate_try_on:277 - Ошибка при запросе к API: 429 Client Error: Too Many Requests for url: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:15:53 | ERROR    | __main__:handle_garment_photo:243 - Ошибка API при генерации: Ошибка API: 429 Client Error: Too Many Requests for url: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 429, 'message': 'Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: virtual-try-on-001. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.', 'status': 'RESOURCE_EXHAUSTED'}}

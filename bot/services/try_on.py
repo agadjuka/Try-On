@@ -5,7 +5,7 @@ import base64
 import json
 from typing import Dict, Any, Optional
 
-import aiohttp
+import requests
 from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
@@ -46,6 +46,7 @@ class VertexTryOnService:
     def _get_access_token(self) -> str:
         """
         Получить access token через Application Default Credentials.
+        Точно так же, как в старой версии (api_client.py).
 
         Returns:
             Access token для авторизации
@@ -76,8 +77,8 @@ class VertexTryOnService:
 
     def _build_request_body(
         self,
-        person_gcs_uri: str,
-        garment_gcs_uri: str,
+        person_image_base64: str,
+        product_image_base64: str,
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = True,
@@ -89,11 +90,11 @@ class VertexTryOnService:
         seed: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        Создать тело запроса для API с использованием GCS URI.
+        Создать тело запроса для API с использованием base64 (как в старой версии).
 
         Args:
-            person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
-            garment_gcs_uri: URI изображения одежды в GCS (gs://bucket/path)
+            person_image_base64: Base64-encoded изображение модели
+            product_image_base64: Base64-encoded изображение одежды
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
             add_watermark: Добавлять водяной знак (по умолчанию: True)
@@ -112,13 +113,13 @@ class VertexTryOnService:
                 {
                     "personImage": {
                         "image": {
-                            "gcsUri": person_gcs_uri
+                            "bytesBase64Encoded": person_image_base64
                         }
                     },
                     "productImages": [
                         {
                             "image": {
-                                "gcsUri": garment_gcs_uri
+                                "bytesBase64Encoded": product_image_base64
                             }
                         }
                     ]
@@ -151,19 +152,19 @@ class VertexTryOnService:
 
     async def generate_try_on(
         self,
-        person_gcs_uri: str,
-        garment_gcs_uri: str,
+        person_image_base64: str,
+        product_image_base64: str,
         storage_service: CloudStorageService,
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = True,
     ) -> str:
         """
-        Генерировать изображение примерки асинхронно.
+        Генерировать изображение примерки асинхронно (используя base64 как в старой версии).
 
         Args:
-            person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
-            garment_gcs_uri: URI изображения одежды в GCS (gs://bucket/path)
+            person_image_base64: Base64-encoded изображение модели
+            product_image_base64: Base64-encoded изображение одежды
             storage_service: Сервис для загрузки результата в GCS
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
@@ -176,10 +177,15 @@ class VertexTryOnService:
             ValueError: Если ответ API не содержит predictions
             RuntimeError: При ошибке запроса к API или обработки ответа
         """
+        # Логируем начало генерации для отслеживания
+        logger.info("=" * 60)
+        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON")
+        logger.info("=" * 60)
+        
         access_token = self._get_access_token()
         request_body = self._build_request_body(
-            person_gcs_uri=person_gcs_uri,
-            garment_gcs_uri=garment_gcs_uri,
+            person_image_base64=person_image_base64,
+            product_image_base64=product_image_base64,
             base_steps=base_steps,
             sample_count=sample_count,
             add_watermark=add_watermark,
@@ -191,85 +197,88 @@ class VertexTryOnService:
         }
 
         api_url = self._get_api_url()
-        logger.info(f"Отправка запроса к Vertex AI API: {api_url}")
-        logger.debug(f"Person GCS URI: {person_gcs_uri}")
-        logger.debug(f"Garment GCS URI: {garment_gcs_uri}")
+        logger.info(f"Отправка ОДНОГО запроса к Vertex AI API: {api_url}")
+        logger.debug(f"Person image size (base64): {len(person_image_base64)} символов")
+        logger.debug(f"Product image size (base64): {len(product_image_base64)} символов")
+
+        # Используем синхронный requests через asyncio.to_thread, как в старой версии
+        def _make_request() -> dict:
+            """Синхронная функция для выполнения запроса."""
+            response = requests.post(
+                api_url,
+                headers=headers,
+                json=request_body,
+                timeout=300  # 5 минут таймаут
+            )
+            response.raise_for_status()
+            return response.json()
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    api_url,
-                    headers=headers,
-                    json=request_body,
-                    timeout=aiohttp.ClientTimeout(total=300)  # 5 минут таймаут
-                ) as response:
-                    response.raise_for_status()
-                    result = await response.json()
+            # Выполняем запрос в отдельном потоке
+            result = await asyncio.to_thread(_make_request)
 
-                    if "predictions" not in result:
-                        error_msg = "Ответ API не содержит 'predictions'"
-                        logger.error(f"{error_msg}. Ответ: {json.dumps(result, indent=2)}")
-                        raise ValueError(error_msg)
+            if "predictions" not in result:
+                error_msg = "Ответ API не содержит 'predictions'"
+                logger.error(f"{error_msg}. Ответ: {json.dumps(result, indent=2)}")
+                raise ValueError(error_msg)
 
-                    predictions = result["predictions"]
-                    if not predictions:
-                        error_msg = "Ответ API содержит пустой список predictions"
-                        logger.error(f"{error_msg}. Ответ: {json.dumps(result, indent=2)}")
-                        raise ValueError(error_msg)
+            predictions = result["predictions"]
+            if not predictions:
+                error_msg = "Ответ API содержит пустой список predictions"
+                logger.error(f"{error_msg}. Ответ: {json.dumps(result, indent=2)}")
+                raise ValueError(error_msg)
 
-                    logger.info(f"Получено {len(predictions)} результатов")
+            logger.info(f"Получено {len(predictions)} результатов")
 
-                    # Берем первый результат
-                    first_prediction = predictions[0]
+            # Берем первый результат
+            first_prediction = predictions[0]
 
-                    if "bytesBase64Encoded" not in first_prediction:
-                        error_msg = "Ответ не содержит 'bytesBase64Encoded'"
-                        logger.error(f"{error_msg}. Ответ: {json.dumps(first_prediction, indent=2)}")
-                        raise ValueError(error_msg)
+            if "bytesBase64Encoded" not in first_prediction:
+                error_msg = "Ответ не содержит 'bytesBase64Encoded'"
+                logger.error(f"{error_msg}. Ответ: {json.dumps(first_prediction, indent=2)}")
+                raise ValueError(error_msg)
 
-                    # Декодируем base64 в байты
-                    image_base64 = first_prediction["bytesBase64Encoded"]
-                    image_bytes = base64.b64decode(image_base64)
+            # Декодируем base64 в байты
+            image_base64 = first_prediction["bytesBase64Encoded"]
+            image_bytes = base64.b64decode(image_base64)
 
-                    # Определяем расширение файла на основе mimeType
-                    mime_type = first_prediction.get("mimeType", "image/png")
-                    extension = "png" if mime_type == "image/png" else "jpg"
+            # Определяем расширение файла на основе mimeType
+            mime_type = first_prediction.get("mimeType", "image/png")
+            extension = "png" if mime_type == "image/png" else "jpg"
 
-                    # Генерируем уникальное имя файла
-                    import uuid
-                    from datetime import datetime
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    unique_id = str(uuid.uuid4())[:8]
-                    destination_path = f"try_on_results/{timestamp}_{unique_id}.{extension}"
+            # Генерируем уникальное имя файла
+            import uuid
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            unique_id = str(uuid.uuid4())[:8]
+            destination_path = f"try_on_results/{timestamp}_{unique_id}.{extension}"
 
-                    # Загружаем результат в GCS
-                    logger.info(f"Загрузка результата в GCS: {destination_path}")
-                    gs_uri = await storage_service.upload_file(
-                        file_bytes=image_bytes,
-                        destination_path=destination_path,
-                        content_type=mime_type,
-                    )
+            # Загружаем результат в GCS
+            logger.info(f"Загрузка результата в GCS: {destination_path}")
+            gs_uri = await storage_service.upload_file(
+                file_bytes=image_bytes,
+                destination_path=destination_path,
+                content_type=mime_type,
+            )
 
-                    logger.success(f"Результат успешно загружен: {gs_uri}")
-                    return gs_uri
+            logger.success(f"Результат успешно загружен: {gs_uri}")
+            return gs_uri
 
-        except aiohttp.ClientResponseError as e:
+        except requests.exceptions.RequestException as e:
             error_detail = "Неизвестная ошибка"
-            try:
-                error_text = await e.response.text()
-                error_detail = json.loads(error_text) if error_text else "Пустой ответ"
-            except:
-                error_detail = str(e)
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_detail = e.response.json()
+                    logger.error(f"Детали ошибки: {json.dumps(error_detail, indent=2)}")
+                except:
+                    error_detail = e.response.text
+                    logger.error(f"Текст ответа: {error_detail}")
 
-            logger.error(f"Ошибка при запросе к API (HTTP {e.status}): {error_detail}")
+            logger.error(f"Ошибка при запросе к API: {e}")
             raise RuntimeError(
-                f"Ошибка API: HTTP {e.status}. "
+                f"Ошибка API: {str(e)}. "
                 f"Детали: {error_detail}"
             ) from e
-
-        except aiohttp.ClientError as e:
-            logger.error(f"Ошибка сети при запросе к API: {e}")
-            raise RuntimeError(f"Ошибка сети при запросе к API: {str(e)}") from e
 
         except Exception as e:
             logger.error(f"Неожиданная ошибка при генерации: {e}")
