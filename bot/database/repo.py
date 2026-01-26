@@ -163,7 +163,7 @@ class FirestoreRepo:
             id=model_id,
             user_id=user_id,
             gcs_uri=gcs_uri,
-            is_active=False,  # По умолчанию неактивна
+            is_active=False,  # Не используется, оставлено для совместимости с БД
             created_at=datetime.utcnow(),
         )
 
@@ -201,27 +201,6 @@ class FirestoreRepo:
         logger.info(f"Найдено {len(models)} моделей для пользователя {user_id}")
         return models
 
-    async def set_active_model(self, user_id: str, model_id: str) -> None:
-        """
-        Установить модель как активную (остальные деактивировать).
-
-        Args:
-            user_id: ID пользователя
-            model_id: ID модели для активации
-        """
-        client = self._get_client()
-        models_ref = client.collection("users").document(user_id).collection("models")
-        
-        # Получаем все модели пользователя
-        async for doc in models_ref.stream():
-            doc_ref = models_ref.document(doc.id)
-            if doc.id == model_id:
-                await doc_ref.update({"is_active": True})
-            else:
-                await doc_ref.update({"is_active": False})
-        
-        logger.info(f"Модель {model_id} установлена как активная для пользователя {user_id}")
-
     async def delete_model(self, user_id: str, model_id: str) -> None:
         """
         Удалить модель пользователя.
@@ -235,22 +214,6 @@ class FirestoreRepo:
         await doc_ref.delete()
         
         logger.info(f"Модель {model_id} удалена для пользователя {user_id}")
-
-    async def get_active_model(self, user_id: str) -> Optional[PersonImage]:
-        """
-        Получить активную модель пользователя.
-
-        Args:
-            user_id: ID пользователя
-
-        Returns:
-            Активная модель или None, если нет активной модели
-        """
-        models = await self.get_user_models(user_id)
-        for model in models:
-            if model.is_active:
-                return model
-        return None
 
     async def close(self) -> None:
         """Закрыть соединение с Firestore."""

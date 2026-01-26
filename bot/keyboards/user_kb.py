@@ -101,7 +101,7 @@ def get_model_selection_keyboard(
     
     for idx, model in enumerate(models):
         builder.button(
-            text=f"Модель {idx + 1}",
+            text=f"Фото {idx + 1}",
             callback_data=f"try_on_select_model_{model.id}",
         )
     
@@ -148,16 +148,16 @@ def get_models_list_keyboard(
     """
     builder = InlineKeyboardBuilder()
     
-    # Кнопка "Добавить новую модель"
+    # Кнопка "Добавить новое фото"
     builder.button(
-        text="➕ Добавить новую модель",
+        text="➕ Добавить новое фото",
         callback_data="add_new_model_from_list",
     )
     
-    # Кнопки удаления для каждой модели
+    # Кнопки удаления для каждого фото
     for idx, model in enumerate(models):
         builder.button(
-            text=f"🗑 Удалить модель {idx + 1}",
+            text=f"🗑 Удалить фото {idx + 1}",
             callback_data=f"model_delete_{model.id}",
         )
     

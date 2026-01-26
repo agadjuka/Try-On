@@ -6,11 +6,11 @@ TEXTS = {
         "en": "👋 Hello! I'm a virtual try-on bot.\n\nChoose an action:",
     },
     "menu_add_model": {
-        "ru": "➕ Добавить модель",
+        "ru": "➕ Добавить ваше фото",
         "en": "➕ Add Model",
     },
     "menu_my_models": {
-        "ru": "👤 Мои модели",
+        "ru": "👤 Мои фото",
         "en": "👤 My Models",
     },
     "menu_try_on": {
@@ -21,41 +21,29 @@ TEXTS = {
         "ru": "🔄 Новая примерка",
         "en": "🔄 New Try On",
     },
-    "menu_settings": {
-        "ru": "⚙️ Настройки",
-        "en": "⚙️ Settings",
-    },
     "upload_model_instr": {
-        "ru": "📸 Отправь фото модели (человека).\n\nФото должно быть четким, с хорошим освещением.",
+        "ru": "📸 Отправьте ваше фото (человека).\n\nФото должно быть четким, с хорошим освещением.",
         "en": "📸 Send a photo of the model (person).\n\nThe photo should be clear with good lighting.",
     },
     "model_saved": {
-        "ru": "✅ Модель успешно сохранена!",
+        "ru": "✅ Фото успешно сохранено!",
         "en": "✅ Model saved successfully!",
     },
     "model_upload_error": {
-        "ru": "❌ Ошибка при загрузке модели. Попробуй еще раз.",
+        "ru": "❌ Ошибка при загрузке фото. Попробуйте еще раз.",
         "en": "❌ Error uploading model. Please try again.",
     },
     "models_list_empty": {
-        "ru": "📭 Список моделей пуст.\n\nДобавь первую модель через меню.",
+        "ru": "📭 У вас нет сохраненных фото.\n\nДобавьте первое фото через меню.",
         "en": "📭 Models list is empty.\n\nAdd your first model from the menu.",
     },
     "model_deleted": {
-        "ru": "🗑 Модель удалена.",
+        "ru": "🗑 Фото удалено.",
         "en": "🗑 Model deleted.",
     },
-    "model_set_active": {
-        "ru": "✅ Модель выбрана как активная.",
-        "en": "✅ Model set as active.",
-    },
     "delete_error": {
-        "ru": "❌ Ошибка при удалении модели.",
+        "ru": "❌ Ошибка при удалении фото.",
         "en": "❌ Error deleting model.",
-    },
-    "set_active_error": {
-        "ru": "❌ Ошибка при выборе модели.",
-        "en": "❌ Error setting active model.",
     },
     "back": {
         "ru": "🔙 Назад",
@@ -65,13 +53,9 @@ TEXTS = {
         "ru": "🗑 Удалить",
         "en": "🗑 Delete",
     },
-    "select": {
-        "ru": "✅ Выбрать",
-        "en": "✅ Select",
-    },
     "try_on_instr": {
-        "ru": "📸 Отправь фото одежды для примерки.\n\nИспользуется активная модель.",
-        "en": "📸 Send a photo of clothing for try-on.\n\nUsing active model.",
+        "ru": "📸 Отправьте фото одежды для примерки.",
+        "en": "📸 Send a photo of clothing for try-on.",
     },
     "processing": {
         "ru": "⏳ Сохраняю...",
@@ -85,16 +69,12 @@ TEXTS = {
         "ru": "❌ Ошибка при генерации примерки.",
         "en": "❌ Error generating try-on.",
     },
-    "no_active_model": {
-        "ru": "⚠️ У тебя нет активной модели.\n\nДобавь модель через меню.",
-        "en": "⚠️ You don't have an active model.\n\nAdd a model from the menu.",
-    },
     "unknown_message": {
-        "ru": "Не понимаю. Используй кнопки меню.",
+        "ru": "Не понимаю. Используйте кнопки меню.",
         "en": "I don't understand. Use menu buttons.",
     },
     "try_on_select_model_or_photo": {
-        "ru": "👤 Выберите модель для примерки или пришлите ваше фото:",
+        "ru": "👤 Выберите фото для примерки или пришлите ваше фото:",
         "en": "👤 Choose a model for try-on or send your photo:",
     },
     "try_on_send_photo": {

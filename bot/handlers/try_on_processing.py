@@ -195,7 +195,7 @@ async def handle_garment_photo(
 
         if not model_gcs_uri:
             await message.answer(
-                "⚠️ Модель не выбрана. Начните заново через меню 'Примерка'.",
+                "⚠️ Фото не выбрано. Начните заново через меню 'Примерка'.",
                 reply_markup=get_main_menu_keyboard(lang),
             )
             await state.clear()

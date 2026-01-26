@@ -151,7 +151,7 @@ async def handle_model_photo(
         lang: Язык интерфейса
     """
     if not message.photo:
-        await message.answer("Пожалуйста, отправь фото.")
+        await message.answer("Пожалуйста, отправьте фото.")
         return
 
     try:
@@ -320,7 +320,7 @@ async def handle_my_models_callback(
         # Отправляем сообщение с клавиатурой управления
         menu_message = await bot.send_message(
             chat_id=callback.from_user.id,
-            text="👤 Ваши модели:",
+            text="👤 Ваши фото:",
             reply_markup=get_models_list_keyboard(models, lang),
         )
         
@@ -384,7 +384,7 @@ async def show_model_in_gallery(
         
         media = InputMediaPhoto(
             media=photo_file,
-            caption=f"Модель {current_index + 1} из {len(models)}",
+            caption=f"Фото {current_index + 1} из {len(models)}",
         )
         
         # Получаем клавиатуру
@@ -431,7 +431,7 @@ async def handle_model_navigation(
         models = await repo.get_user_models(user_id)
         
         if not models:
-            await callback.answer("Нет моделей")
+            await callback.answer("Нет фото")
             return
         
         # Определяем направление навигации и текущий индекс
@@ -510,7 +510,7 @@ async def handle_model_delete(
                 f"Модель не найдена: user_id={user_id}, model_id={model_id}, "
                 f"доступные модели: {[m.id for m in models]}"
             )
-            await callback.answer("Модель не найдена")
+            await callback.answer("Фото не найдено")
             return
         
         # Удаляем файл из GCS
@@ -572,7 +572,7 @@ async def handle_model_delete(
         # Отправляем обновленное сообщение с клавиатурой
         menu_message = await bot.send_message(
             chat_id=callback.from_user.id,
-            text="👤 Ваши модели:",
+            text="👤 Ваши фото:",
             reply_markup=get_models_list_keyboard(models, lang),
         )
         

@@ -55,7 +55,7 @@ async def handle_model_selection_for_try_on(
                 f"Модель не найдена: user_id={user_id}, model_id={model_id}, "
                 f"доступные модели: {[m.id for m in models]}"
             )
-            await callback.answer("Модель не найдена")
+            await callback.answer("Фото не найдено")
             return
 
         # Импортируем функцию удаления
@@ -86,7 +86,7 @@ async def handle_model_selection_for_try_on(
         # Сохраняем ID сообщения с инструкцией для последующего удаления
         await state.update_data(garment_instruction_message_id=instruction_message.message_id)
 
-        await callback.answer("Модель выбрана")
+        await callback.answer("Фото выбрано")
 
     except Exception as e:
         logger.error(f"Ошибка в handle_model_selection_for_try_on: {e}")
