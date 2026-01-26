@@ -1,7 +1,8 @@
 """Обработчики для работы с моделями."""
 
+import asyncio
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from aiogram import Bot
 from aiogram.fsm.context import FSMContext
@@ -19,6 +20,54 @@ from bot.keyboards.user_kb import (
 )
 from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
+
+
+async def delete_models_menu_messages(
+    bot: Bot,
+    chat_id: int,
+    state: FSMContext,
+) -> None:
+    """
+    Удалить все сообщения меню моделей (фотографии и сообщение с кнопками).
+    Удаление происходит параллельно для скорости.
+
+    Args:
+        bot: Экземпляр бота
+        chat_id: ID чата
+        state: Контекст FSM
+    """
+    state_data = await state.get_data()
+    album_message_ids = state_data.get("models_album_message_ids", [])
+    menu_message_id = state_data.get("models_menu_message_id")
+    
+    # Собираем все ID сообщений для удаления
+    message_ids_to_delete = list(album_message_ids)
+    if menu_message_id:
+        message_ids_to_delete.append(menu_message_id)
+    
+    if not message_ids_to_delete:
+        return
+    
+    # Удаляем все сообщения параллельно
+    delete_tasks = []
+    for msg_id in message_ids_to_delete:
+        delete_tasks.append(
+            bot.delete_message(chat_id=chat_id, message_id=msg_id)
+        )
+    
+    # Выполняем удаление параллельно, игнорируем ошибки
+    results = await asyncio.gather(*delete_tasks, return_exceptions=True)
+    
+    # Логируем ошибки, если есть
+    for idx, result in enumerate(results):
+        if isinstance(result, Exception):
+            logger.warning(f"Не удалось удалить сообщение {message_ids_to_delete[idx]}: {result}")
+    
+    # Очищаем данные из FSM
+    await state.update_data(
+        models_album_message_ids=[],
+        models_menu_message_id=None,
+    )
 
 
 async def handle_add_model_callback(
@@ -59,25 +108,12 @@ async def handle_add_new_model_from_list(
     """
     await state.set_state(ModelStates.waiting_for_model_photo)
     
-    # Получаем ID сообщений альбома из FSM и удаляем их
-    state_data = await state.get_data()
-    album_message_ids = state_data.get("models_album_message_ids", [])
-    
-    # Удаляем все сообщения альбома
-    for msg_id in album_message_ids:
-        try:
-            await bot.delete_message(
-                chat_id=callback.from_user.id,
-                message_id=msg_id,
-            )
-        except Exception as e:
-            logger.warning(f"Не удалось удалить сообщение альбома {msg_id}: {e}")
-    
-    # Удаляем сообщение с кнопками
-    try:
-        await callback.message.delete()
-    except Exception:
-        pass
+    # Удаляем все сообщения меню моделей (фотографии и сообщение с кнопками)
+    await delete_models_menu_messages(
+        bot=bot,
+        chat_id=callback.from_user.id,
+        state=state,
+    )
     
     # Отправляем новое сообщение с инструкцией
     await bot.send_message(
@@ -186,14 +222,36 @@ async def handle_my_models_callback(
         models = await repo.get_user_models(user_id)
         
         if not models:
-            await callback.message.edit_text(
-                get_text("models_list_empty", lang),
+            # Удаляем все предыдущие сообщения меню моделей (если есть)
+            await delete_models_menu_messages(
+                bot=bot,
+                chat_id=callback.from_user.id,
+                state=state,
+            )
+            
+            # Удаляем исходное сообщение из главного меню
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
+            
+            # Отправляем сообщение о пустом списке
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text=get_text("models_list_empty", lang),
                 reply_markup=get_back_keyboard(lang),
             )
             await callback.answer()
             return
         
-        # Удаляем исходное сообщение
+        # Удаляем все предыдущие сообщения меню моделей (если есть)
+        await delete_models_menu_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
+        
+        # Удаляем исходное сообщение из главного меню
         try:
             await callback.message.delete()
         except Exception:
@@ -220,14 +278,17 @@ async def handle_my_models_callback(
             )
             album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
         
-        # Сохраняем ID сообщений альбома в FSM для последующего удаления
-        await state.update_data(models_album_message_ids=album_message_ids)
-        
         # Отправляем сообщение с клавиатурой управления
-        await bot.send_message(
+        menu_message = await bot.send_message(
             chat_id=callback.from_user.id,
             text="👤 Ваши модели:",
             reply_markup=get_models_list_keyboard(models, lang),
+        )
+        
+        # Сохраняем ID всех сообщений в FSM для последующего удаления
+        await state.update_data(
+            models_album_message_ids=album_message_ids,
+            models_menu_message_id=menu_message.message_id,
         )
         
         await callback.answer()
@@ -426,25 +487,12 @@ async def handle_model_delete(
         # Получаем обновленный список
         models = await repo.get_user_models(user_id)
         
-        # Получаем ID старых сообщений альбома из FSM и удаляем их
-        state_data = await state.get_data()
-        album_message_ids = state_data.get("models_album_message_ids", [])
-        
-        # Удаляем все старые сообщения альбома
-        for msg_id in album_message_ids:
-            try:
-                await bot.delete_message(
-                    chat_id=callback.from_user.id,
-                    message_id=msg_id,
-                )
-            except Exception as e:
-                logger.warning(f"Не удалось удалить сообщение альбома {msg_id}: {e}")
-        
-        # Удаляем сообщение с кнопками
-        try:
-            await callback.message.delete()
-        except Exception:
-            pass
+        # Удаляем все старые сообщения меню моделей (фотографии и сообщение с кнопками)
+        await delete_models_menu_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
         
         if not models:
             # Если моделей не осталось
@@ -477,14 +525,17 @@ async def handle_model_delete(
             )
             album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
         
-        # Сохраняем ID новых сообщений альбома в FSM
-        await state.update_data(models_album_message_ids=album_message_ids)
-        
         # Отправляем обновленное сообщение с клавиатурой
-        await bot.send_message(
+        menu_message = await bot.send_message(
             chat_id=callback.from_user.id,
             text="👤 Ваши модели:",
             reply_markup=get_models_list_keyboard(models, lang),
+        )
+        
+        # Сохраняем ID всех новых сообщений в FSM
+        await state.update_data(
+            models_album_message_ids=album_message_ids,
+            models_menu_message_id=menu_message.message_id,
         )
         
         await callback.answer(get_text("model_deleted", lang))
@@ -497,43 +548,34 @@ async def handle_model_delete(
 async def handle_back_to_menu(
     callback: CallbackQuery,
     state: FSMContext,
+    bot: Bot,
     lang: str = "ru",
 ) -> None:
     """
     Обработчик кнопки "Назад".
+    Удаляет все сообщения меню моделей и возвращает в главное меню.
 
     Args:
         callback: Callback запрос
         state: Контекст FSM
+        bot: Экземпляр бота
         lang: Язык интерфейса
     """
+    # Удаляем все сообщения меню моделей (фотографии и сообщение с кнопками)
+    await delete_models_menu_messages(
+        bot=bot,
+        chat_id=callback.from_user.id,
+        state=state,
+    )
+    
+    # Очищаем состояние
     await state.clear()
     
-    # Проверяем, является ли сообщение медиа (фото)
-    if callback.message.photo:
-        # Для медиа-сообщений удаляем старое и отправляем новое
-        try:
-            await callback.message.delete()
-        except Exception:
-            pass
-        await callback.bot.send_message(
-            chat_id=callback.from_user.id,
-            text=get_text("welcome", lang),
-            reply_markup=get_main_menu_keyboard(lang),
-        )
-    else:
-        # Для текстовых сообщений редактируем
-        try:
-            await callback.message.edit_text(
-                get_text("welcome", lang),
-                reply_markup=get_main_menu_keyboard(lang),
-            )
-        except Exception:
-            # Если не удалось отредактировать, отправляем новое
-            await callback.bot.send_message(
-                chat_id=callback.from_user.id,
-                text=get_text("welcome", lang),
-                reply_markup=get_main_menu_keyboard(lang),
-            )
+    # Отправляем главное меню
+    await bot.send_message(
+        chat_id=callback.from_user.id,
+        text=get_text("welcome", lang),
+        reply_markup=get_main_menu_keyboard(lang),
+    )
     
     await callback.answer()

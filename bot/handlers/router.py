@@ -69,7 +69,7 @@ def setup_handlers(
     
     # Callback: Назад в меню
     async def back_to_menu_handler(callback, state: FSMContext):
-        await models.handle_back_to_menu(callback, state, lang)
+        await models.handle_back_to_menu(callback, state, bot, lang)
     router.callback_query.register(
         back_to_menu_handler,
         F.data == "back_to_menu",
