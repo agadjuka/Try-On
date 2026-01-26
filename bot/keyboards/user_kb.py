@@ -19,16 +19,16 @@ def get_main_menu_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     
     builder.button(
+        text=get_text("menu_try_on", lang),
+        callback_data="try_on"
+    )
+    builder.button(
         text=get_text("menu_add_model", lang),
         callback_data="add_model"
     )
     builder.button(
         text=get_text("menu_my_models", lang),
         callback_data="my_models"
-    )
-    builder.button(
-        text=get_text("menu_try_on", lang),
-        callback_data="try_on"
     )
     
     builder.adjust(1)  # По одной кнопке в ряд

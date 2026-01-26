@@ -38,6 +38,7 @@ async def start_command(
         await message.answer(
             get_text("welcome", lang),
             reply_markup=get_main_menu_keyboard(lang),
+            parse_mode="HTML",
         )
         
     except Exception as e:
