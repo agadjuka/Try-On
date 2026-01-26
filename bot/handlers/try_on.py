@@ -69,9 +69,8 @@ async def handle_try_on_callback(
                     file=photo_bytes,
                     filename=f"model_{idx + 1}.jpg",
                 )
-                caption = (
-                    f"Модель {idx + 1}" if idx == len(models) - 1 else None
-                )
+                # Для последнего фото добавим caption и кнопки после отправки
+                caption = None
                 media_group.append(InputMediaPhoto(media=photo_file, caption=caption))
             except Exception as e:
                 logger.error(f"Ошибка при загрузке фото модели {idx + 1}: {e}")
@@ -84,17 +83,28 @@ async def handle_try_on_callback(
             await callback.answer()
             return
 
-        # Отправляем альбом с фото моделей
-        await bot.send_media_group(
+        # Удаляем исходное сообщение с кнопкой "Примерка"
+        await callback.message.delete()
+
+        # Отправляем альбом с фото моделей (сначала фотографии)
+        sent_messages = await bot.send_media_group(
             chat_id=callback.from_user.id,
             media=media_group,
         )
 
-        # Редактируем сообщение с кнопками выбора
-        await callback.message.edit_text(
-            "👤 Выберите модель для примерки:",
+        # Сохраняем ID сообщений альбома в FSM для последующего удаления
+        album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
+        await state.update_data(album_message_ids=album_message_ids)
+
+        # Отправляем сообщение с кнопками (после фотографий)
+        selection_message = await bot.send_message(
+            chat_id=callback.from_user.id,
+            text="👤 Выберите модель для примерки:",
             reply_markup=get_model_selection_keyboard(models, lang),
         )
+
+        # Сохраняем ID сообщения с кнопками для последующего редактирования
+        await state.update_data(selection_message_id=selection_message.message_id)
 
         await callback.answer()
 
@@ -152,16 +162,52 @@ async def handle_model_selection_for_try_on(
             await callback.answer("Модель не найдена")
             return
 
+        # Получаем данные из FSM
+        state_data = await state.get_data()
+        album_message_ids = state_data.get("album_message_ids", [])
+        selection_message_id = state_data.get("selection_message_id")
+
+        # Удаляем альбом с фотографиями моделей
+        for msg_id in album_message_ids:
+            try:
+                await bot.delete_message(
+                    chat_id=callback.from_user.id,
+                    message_id=msg_id,
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось удалить сообщение {msg_id}: {e}")
+
         # Сохраняем выбранную модель в FSM
         await state.update_data(selected_model_gcs_uri=selected_model.gcs_uri)
         await state.set_state(TryOnStates.waiting_for_garment_photo)
 
-        # Редактируем сообщение с инструкцией
-        await callback.message.edit_text(
-            "📸 Пришлите фото одежды (до 5 штук).\n\n"
-            "Можно отправить одно фото или несколько фото одним альбомом.",
-            reply_markup=get_back_keyboard(lang),
-        )
+        # Редактируем сообщение с кнопками, заменяя его на инструкцию
+        if selection_message_id:
+            try:
+                await bot.edit_message_text(
+                    chat_id=callback.from_user.id,
+                    message_id=selection_message_id,
+                    text="📸 Пришлите фото одежды (до 5 штук).\n\n"
+                    "Можно отправить одно фото или несколько фото одним альбомом.",
+                    reply_markup=get_back_keyboard(lang),
+                )
+            except Exception as e:
+                logger.error(f"Ошибка при редактировании сообщения: {e}")
+                # Если не удалось отредактировать, отправляем новое
+                await bot.send_message(
+                    chat_id=callback.from_user.id,
+                    text="📸 Пришлите фото одежды (до 5 штук).\n\n"
+                    "Можно отправить одно фото или несколько фото одним альбомом.",
+                    reply_markup=get_back_keyboard(lang),
+                )
+        else:
+            # Если ID сообщения не найден, отправляем новое
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text="📸 Пришлите фото одежды (до 5 штук).\n\n"
+                "Можно отправить одно фото или несколько фото одним альбомом.",
+                reply_markup=get_back_keyboard(lang),
+            )
 
         await callback.answer("Модель выбрана")
 
