@@ -83,6 +83,11 @@ async def handle_add_model_callback(
         get_text("upload_model_instr", lang),
         reply_markup=get_back_keyboard(lang),
     )
+    # Сохраняем ID сообщения с инструкцией для последующего удаления
+    await state.update_data(
+        models_menu_message_id=callback.message.message_id,
+        models_album_message_ids=[],
+    )
     await callback.answer()
 
 
@@ -111,10 +116,16 @@ async def handle_add_new_model_from_list(
     )
     
     # Отправляем новое сообщение с инструкцией
-    await bot.send_message(
+    instruction_message = await bot.send_message(
         chat_id=callback.from_user.id,
-        text="📸 Пришлите фото модели (человека).\n\nФото должно быть четким, с хорошим освещением.",
+        text=get_text("upload_model_instr", lang),
         reply_markup=get_back_keyboard(lang),
+    )
+    
+    # Сохраняем ID сообщения с инструкцией для последующего удаления
+    await state.update_data(
+        models_menu_message_id=instruction_message.message_id,
+        models_album_message_ids=[],
     )
     
     await callback.answer()
@@ -183,7 +194,19 @@ async def handle_model_photo(
                 message_id=processing_message_id,
             )
         except Exception as e:
-            logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
+            logger.warning(f"Не удалось удалить сообщение 'Обрабатываю...': {e}")
+        
+        # Удаляем сообщение с инструкцией "Отправь фото модели" (если есть)
+        state_data = await state.get_data()
+        instruction_message_id = state_data.get("models_menu_message_id")
+        if instruction_message_id:
+            try:
+                await bot.delete_message(
+                    chat_id=message.from_user.id,
+                    message_id=instruction_message_id,
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
         
         # Сбрасываем состояние
         await state.clear()
@@ -241,12 +264,22 @@ async def handle_my_models_callback(
             except Exception:
                 pass
             
-            # Отправляем сообщение о пустом списке
-            await bot.send_message(
+            # Устанавливаем состояние ожидания фото модели
+            await state.set_state(ModelStates.waiting_for_model_photo)
+            
+            # Отправляем сообщение с инструкцией добавления модели
+            instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,
-                text=get_text("models_list_empty", lang),
+                text=get_text("upload_model_instr", lang),
                 reply_markup=get_back_keyboard(lang),
             )
+            
+            # Сохраняем ID сообщения с инструкцией для последующего удаления
+            await state.update_data(
+                models_menu_message_id=instruction_message.message_id,
+                models_album_message_ids=[],
+            )
+            
             await callback.answer()
             return
         
@@ -502,10 +535,15 @@ async def handle_model_delete(
         
         if not models:
             # Если моделей не осталось
-            await bot.send_message(
+            empty_list_message = await bot.send_message(
                 chat_id=callback.from_user.id,
                 text=get_text("models_list_empty", lang),
                 reply_markup=get_back_keyboard(lang),
+            )
+            # Сохраняем ID сообщения для последующего удаления
+            await state.update_data(
+                models_menu_message_id=empty_list_message.message_id,
+                models_album_message_ids=[],
             )
             await callback.answer(get_text("model_deleted", lang))
             return

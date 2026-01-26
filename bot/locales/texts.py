@@ -74,8 +74,8 @@ TEXTS = {
         "en": "📸 Send a photo of clothing for try-on.\n\nUsing active model.",
     },
     "processing": {
-        "ru": "⏳ Обрабатываю...",
-        "en": "⏳ Processing...",
+        "ru": "⏳ Сохраняю...",
+        "en": "⏳ Saving...",
     },
     "try_on_success": {
         "ru": "✅ Примерка готова!",
