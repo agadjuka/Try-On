@@ -1,6 +1,5 @@
 """Модуль для обработки обновлений от Telegram в режиме webhook."""
 
-import logging
 from typing import Any
 
 from aiogram import Bot, Dispatcher
@@ -33,23 +32,32 @@ async def init_webhook_services() -> None:
     global _webhook_repo, _webhook_storage_service, _webhook_try_on_service
     
     if _initialized:
+        logger.info("ℹ️ Сервисы уже инициализированы")
         return
     
-    logger.info("Инициализация сервисов при старте приложения...")
+    logger.info("🔧 Инициализация сервисов...")
     
     # Загружаем настройки
     settings = get_settings()
+    logger.info("✅ Настройки загружены")
     
     # Создаем бота и диспетчер
+    logger.info("🤖 Создание бота и диспетчера...")
     _webhook_bot = Bot(token=settings.bot_token)
     _webhook_dispatcher = Dispatcher(storage=MemoryStorage())
     
     # Инициализируем сервисы
+    logger.info("💾 Инициализация Firestore репозитория...")
     _webhook_repo = FirestoreRepo(settings)
+    
+    logger.info("☁️ Инициализация Cloud Storage сервиса...")
     _webhook_storage_service = CloudStorageService(settings)
+    
+    logger.info("🎨 Инициализация Try-On сервиса...")
     _webhook_try_on_service = VertexTryOnService(settings)
     
     # Настраиваем хендлеры
+    logger.info("📋 Настройка хендлеров...")
     setup_handlers(
         router=_webhook_dispatcher,
         bot=_webhook_bot,
@@ -59,7 +67,7 @@ async def init_webhook_services() -> None:
     )
     
     _initialized = True
-    logger.info("Сервисы успешно инициализированы при старте")
+    logger.info("✅ Все сервисы успешно инициализированы")
 
 
 async def get_webhook_dispatcher() -> tuple[Bot, Dispatcher]:
@@ -83,7 +91,10 @@ async def process_update(update_data: dict[str, Any]) -> None:
     Args:
         update_data: Обновление от Telegram в формате словаря (JSON)
     """
+    update_id = update_data.get("update_id", "unknown")
     try:
+        logger.info(f"🔄 Начало обработки обновления: update_id={update_id}")
+        
         # Получаем Bot и Dispatcher
         bot, dispatcher = await get_webhook_dispatcher()
         
@@ -93,6 +104,8 @@ async def process_update(update_data: dict[str, Any]) -> None:
         # Обрабатываем обновление через Dispatcher
         await dispatcher.feed_update(bot, update)
         
+        logger.info(f"✅ Обновление успешно обработано: update_id={update_id}")
+        
     except Exception as e:
-        logger.error(f"Ошибка при обработке обновления: {e}")
+        logger.error(f"❌ Ошибка при обработке обновления {update_id}: {e}")
         logger.exception(e)

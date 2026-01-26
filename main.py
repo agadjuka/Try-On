@@ -1,7 +1,5 @@
 """Точка входа для Telegram бота в режиме webhook (Cloud Run)."""
 
-import logging
-
 from fastapi import BackgroundTasks, FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from loguru import logger
@@ -10,13 +8,8 @@ from bot.core.config import get_settings
 from bot.core.logger import setup_logger
 from bot.webhook import process_update, init_webhook_services
 
-# Настройка логирования
+# Настройка логирования (отключает детальные логи FastAPI/Starlette/Uvicorn)
 setup_logger()
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
 
 # Создаем FastAPI приложение
 app = FastAPI(
@@ -35,14 +28,20 @@ async def startup_event():
     """
     try:
         settings = get_settings()
-        logger.info(f"Приложение запускается. Project ID: {settings.google_cloud_project_id}")
+        logger.info("=" * 60)
+        logger.info("🚀 Запуск приложения (Webhook режим)")
+        logger.info(f"📦 Project ID: {settings.google_cloud_project_id}")
+        logger.info(f"🌍 Region: {settings.google_cloud_region}")
+        logger.info("=" * 60)
         
         # Инициализируем все сервисы сразу при старте
         await init_webhook_services()
         
-        logger.info("Приложение полностью готово к работе")
+        logger.info("✅ Приложение полностью готово к работе")
+        logger.info("📡 Ожидание webhook запросов от Telegram...")
     except Exception as e:
-        logger.error(f"Ошибка при инициализации: {e}")
+        logger.error(f"❌ Ошибка при инициализации: {e}")
+        logger.exception(e)
 
 
 @app.get("/")
@@ -81,21 +80,36 @@ async def telegram_webhook(
         try:
             settings = get_settings()
             if not settings.bot_token or not settings.bot_token.strip():
-                logger.error("BOT_TOKEN не установлен в переменных окружения")
+                logger.error("❌ BOT_TOKEN не установлен в переменных окружения")
                 return JSONResponse(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     content={"error": "Bot token not configured"},
                 )
         except Exception as e:
-            logger.error(f"Ошибка загрузки настроек: {e}")
+            logger.error(f"❌ Ошибка загрузки настроек: {e}")
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={"error": "Configuration error"},
             )
         
-        # Логируем получение обновления
+        # Логируем получение обновления с деталями
         update_id = update_data.get("update_id", "unknown")
-        logger.info(f"Получено обновление от Telegram: update_id={update_id}")
+        message = update_data.get("message")
+        callback_query = update_data.get("callback_query")
+        
+        if message:
+            user_id = message.get("from", {}).get("id", "unknown")
+            username = message.get("from", {}).get("username", "unknown")
+            text = message.get("text", "")
+            has_photo = "photo" in message
+            logger.info(f"📨 Получено сообщение: update_id={update_id}, user_id={user_id}, username=@{username}, text={text[:50] if text else 'N/A'}, photo={has_photo}")
+        elif callback_query:
+            user_id = callback_query.get("from", {}).get("id", "unknown")
+            username = callback_query.get("from", {}).get("username", "unknown")
+            data = callback_query.get("data", "")
+            logger.info(f"🔘 Получен callback: update_id={update_id}, user_id={user_id}, username=@{username}, data={data}")
+        else:
+            logger.info(f"📥 Получено обновление: update_id={update_id}, тип={update_data.keys()}")
         
         # Добавляем обработку в фоновые задачи
         # Это позволяет немедленно вернуть ответ Telegram, не дожидаясь обработки
@@ -110,7 +124,7 @@ async def telegram_webhook(
     except Exception as e:
         # Логируем ошибку, но все равно возвращаем 200 OK
         # Это важно, чтобы Telegram не повторял запрос
-        logger.error(f"Ошибка при получении webhook запроса: {e}")
+        logger.error(f"❌ Ошибка при получении webhook запроса: {e}")
         logger.exception(e)
         return JSONResponse(
             status_code=status.HTTP_200_OK,
