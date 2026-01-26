@@ -1,91 +1,109 @@
-"""Основной файл для запуска Telegram бота."""
+"""Точка входа для Telegram бота в режиме webhook (Cloud Run)."""
 
-import asyncio
+import logging
 
-from aiogram import Bot, Dispatcher
-from aiogram.exceptions import TelegramUnauthorizedError
-from aiogram.fsm.storage.memory import MemoryStorage
+from fastapi import BackgroundTasks, FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from loguru import logger
 
 from bot.core.config import get_settings
 from bot.core.logger import setup_logger
-from bot.database.repo import FirestoreRepo
-from bot.handlers.router import setup_handlers
-from bot.services.storage import CloudStorageService
-from bot.services.try_on import VertexTryOnService
+from bot.webhook import process_update
+
+# Настройка логирования
+setup_logger()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+# Создаем FastAPI приложение
+app = FastAPI(
+    title="Virtual Try-On Bot",
+    description="Webhook endpoint для Telegram бота виртуальной примерки",
+    version="1.0.0",
+)
 
 
-async def main() -> None:
-    """Основная функция запуска бота."""
-    setup_logger()
-    logger.info("Запуск Telegram бота...")
-
-    # Загружаем настройки
+@app.on_event("startup")
+async def startup_event():
+    """Инициализация при запуске приложения."""
     try:
         settings = get_settings()
+        logger.info(f"Приложение запущено. Project ID: {settings.google_cloud_project_id}")
     except Exception as e:
-        logger.error(
-            f"Ошибка загрузки настроек: {e}\n"
-            "Убедитесь, что файл .env существует и содержит все необходимые переменные:\n"
-            "- BOT_TOKEN\n"
-            "- GOOGLE_CLOUD_PROJECT_ID\n"
-            "- GOOGLE_CLOUD_REGION\n"
-            "- GCS_BUCKET_NAME"
-        )
-        return
+        logger.error(f"Ошибка при инициализации: {e}")
 
-    # Проверяем наличие токена
-    if not settings.bot_token or not settings.bot_token.strip():
-        logger.error(
-            "BOT_TOKEN не найден или пустой в файле .env\n"
-            "Получите токен у @BotFather в Telegram и добавьте в .env файл:\n"
-            "BOT_TOKEN=ваш_токен_бота"
-        )
-        return
 
-    logger.info(f"Конфигурация загружена. Project ID: {settings.google_cloud_project_id}")
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Проверка работоспособности сервиса."""
+    return {"status": "ok", "service": "virtual-try-on-bot"}
 
-    # Инициализируем сервисы
-    repo = FirestoreRepo(settings)
-    storage_service = CloudStorageService(settings)
-    try_on_service = VertexTryOnService(settings)
 
-    # Создаем бота и диспетчер
-    bot = Bot(token=settings.bot_token)
-    dp = Dispatcher(storage=MemoryStorage())
+@app.get("/health")
+async def health_check() -> dict[str, str]:
+    """Health check endpoint для Cloud Run."""
+    return {"status": "healthy"}
 
-    # Настраиваем хендлеры
-    setup_handlers(
-        router=dp,
-        bot=bot,
-        repo=repo,
-        storage_service=storage_service,
-        try_on_service=try_on_service,
-    )
 
-    try:
-        logger.info("Проверка подключения к Telegram API...")
-        # Проверяем подключение перед запуском polling
-        me = await bot.get_me()
-        logger.success(f"Бот успешно подключен: @{me.username} ({me.first_name})")
+@app.post("/telegram/webhook")
+async def telegram_webhook(
+    request: Request, background_tasks: BackgroundTasks
+) -> JSONResponse:
+    """Эндпоинт для получения обновлений от Telegram.
+    
+    Telegram отправляет POST-запросы с объектом Update в JSON.
+    Эндпоинт немедленно возвращает 200 OK, а обработка запускается в фоне.
+    
+    Args:
+        request: HTTP запрос от Telegram
+        background_tasks: Фоновые задачи FastAPI
         
-        logger.info("Бот запущен и готов к работе")
-        await dp.start_polling(bot)
-    except TelegramUnauthorizedError:
-        logger.error(
-            "Ошибка авторизации: неверный токен бота\n"
-            "Проверьте BOT_TOKEN в файле .env:\n"
-            "1. Получите новый токен у @BotFather в Telegram\n"
-            "2. Убедитесь, что токен скопирован полностью без пробелов\n"
-            "3. Формат в .env: BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+    Returns:
+        JSONResponse с кодом 200 OK
+    """
+    try:
+        # Получаем данные обновления из запроса
+        update_data = await request.json()
+        
+        # Проверяем наличие токена бота
+        try:
+            settings = get_settings()
+            if not settings.bot_token or not settings.bot_token.strip():
+                logger.error("BOT_TOKEN не установлен в переменных окружения")
+                return JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    content={"error": "Bot token not configured"},
+                )
+        except Exception as e:
+            logger.error(f"Ошибка загрузки настроек: {e}")
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "Configuration error"},
+            )
+        
+        # Логируем получение обновления
+        update_id = update_data.get("update_id", "unknown")
+        logger.info(f"Получено обновление от Telegram: update_id={update_id}")
+        
+        # Добавляем обработку в фоновые задачи
+        # Это позволяет немедленно вернуть ответ Telegram, не дожидаясь обработки
+        background_tasks.add_task(process_update, update_data)
+        
+        # Немедленно возвращаем успешный ответ
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"status": "ok"},
         )
+        
     except Exception as e:
-        logger.error(f"Критическая ошибка: {e}")
+        # Логируем ошибку, но все равно возвращаем 200 OK
+        # Это важно, чтобы Telegram не повторял запрос
+        logger.error(f"Ошибка при получении webhook запроса: {e}")
         logger.exception(e)
-    finally:
-        await bot.session.close()
-        await repo.close()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"status": "error", "message": str(e)},
+        )

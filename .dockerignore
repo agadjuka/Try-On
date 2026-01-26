@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+README*
+
+# Образец деплоя (не нужен в образе)
+Образец деплоя/
+
+# Логи
+*.log
+
+# Тесты
+tests/
+test_*.py
+*_test.py
+
+# Другие файлы
+*.db
+*.sqlite
+.DS_Store

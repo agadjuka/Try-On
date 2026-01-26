@@ -1,5 +1,6 @@
 """Репозиторий для работы с Firestore."""
 
+import warnings
 from datetime import datetime
 from typing import Optional
 
@@ -9,6 +10,14 @@ from loguru import logger
 
 from bot.core.config import Settings
 from bot.database.models import PersonImage, UserModel
+
+# Подавляем предупреждение о синхронном Retry с асинхронными вызовами
+# AsyncClient не поддерживает retry в конструкторе, используется дефолтный retry
+warnings.filterwarnings(
+    "ignore",
+    message=".*synchronous google.api_core.retry.Retry with asynchronous calls.*",
+    category=UserWarning
+)
 
 
 class FirestoreRepo:

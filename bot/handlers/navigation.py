@@ -67,6 +67,7 @@ async def handle_back_to_menu(
         chat_id=callback.from_user.id,
         text=get_text("welcome", lang),
         reply_markup=get_main_menu_keyboard(lang),
+        parse_mode="HTML",
     )
     
     await callback.answer()
