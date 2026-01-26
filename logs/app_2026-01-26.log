@@ -1,0 +1,70 @@
+2026-01-26 15:51:57 | INFO     | __main__:main:258 - Запуск тестового бота...
+2026-01-26 15:51:57 | INFO     | __main__:main:262 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 15:51:57 | INFO     | __main__:main:293 - Бот запущен и готов к работе
+2026-01-26 15:52:00 | ERROR    | __main__:main:296 - Критическая ошибка: Telegram server says - Unauthorized
+2026-01-26 15:52:53 | INFO     | __main__:main:259 - Запуск тестового бота...
+2026-01-26 15:52:53 | INFO     | __main__:main:284 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 15:52:53 | INFO     | __main__:main:315 - Проверка подключения к Telegram API...
+2026-01-26 15:52:54 | ERROR    | __main__:main:322 - Ошибка авторизации: неверный токен бота
+Проверьте BOT_TOKEN в файле .env:
+1. Получите новый токен у @BotFather в Telegram
+2. Убедитесь, что токен скопирован полностью без пробелов
+3. Формат в .env: BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+2026-01-26 15:53:36 | INFO     | __main__:main:259 - Запуск тестового бота...
+2026-01-26 15:53:36 | INFO     | __main__:main:284 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 15:53:36 | INFO     | __main__:main:315 - Проверка подключения к Telegram API...
+2026-01-26 15:53:37 | SUCCESS  | __main__:main:318 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 15:53:37 | INFO     | __main__:main:319 - Бот запущен и готов к работе
+2026-01-26 15:55:14 | INFO     | __main__:main:259 - Запуск тестового бота...
+2026-01-26 15:55:14 | INFO     | __main__:main:284 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 15:55:14 | INFO     | __main__:main:324 - Проверка подключения к Telegram API...
+2026-01-26 15:55:15 | SUCCESS  | __main__:main:327 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 15:55:15 | INFO     | __main__:main:328 - Бот запущен и готов к работе
+2026-01-26 15:55:25 | ERROR    | __main__:handle_model_photo:119 - Ошибка при обработке фото модели: Telegram server says - Bad Request: wrong file_id or the file is temporarily unavailable
+2026-01-26 15:56:57 | INFO     | __main__:main:270 - Запуск тестового бота...
+2026-01-26 15:56:57 | INFO     | __main__:main:295 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 15:56:57 | INFO     | __main__:main:335 - Проверка подключения к Telegram API...
+2026-01-26 15:56:58 | SUCCESS  | __main__:main:338 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 15:56:58 | INFO     | __main__:main:339 - Бот запущен и готов к работе
+2026-01-26 15:57:06 | ERROR    | __main__:handle_model_photo:130 - Ошибка при обработке фото модели: Telegram server says - Bad Request: wrong file_id or the file is temporarily unavailable
+2026-01-26 15:58:30 | INFO     | __main__:main:303 - Запуск тестового бота...
+2026-01-26 15:58:30 | INFO     | __main__:main:328 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 15:58:30 | INFO     | __main__:main:368 - Проверка подключения к Telegram API...
+2026-01-26 15:58:31 | SUCCESS  | __main__:main:371 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 15:58:31 | INFO     | __main__:main:372 - Бот запущен и готов к работе
+2026-01-26 15:58:39 | WARNING  | __main__:download_photo_to_bytes:86 - Файл временно недоступен (попытка 1/3). Ждем 0.5 сек...
+2026-01-26 15:58:40 | WARNING  | __main__:download_photo_to_bytes:86 - Файл временно недоступен (попытка 2/3). Ждем 1.0 сек...
+2026-01-26 15:58:42 | ERROR    | __main__:handle_model_photo:163 - Ошибка при обработке фото модели: Не удалось скачать файл после 3 попыток. Файл может быть временно недоступен в Telegram. Попробуйте отправить фото еще раз.
+2026-01-26 16:01:48 | INFO     | __main__:main:269 - Запуск тестового бота...
+2026-01-26 16:01:48 | INFO     | __main__:main:294 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:01:48 | INFO     | __main__:main:334 - Проверка подключения к Telegram API...
+2026-01-26 16:01:49 | SUCCESS  | __main__:main:337 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:01:49 | INFO     | __main__:main:338 - Бот запущен и готов к работе
+2026-01-26 16:01:56 | ERROR    | __main__:handle_model_photo:129 - Ошибка при обработке фото модели: Ошибка загрузки файла в GCS: <_io.BytesIO object at 0x00000140CD1C3C40> could not be converted to bytes
+2026-01-26 16:02:59 | INFO     | __main__:main:275 - Запуск тестового бота...
+2026-01-26 16:02:59 | INFO     | __main__:main:300 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:02:59 | INFO     | __main__:main:340 - Проверка подключения к Telegram API...
+2026-01-26 16:03:00 | SUCCESS  | __main__:main:343 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:03:00 | INFO     | __main__:main:344 - Бот запущен и готов к работе
+2026-01-26 16:03:19 | DEBUG    | bot.services.try_on:_get_access_token:66 - Access token получен через Application Default Credentials
+2026-01-26 16:03:19 | INFO     | bot.services.try_on:generate_try_on:194 - Отправка запроса к Vertex AI API: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:03:19 | DEBUG    | bot.services.try_on:generate_try_on:195 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_160303.jpg
+2026-01-26 16:03:19 | DEBUG    | bot.services.try_on:generate_try_on:196 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_160318.jpg
+2026-01-26 16:03:19 | ERROR    | bot.services.try_on:generate_try_on:264 - Ошибка при запросе к API (HTTP 429): 429, message='Too Many Requests', url='https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict'
+2026-01-26 16:03:19 | ERROR    | __main__:handle_garment_photo:230 - Ошибка API при генерации: Ошибка API: HTTP 429. Детали: 429, message='Too Many Requests', url='https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict'
+2026-01-26 16:05:13 | INFO     | __main__:main:300 - Запуск тестового бота...
+2026-01-26 16:05:13 | INFO     | __main__:main:325 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:05:13 | INFO     | __main__:main:365 - Проверка подключения к Telegram API...
+2026-01-26 16:05:14 | SUCCESS  | __main__:main:368 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:05:14 | INFO     | __main__:main:369 - Бот запущен и готов к работе
+2026-01-26 16:05:27 | DEBUG    | bot.services.try_on:_get_access_token:66 - Access token получен через Application Default Credentials
+2026-01-26 16:05:27 | INFO     | bot.services.try_on:generate_try_on:194 - Отправка запроса к Vertex AI API: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:05:27 | DEBUG    | bot.services.try_on:generate_try_on:195 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_160520.jpg
+2026-01-26 16:05:27 | DEBUG    | bot.services.try_on:generate_try_on:196 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_160526.jpg
+2026-01-26 16:05:27 | ERROR    | bot.services.try_on:generate_try_on:264 - Ошибка при запросе к API (HTTP 429): 429, message='Too Many Requests', url='https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict'
+2026-01-26 16:05:27 | ERROR    | __main__:handle_garment_photo:242 - Ошибка API при генерации: Ошибка API: HTTP 429. Детали: 429, message='Too Many Requests', url='https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict'
+2026-01-26 16:06:23 | INFO     | __main__:main:16 - Запуск проверки соединений с Google Cloud сервисами...
+2026-01-26 16:06:23 | INFO     | __main__:main:21 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:06:23 | INFO     | __main__:main:24 - Проверка подключения к Firestore...
+2026-01-26 16:06:24 | ERROR    | bot.database.repo:check_connection:63 - Ошибка подключения к Firestore: 404 The database (default) does not exist for project carrental-480202 Please visit https://console.cloud.google.com/datastore/setup?project=carrental-480202 to add a Cloud Datastore or Cloud Firestore database. 
+2026-01-26 16:06:24 | ERROR    | __main__:main:29 - Не удалось подключиться к Firestore

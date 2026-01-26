@@ -103,3 +103,51 @@ class CloudStorageService:
             return gs_uri
         except Exception as e:
             raise Exception(f"Ошибка загрузки файла в GCS: {str(e)}") from e
+
+    def _parse_gs_uri(self, gs_uri: str) -> tuple[str, str]:
+        """
+        Распарсить gs:// URI на bucket и path.
+
+        Args:
+            gs_uri: URI в формате gs://bucket-name/path
+
+        Returns:
+            Кортеж (bucket_name, path)
+        """
+        if not gs_uri.startswith("gs://"):
+            raise ValueError(f"Некорректный GCS URI: {gs_uri}")
+        uri_without_prefix = gs_uri[5:]  # Убираем "gs://"
+        parts = uri_without_prefix.split("/", 1)
+        bucket_name = parts[0]
+        path = parts[1] if len(parts) > 1 else ""
+        return bucket_name, path
+
+    async def download_file(self, gs_uri: str) -> bytes:
+        """
+        Скачать файл из GCS бакета асинхронно.
+
+        Args:
+            gs_uri: URI файла в формате gs://bucket-name/path
+
+        Returns:
+            Байты файла
+
+        Raises:
+            Exception: При ошибке скачивания
+        """
+        bucket_name, path = self._parse_gs_uri(gs_uri)
+        client = self._get_client()
+        bucket = client.bucket(bucket_name)
+
+        def _download() -> bytes:
+            """Синхронная функция скачивания."""
+            blob = bucket.blob(path)
+            if not blob.exists():
+                raise Exception(f"Файл не найден: {gs_uri}")
+            return blob.download_as_bytes()
+
+        try:
+            file_bytes = await asyncio.to_thread(_download)
+            return file_bytes
+        except Exception as e:
+            raise Exception(f"Ошибка скачивания файла из GCS: {str(e)}") from e

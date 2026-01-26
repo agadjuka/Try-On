@@ -1,16 +1,24 @@
-﻿# Core dependencies
-python-dotenv>=1.0.0,<2.0.0
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-loguru>=0.7.0
+# --- Core & Config ---
+python-dotenv              # Для чтения .env
+pydantic>=2.0.0            # Валидация данных (из твоего рабочего файла)
+pydantic-settings>=2.0.0   # Управление конфигурацией
 
-# Google Cloud
-google-cloud-storage>=2.10.0
-google-cloud-firestore>=2.11.0
-google-auth>=2.23.0
+# --- Telegram Bot ---
+aiogram>=3.0.0             # Асинхронный фреймворк для бота
 
-# Telegram Bot (для будущего использования)
-aiogram>=3.0.0
+# --- Google Cloud Platform ---
+google-cloud-storage>=2.0.0    # Хранилище файлов
+google-cloud-firestore>=2.0.0  # База данных (NoSQL)
+google-auth>=2.0.0             # Авторизация (ADC)
 
-# Utilities
-requests>=2.31.0
+# --- Networking ---
+aiohttp>=3.9.0             # Асинхронные запросы (из твоего рабочего файла)
+requests                   # Синхронные запросы (как резерв)
+
+# --- Webhook Server (Future proof) ---
+fastapi                    # Для вебхуков (из твоего рабочего файла)
+uvicorn[standard]          # ASGI сервер (из твоего рабочего файла)
+
+# --- Utilities ---
+loguru>=0.7.0              # Удобное логирование
+pytz                       # Работа с часовыми поясами (для timestamp)
