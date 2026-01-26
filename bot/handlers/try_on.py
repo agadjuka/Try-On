@@ -9,6 +9,7 @@ from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
 from bot.keyboards.user_kb import get_back_keyboard
 from bot.handlers.try_on_utils import send_models_album, delete_try_on_selection_messages
+from bot.utils.message_utils import delete_messages
 
 
 async def handle_try_on_callback(
@@ -31,28 +32,26 @@ async def handle_try_on_callback(
         storage_service: Сервис для работы с GCS
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback - убирает "часики" на кнопке
+    await callback.answer()
+    
     user_id = str(callback.from_user.id)
 
     try:
+        # Сохраняем старые ID ДО любых изменений state
+        state_data = await state.get_data()
+        old_album_ids = state_data.get("album_message_ids", [])
+        old_selection_id = state_data.get("selection_message_id")
+        
         # Получаем все модели пользователя
         models = await repo.get_user_models(user_id)
-
-        # Удаляем все предыдущие сообщения выбора модели (если есть)
-        await delete_try_on_selection_messages(
-            bot=bot,
-            chat_id=callback.from_user.id,
-            state=state,
-        )
-        
-        # Удаляем исходное сообщение из главного меню
-        try:
-            await callback.message.delete()
-        except Exception:
-            pass
         
         if not models:
             # Если нет моделей - просим прислать фото
             from bot.locales.texts import get_text
+            from bot.states.user_states import TryOnStates
+            
+            # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,
                 text=get_text("try_on_send_photo", lang),
@@ -66,13 +65,21 @@ async def handle_try_on_callback(
             )
             
             # Устанавливаем состояние ожидания фото модели
-            from bot.states.user_states import TryOnStates
             await state.set_state(TryOnStates.waiting_for_model_photo)
             
-            await callback.answer()
+            # ПОТОМ удаляем старые по СОХРАНЁННЫМ ID
+            old_ids_to_delete = list(old_album_ids)
+            if old_selection_id:
+                old_ids_to_delete.append(old_selection_id)
+            await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
+            
             return
 
-        # Отправляем альбом с моделями
+        # Отправляем альбом с моделями (внутри уже оптимизировано)
         success = await send_models_album(
             callback=callback,
             state=state,
@@ -82,10 +89,8 @@ async def handle_try_on_callback(
             lang=lang,
         )
 
-        if success:
-            await callback.answer()
-        else:
-            await callback.answer("Произошла ошибка")
+        if not success:
+            logger.error("Ошибка при отправке альбома моделей")
 
     except Exception as e:
         logger.error(f"Ошибка в handle_try_on_callback: {e}")
@@ -106,7 +111,6 @@ async def handle_try_on_callback(
             text="❌ Произошла ошибка. Попробуйте позже.",
             reply_markup=get_back_keyboard(lang),
         )
-        await callback.answer()
 
 
 async def handle_new_try_on_callback(
@@ -129,58 +133,29 @@ async def handle_new_try_on_callback(
         storage_service: Сервис для работы с GCS
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback - убирает "часики" на кнопке
+    await callback.answer()
+    
     user_id = str(callback.from_user.id)
 
     try:
-        # Получаем данные из FSM
+        # Получаем данные из FSM и сохраняем старые ID ДО любых изменений
         state_data = await state.get_data()
-        
-        # Сохраняем ID фотографий результата, чтобы они не удалились
         result_album_message_ids = state_data.get("try_on_result_album_message_ids", [])
-        logger.info(f"Сохраняем ID фотографий результата перед обработкой: {result_album_message_ids}")
-        
-        # Удаляем только сообщение с кнопками (фотографии результата остаются в чате)
+        old_album_ids = state_data.get("album_message_ids", [])
+        old_selection_id = state_data.get("selection_message_id")
         result_message_id = state_data.get("try_on_result_message_id")
-        
-        if result_message_id:
-            try:
-                await bot.delete_message(
-                    chat_id=callback.from_user.id,
-                    message_id=result_message_id,
-                )
-            except Exception as e:
-                logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
-        
-        # Удаляем все предыдущие сообщения выбора модели (если есть)
-        # Важно: это удаляет только album_message_ids (фотографии моделей), не try_on_result_album_message_ids
-        await delete_try_on_selection_messages(
-            bot=bot,
-            chat_id=callback.from_user.id,
-            state=state,
-        )
+        logger.info(f"Сохраняем ID фотографий результата перед обработкой: {result_album_message_ids}")
         
         # Получаем все модели пользователя
         models = await repo.get_user_models(user_id)
-
-        # Удаляем сообщение с кнопками
-        try:
-            await callback.message.delete()
-        except Exception:
-            pass
-        
-        # Восстанавливаем ID фотографий результата в FSM (чтобы они не удалились)
-        # Очищаем только ID сообщения с кнопками
-        await state.update_data(
-            try_on_result_message_id=None,
-            try_on_result_album_message_ids=result_album_message_ids,  # Восстанавливаем
-        )
-        logger.info(f"Восстановили ID фотографий результата в FSM после удаления сообщений: {result_album_message_ids}")
         
         if not models:
             # Если нет моделей - просим прислать фото
             from bot.locales.texts import get_text
             from bot.states.user_states import TryOnStates
             
+            # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,
                 text=get_text("try_on_send_photo", lang),
@@ -188,20 +163,40 @@ async def handle_new_try_on_callback(
             )
             
             # Сохраняем ID сообщения с инструкцией для последующего удаления
-            # Сохраняем существующие try_on_result_album_message_ids, чтобы не удалить фотографии результата
             await state.update_data(
                 selection_message_id=instruction_message.message_id,
                 album_message_ids=[],
-                try_on_result_album_message_ids=result_album_message_ids,  # Сохраняем фотографии результата
+                try_on_result_album_message_ids=result_album_message_ids,
             )
             
             # Устанавливаем состояние ожидания фото модели
             await state.set_state(TryOnStates.waiting_for_model_photo)
             
-            await callback.answer()
+            # ПОТОМ удаляем старые по СОХРАНЁННЫМ ID
+            if result_message_id:
+                try:
+                    await bot.delete_message(chat_id=callback.from_user.id, message_id=result_message_id)
+                except Exception as e:
+                    logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
+            
+            old_ids_to_delete = list(old_album_ids)
+            if old_selection_id:
+                old_ids_to_delete.append(old_selection_id)
+            await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
+            
             return
 
-        # Отправляем альбом с моделями (send_models_album удалит callback.message сам)
+        # Восстанавливаем ID фотографий результата в FSM
+        await state.update_data(
+            try_on_result_message_id=None,
+            try_on_result_album_message_ids=result_album_message_ids,
+        )
+        
+        # Отправляем альбом с моделями (внутри уже оптимизировано)
         success = await send_models_album(
             callback=callback,
             state=state,
@@ -211,11 +206,8 @@ async def handle_new_try_on_callback(
             lang=lang,
         )
 
-        if success:
-            await callback.answer()
-        else:
-            await callback.answer("Произошла ошибка")
+        if not success:
+            logger.error("Ошибка при отправке альбома моделей")
 
     except Exception as e:
-        logger.error(f"Ошибка в handle_try_on_callback: {e}")
-        await callback.answer("Произошла ошибка")
+        logger.error(f"Ошибка в handle_new_try_on_callback: {e}")

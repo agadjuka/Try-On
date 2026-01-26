@@ -6,7 +6,7 @@ import os
 import re
 
 
-CONTAINER_NAME = "vyon"
+CONTAINER_NAME = ""
 
 
 def get_container_name():
@@ -26,8 +26,8 @@ def get_container_name():
         
         # Заменяем любое значение на введенное
         content = re.sub(
-            r'CONTAINER_NAME = "vyon"]*"',
-            f'CONTAINER_NAME = "vyon"',
+            r'CONTAINER_NAME = "[^"]*"',
+            f'CONTAINER_NAME = "{container_name}"',
             content
         )
         
@@ -46,7 +46,7 @@ def main():
     command = (
         f"gcloud run deploy {container_name} "
         "--source . "
-        "--region asia-southeast1 "
+        "--region BYON "
         "--allow-unauthenticated "
         "--memory 1Gi"
     )

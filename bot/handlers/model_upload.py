@@ -12,7 +12,7 @@ from bot.keyboards.user_kb import get_main_menu_keyboard, get_back_keyboard
 from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 from bot.utils.model_utils import process_model_photo
-from bot.utils.message_utils import delete_models_menu_messages
+from bot.utils.message_utils import delete_models_menu_messages, delete_messages
 
 
 async def handle_add_model_callback(
@@ -28,6 +28,9 @@ async def handle_add_model_callback(
         state: Контекст FSM
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback - убирает "часики" на кнопке
+    await callback.answer()
+    
     await state.set_state(ModelStates.waiting_for_model_photo)
     await callback.message.edit_text(
         get_text("upload_model_instr", lang),
@@ -37,7 +40,6 @@ async def handle_add_model_callback(
         models_menu_message_id=callback.message.message_id,
         models_album_message_ids=[],
     )
-    await callback.answer()
 
 
 async def handle_add_new_model_from_list(
@@ -55,14 +57,17 @@ async def handle_add_new_model_from_list(
         bot: Экземпляр бота
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback - убирает "часики" на кнопке
+    await callback.answer()
+    
+    # Сохраняем старые ID ДО любых изменений state
+    state_data = await state.get_data()
+    old_album_ids = state_data.get("models_album_message_ids", [])
+    old_menu_id = state_data.get("models_menu_message_id")
+    
     await state.set_state(ModelStates.waiting_for_model_photo)
     
-    await delete_models_menu_messages(
-        bot=bot,
-        chat_id=callback.from_user.id,
-        state=state,
-    )
-    
+    # СНАЧАЛА показываем новое сообщение
     instruction_message = await bot.send_message(
         chat_id=callback.from_user.id,
         text=get_text("upload_model_instr", lang),
@@ -74,7 +79,11 @@ async def handle_add_new_model_from_list(
         models_album_message_ids=[],
     )
     
-    await callback.answer()
+    # ПОТОМ удаляем старые по сохранённым ID
+    old_ids_to_delete = list(old_album_ids)
+    if old_menu_id:
+        old_ids_to_delete.append(old_menu_id)
+    await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
 
 
 async def handle_model_photo(

@@ -27,8 +27,20 @@ async def handle_back_to_menu(
         bot: Экземпляр бота
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback - убирает "часики" на кнопке
+    await callback.answer()
+    
     state_data = await state.get_data()
     
+    # СНАЧАЛА показываем новое меню - пользователь сразу видит результат
+    await bot.send_message(
+        chat_id=callback.from_user.id,
+        text=get_text("welcome", lang),
+        reply_markup=get_main_menu_keyboard(lang),
+        parse_mode="HTML",
+    )
+    
+    # ПОТОМ удаляем старые сообщения в фоне
     await delete_models_menu_messages(
         bot=bot,
         chat_id=callback.from_user.id,
@@ -62,12 +74,3 @@ async def handle_back_to_menu(
             logger.warning(f"Не удалось удалить сообщение с кнопками результата: {e}")
     
     await state.clear()
-    
-    await bot.send_message(
-        chat_id=callback.from_user.id,
-        text=get_text("welcome", lang),
-        reply_markup=get_main_menu_keyboard(lang),
-        parse_mode="HTML",
-    )
-    
-    await callback.answer()

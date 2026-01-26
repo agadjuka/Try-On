@@ -1,7 +1,8 @@
 """Утилиты для работы с моделями."""
 
+import asyncio
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from aiogram import Bot
 from aiogram.types import InputMediaPhoto, BufferedInputFile
@@ -11,12 +12,41 @@ from bot.database.models import PersonImage
 from bot.services.storage import CloudStorageService
 
 
+async def _download_single_photo(
+    model: PersonImage,
+    idx: int,
+    storage_service: CloudStorageService,
+) -> Tuple[int, Optional[InputMediaPhoto]]:
+    """
+    Скачать одно фото модели.
+
+    Args:
+        model: Модель
+        idx: Индекс модели
+        storage_service: Сервис для работы с GCS
+
+    Returns:
+        Кортеж (индекс, InputMediaPhoto или None при ошибке)
+    """
+    try:
+        photo_bytes = await storage_service.download_file(model.gcs_uri)
+        photo_file = BufferedInputFile(
+            file=photo_bytes,
+            filename=f"model_{idx + 1}.jpg",
+        )
+        return idx, InputMediaPhoto(media=photo_file, caption=None)
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке фото модели {idx + 1}: {e}")
+        return idx, None
+
+
 async def prepare_models_media_group(
     models: List[PersonImage],
     storage_service: CloudStorageService,
 ) -> List[InputMediaPhoto]:
     """
     Подготовить медиа-группу из моделей для отправки альбомом.
+    Скачивает все фото параллельно для максимальной скорости.
 
     Args:
         models: Список моделей
@@ -25,17 +55,20 @@ async def prepare_models_media_group(
     Returns:
         Список InputMediaPhoto для альбома
     """
-    media_group = []
-    for idx, model in enumerate(models):
-        try:
-            photo_bytes = await storage_service.download_file(model.gcs_uri)
-            photo_file = BufferedInputFile(
-                file=photo_bytes,
-                filename=f"model_{idx + 1}.jpg",
-            )
-            media_group.append(InputMediaPhoto(media=photo_file, caption=None))
-        except Exception as e:
-            logger.error(f"Ошибка при загрузке фото модели {idx + 1}: {e}")
+    if not models:
+        return []
+    
+    # Скачиваем все фото параллельно
+    tasks = [
+        _download_single_photo(model, idx, storage_service)
+        for idx, model in enumerate(models)
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    
+    # Сортируем по индексу и фильтруем None (ошибки)
+    results.sort(key=lambda x: x[0])
+    media_group = [media for idx, media in results if media is not None]
     
     return media_group
 

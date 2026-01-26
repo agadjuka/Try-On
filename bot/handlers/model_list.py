@@ -14,7 +14,7 @@ from bot.keyboards.user_kb import (
     get_models_list_keyboard,
 )
 from bot.locales.texts import get_text
-from bot.utils.message_utils import delete_models_menu_messages
+from bot.utils.message_utils import delete_models_menu_messages, delete_messages
 from bot.utils.model_utils import prepare_models_media_group
 
 
@@ -38,25 +38,23 @@ async def handle_my_models_callback(
         storage_service: Сервис для работы с GCS
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback - убирает "часики" на кнопке
+    await callback.answer()
+    
     user_id = str(callback.from_user.id)
+    
+    # Сохраняем старые ID ДО любых изменений state
+    state_data = await state.get_data()
+    old_album_ids = state_data.get("models_album_message_ids", [])
+    old_menu_id = state_data.get("models_menu_message_id")
     
     try:
         models = await repo.get_user_models(user_id)
         
         if not models:
-            await delete_models_menu_messages(
-                bot=bot,
-                chat_id=callback.from_user.id,
-                state=state,
-            )
-            
-            try:
-                await callback.message.delete()
-            except Exception:
-                pass
-            
             await state.set_state(ModelStates.waiting_for_model_photo)
             
+            # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,
                 text=get_text("upload_model_instr", lang),
@@ -68,22 +66,23 @@ async def handle_my_models_callback(
                 models_album_message_ids=[],
             )
             
-            await callback.answer()
+            # ПОТОМ удаляем старые по сохранённым ID
+            old_ids_to_delete = list(old_album_ids)
+            if old_menu_id:
+                old_ids_to_delete.append(old_menu_id)
+            await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+            
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
+            
             return
         
-        await delete_models_menu_messages(
-            bot=bot,
-            chat_id=callback.from_user.id,
-            state=state,
-        )
-        
-        try:
-            await callback.message.delete()
-        except Exception:
-            pass
-        
+        # Скачиваем фото параллельно (уже оптимизировано в prepare_models_media_group)
         media_group = await prepare_models_media_group(models, storage_service)
         
+        # СНАЧАЛА отправляем новый контент
         album_message_ids = []
         if media_group:
             sent_messages = await bot.send_media_group(
@@ -103,7 +102,16 @@ async def handle_my_models_callback(
             models_menu_message_id=menu_message.message_id,
         )
         
-        await callback.answer()
+        # ПОТОМ удаляем старые по сохранённым ID
+        old_ids_to_delete = list(old_album_ids)
+        if old_menu_id:
+            old_ids_to_delete.append(old_menu_id)
+        await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+        
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
         
     except Exception as e:
         logger.error(f"Ошибка при получении моделей: {e}")
@@ -119,7 +127,6 @@ async def handle_my_models_callback(
                 text=error_text,
                 reply_markup=get_back_keyboard(lang),
             )
-        await callback.answer()
 
 
 async def handle_model_delete(
@@ -150,6 +157,14 @@ async def handle_model_delete(
         await callback.answer(get_text("invalid_data_format", lang))
         return
     
+    # Мгновенно отвечаем с сообщением об удалении
+    await callback.answer(get_text("model_deleted", lang))
+    
+    # Сохраняем старые ID ДО любых изменений state
+    state_data = await state.get_data()
+    old_album_ids = state_data.get("models_album_message_ids", [])
+    old_menu_id = state_data.get("models_menu_message_id")
+    
     model_id = callback_data.replace("model_delete_", "", 1)
     logger.info(f"Удаление модели: user_id={user_id}, model_id={model_id}")
     
@@ -164,7 +179,6 @@ async def handle_model_delete(
                 f"Модель не найдена: user_id={user_id}, model_id={model_id}, "
                 f"доступные модели: {[m.id for m in models]}"
             )
-            await callback.answer(get_text("photo_not_found", lang))
             return
         
         try:
@@ -177,13 +191,8 @@ async def handle_model_delete(
         
         models = await repo.get_user_models(user_id)
         
-        await delete_models_menu_messages(
-            bot=bot,
-            chat_id=callback.from_user.id,
-            state=state,
-        )
-        
         if not models:
+            # СНАЧАЛА показываем новое
             empty_list_message = await bot.send_message(
                 chat_id=callback.from_user.id,
                 text=get_text("models_list_empty", lang),
@@ -193,11 +202,16 @@ async def handle_model_delete(
                 models_menu_message_id=empty_list_message.message_id,
                 models_album_message_ids=[],
             )
-            await callback.answer(get_text("model_deleted", lang))
+            # ПОТОМ удаляем старое по сохранённым ID
+            old_ids_to_delete = list(old_album_ids)
+            if old_menu_id:
+                old_ids_to_delete.append(old_menu_id)
+            await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
             return
         
         media_group = await prepare_models_media_group(models, storage_service)
         
+        # СНАЧАЛА показываем новое
         album_message_ids = []
         if media_group:
             sent_messages = await bot.send_media_group(
@@ -217,8 +231,11 @@ async def handle_model_delete(
             models_menu_message_id=menu_message.message_id,
         )
         
-        await callback.answer(get_text("model_deleted", lang))
+        # ПОТОМ удаляем старое по сохранённым ID
+        old_ids_to_delete = list(old_album_ids)
+        if old_menu_id:
+            old_ids_to_delete.append(old_menu_id)
+        await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
         
     except Exception as e:
         logger.error(f"Ошибка при удалении модели: {e}")
-        await callback.answer(get_text("delete_error", lang))

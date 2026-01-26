@@ -81,6 +81,9 @@ async def handle_model_navigation(
         storage_service: Сервис для работы с GCS
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback - убирает "часики" на кнопке
+    await callback.answer()
+    
     user_id = str(callback.from_user.id)
     callback_data = callback.data
     
@@ -88,7 +91,6 @@ async def handle_model_navigation(
         models = await repo.get_user_models(user_id)
         
         if not models:
-            await callback.answer(get_text("no_photos", lang))
             return
         
         if callback_data.startswith("model_prev_"):
@@ -96,11 +98,9 @@ async def handle_model_navigation(
         elif callback_data.startswith("model_next_"):
             current_index = int(callback_data.replace("model_next_", "")) + 1
         else:
-            await callback.answer(get_text("unknown_command", lang))
             return
         
         if current_index < 0 or current_index >= len(models):
-            await callback.answer(get_text("list_end", lang))
             return
         
         await show_model_in_gallery(
@@ -111,8 +111,6 @@ async def handle_model_navigation(
             storage_service=storage_service,
             lang=lang,
         )
-        await callback.answer()
         
     except Exception as e:
         logger.error(f"Ошибка при получении моделей: {e}")
-        await callback.answer(get_text("navigation_error", lang))

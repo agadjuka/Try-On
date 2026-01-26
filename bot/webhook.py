@@ -20,20 +20,22 @@ _webhook_dispatcher: Dispatcher | None = None
 _webhook_repo: FirestoreRepo | None = None
 _webhook_storage_service: CloudStorageService | None = None
 _webhook_try_on_service: VertexTryOnService | None = None
+_initialized: bool = False
 
 
-async def get_webhook_dispatcher() -> tuple[Bot, Dispatcher]:
-    """Получает или создает глобальные объекты Bot и Dispatcher для webhook режима.
+async def init_webhook_services() -> None:
+    """Инициализирует все сервисы при старте приложения.
     
-    Returns:
-        Кортеж (Bot, Dispatcher) для обработки обновлений
+    Вызывается из startup_event FastAPI для предварительной инициализации,
+    чтобы избежать cold start задержек при первом запросе.
     """
-    global _webhook_bot, _webhook_dispatcher
+    global _webhook_bot, _webhook_dispatcher, _initialized
     global _webhook_repo, _webhook_storage_service, _webhook_try_on_service
     
-    # Если объекты уже созданы, возвращаем их
-    if _webhook_bot is not None and _webhook_dispatcher is not None:
-        return _webhook_bot, _webhook_dispatcher
+    if _initialized:
+        return
+    
+    logger.info("Инициализация сервисов при старте приложения...")
     
     # Загружаем настройки
     settings = get_settings()
@@ -56,7 +58,22 @@ async def get_webhook_dispatcher() -> tuple[Bot, Dispatcher]:
         try_on_service=_webhook_try_on_service,
     )
     
-    logger.info("Инициализированы объекты Bot и Dispatcher для webhook режима")
+    _initialized = True
+    logger.info("Сервисы успешно инициализированы при старте")
+
+
+async def get_webhook_dispatcher() -> tuple[Bot, Dispatcher]:
+    """Получает или создает глобальные объекты Bot и Dispatcher для webhook режима.
+    
+    Returns:
+        Кортеж (Bot, Dispatcher) для обработки обновлений
+    """
+    global _webhook_bot, _webhook_dispatcher
+    
+    # Если объекты еще не инициализированы, инициализируем
+    if not _initialized:
+        await init_webhook_services()
+    
     return _webhook_bot, _webhook_dispatcher
 
 

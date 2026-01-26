@@ -70,7 +70,16 @@ async def send_models_album(
     """
     try:
         from bot.utils.model_utils import prepare_models_media_group
+        from bot.states.user_states import TryOnStates
         
+        # Сохраняем ВСЕ старые ID ДО любых изменений state
+        state_data_before = await state.get_data()
+        existing_result_album_ids = state_data_before.get("try_on_result_album_message_ids", [])
+        old_album_ids = state_data_before.get("album_message_ids", [])
+        old_selection_id = state_data_before.get("selection_message_id")
+        logger.info(f"Сохраняем ID фотографий результата перед отправкой альбома моделей: {existing_result_album_ids}")
+        
+        # Скачиваем фото параллельно (уже оптимизировано в prepare_models_media_group)
         media_group = await prepare_models_media_group(models, storage_service)
 
         if not media_group:
@@ -78,46 +87,22 @@ async def send_models_album(
                 get_text("models_album_error", lang),
                 reply_markup=get_back_keyboard(lang),
             )
-            await callback.answer()
             return False
 
-        # Удаляем все предыдущие сообщения выбора модели (если есть)
-        await delete_try_on_selection_messages(
-            bot=bot,
-            chat_id=callback.from_user.id,
-            state=state,
-        )
-        
-        # Удаляем исходное сообщение с кнопкой "Примерка"
-        try:
-            await callback.message.delete()
-        except Exception:
-            pass
-
-        # Сохраняем существующие try_on_result_album_message_ids ПЕРЕД отправкой нового альбома
-        # Это важно, чтобы не потерять ID фотографий результата
-        state_data_before = await state.get_data()
-        existing_result_album_ids = state_data_before.get("try_on_result_album_message_ids", [])
-        logger.info(f"Сохраняем ID фотографий результата перед отправкой альбома моделей: {existing_result_album_ids}")
-        
-        # Отправляем альбом с фото моделей
+        # СНАЧАЛА отправляем новый контент
         sent_messages = await bot.send_media_group(
             chat_id=callback.from_user.id,
             media=media_group,
         )
 
-        # Сохраняем ID сообщений альбома в FSM для последующего удаления
-        # Важно: сохраняем существующие try_on_result_album_message_ids, чтобы не удалить фотографии результата
         album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
         await state.update_data(
             album_message_ids=album_message_ids,
-            try_on_result_album_message_ids=existing_result_album_ids,  # Сохраняем фотографии результата
+            try_on_result_album_message_ids=existing_result_album_ids,
         )
         logger.info(f"Восстановили ID фотографий результата после отправки альбома моделей: {existing_result_album_ids}")
 
         # Отправляем сообщение с кнопками (после фотографий)
-        from bot.states.user_states import TryOnStates
-        
         selection_message = await bot.send_message(
             chat_id=callback.from_user.id,
             text=get_text("try_on_select_model_or_photo", lang),
@@ -125,11 +110,22 @@ async def send_models_album(
         )
         
         # Устанавливаем состояние ожидания выбора модели или фото
-        # Это позволит обработать фото, если пользователь пришлет его вместо нажатия кнопки
         await state.set_state(TryOnStates.waiting_for_model_photo)
 
         # Сохраняем ID сообщения с кнопками для последующего удаления
         await state.update_data(selection_message_id=selection_message.message_id)
+
+        # ПОТОМ удаляем старые по СОХРАНЁННЫМ ID
+        old_ids_to_delete = list(old_album_ids)
+        if old_selection_id:
+            old_ids_to_delete.append(old_selection_id)
+        await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+        
+        # Удаляем исходное сообщение с кнопкой "Примерка"
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
 
         return True
 

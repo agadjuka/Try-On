@@ -8,7 +8,7 @@ from loguru import logger
 
 from bot.core.config import get_settings
 from bot.core.logger import setup_logger
-from bot.webhook import process_update
+from bot.webhook import process_update, init_webhook_services
 
 # Настройка логирования
 setup_logger()
@@ -28,10 +28,19 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    """Инициализация при запуске приложения."""
+    """Инициализация при запуске приложения.
+    
+    Инициализируем все сервисы сразу, чтобы избежать cold start
+    задержек при первом запросе от пользователя.
+    """
     try:
         settings = get_settings()
-        logger.info(f"Приложение запущено. Project ID: {settings.google_cloud_project_id}")
+        logger.info(f"Приложение запускается. Project ID: {settings.google_cloud_project_id}")
+        
+        # Инициализируем все сервисы сразу при старте
+        await init_webhook_services()
+        
+        logger.info("Приложение полностью готово к работе")
     except Exception as e:
         logger.error(f"Ошибка при инициализации: {e}")
 

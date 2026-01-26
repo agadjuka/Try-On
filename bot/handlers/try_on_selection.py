@@ -32,13 +32,15 @@ async def handle_model_selection_for_try_on(
         repo: Репозиторий для работы с БД
         lang: Язык интерфейса
     """
+    # Мгновенно отвечаем на callback с сообщением о выборе
+    await callback.answer(get_text("photo_selected", lang))
+    
     user_id = str(callback.from_user.id)
     
     # Извлекаем model_id из callback_data
     callback_data = callback.data
     if not callback_data or not callback_data.startswith("try_on_select_model_"):
         logger.error(f"Неверный формат callback_data: {callback_data}")
-        await callback.answer(get_text("invalid_data_format", lang))
         return
     
     model_id = callback_data.replace("try_on_select_model_", "", 1)
@@ -55,18 +57,12 @@ async def handle_model_selection_for_try_on(
                 f"Модель не найдена: user_id={user_id}, model_id={model_id}, "
                 f"доступные модели: {[m.id for m in models]}"
             )
-            await callback.answer(get_text("photo_not_found", lang))
             return
-
-        await delete_try_on_selection_messages(
-            bot=bot,
-            chat_id=callback.from_user.id,
-            state=state,
-        )
 
         await state.update_data(selected_model_gcs_uri=selected_model.gcs_uri)
         await state.set_state(TryOnStates.waiting_for_garment_photo)
 
+        # СНАЧАЛА показываем новое сообщение
         instruction_message = await bot.send_message(
             chat_id=callback.from_user.id,
             text=get_text("try_on_garment_instr", lang),
@@ -75,11 +71,15 @@ async def handle_model_selection_for_try_on(
         
         await state.update_data(garment_instruction_message_id=instruction_message.message_id)
 
-        await callback.answer(get_text("photo_selected", lang))
+        # ПОТОМ удаляем старые сообщения
+        await delete_try_on_selection_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
 
     except Exception as e:
         logger.error(f"Ошибка в handle_model_selection_for_try_on: {e}")
-        await callback.answer(get_text("error_occurred", lang))
 
 
 async def handle_model_photo_for_try_on(
@@ -127,6 +127,19 @@ async def handle_model_photo_for_try_on(
             storage_service=storage_service,
         )
         
+        await state.update_data(selected_model_gcs_uri=gcs_uri)
+        await state.set_state(TryOnStates.waiting_for_garment_photo)
+        
+        # СНАЧАЛА показываем новое сообщение
+        instruction_message = await bot.send_message(
+            chat_id=message.from_user.id,
+            text=get_text("try_on_garment_instr", lang),
+            reply_markup=get_back_keyboard(lang),
+        )
+        
+        await state.update_data(garment_instruction_message_id=instruction_message.message_id)
+        
+        # ПОТОМ удаляем старые
         try:
             await bot.delete_message(
                 chat_id=message.from_user.id,
@@ -140,17 +153,6 @@ async def handle_model_photo_for_try_on(
             chat_id=message.from_user.id,
             state=state,
         )
-        
-        await state.update_data(selected_model_gcs_uri=gcs_uri)
-        await state.set_state(TryOnStates.waiting_for_garment_photo)
-        
-        instruction_message = await bot.send_message(
-            chat_id=message.from_user.id,
-            text=get_text("try_on_garment_instr", lang),
-            reply_markup=get_back_keyboard(lang),
-        )
-        
-        await state.update_data(garment_instruction_message_id=instruction_message.message_id)
         
     except Exception as e:
         logger.error(f"Ошибка при обработке фото модели для примерки: {e}")
