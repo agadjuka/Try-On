@@ -191,6 +191,8 @@ class FirestoreRepo:
         async for doc in models_ref.stream():
             data = doc.to_dict()
             if data:
+                # ID документа из Firestore должен быть явно установлен
+                data["id"] = doc.id
                 models.append(PersonImage(**data))
         
         # Сортируем по дате создания (новые первыми)

@@ -43,7 +43,7 @@ def setup_handlers(
         Command("start"),
     )
     
-    # Callback: Добавить модель
+    # Callback: Добавить модель (из главного меню)
     async def add_model_handler(callback, state: FSMContext):
         await models.handle_add_model_callback(callback, state, lang)
     router.callback_query.register(
@@ -51,9 +51,17 @@ def setup_handlers(
         F.data == "add_model",
     )
     
+    # Callback: Добавить новую модель (из списка моделей)
+    async def add_new_model_from_list_handler(callback, state: FSMContext):
+        await models.handle_add_new_model_from_list(callback, state, bot, lang)
+    router.callback_query.register(
+        add_new_model_from_list_handler,
+        F.data == "add_new_model_from_list",
+    )
+    
     # Callback: Мои модели
-    async def my_models_handler(callback):
-        await models.handle_my_models_callback(callback, bot, repo, storage_service, lang)
+    async def my_models_handler(callback, state: FSMContext):
+        await models.handle_my_models_callback(callback, state, bot, repo, storage_service, lang)
     router.callback_query.register(
         my_models_handler,
         F.data == "my_models",
@@ -67,17 +75,9 @@ def setup_handlers(
         F.data == "back_to_menu",
     )
     
-    # Callback: Навигация по моделям
-    async def model_navigation_handler(callback):
-        await models.handle_model_navigation(callback, bot, repo, storage_service, lang)
-    router.callback_query.register(
-        model_navigation_handler,
-        lambda c: c.data and (c.data.startswith("model_prev_") or c.data.startswith("model_next_")),
-    )
-    
     # Callback: Удалить модель
-    async def model_delete_handler(callback):
-        await models.handle_model_delete(callback, repo, bot, storage_service, lang)
+    async def model_delete_handler(callback, state: FSMContext):
+        await models.handle_model_delete(callback, state, repo, bot, storage_service, lang)
     router.callback_query.register(
         model_delete_handler,
         lambda c: c.data and c.data.startswith("model_delete_"),

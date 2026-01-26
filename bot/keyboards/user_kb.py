@@ -130,3 +130,42 @@ def get_back_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
         callback_data="back_to_menu",
     )
     return builder.as_markup()
+
+
+def get_models_list_keyboard(
+    models: list,
+    lang: str = "ru"
+) -> InlineKeyboardMarkup:
+    """
+    Получить клавиатуру для списка моделей.
+
+    Args:
+        models: Список моделей
+        lang: Язык интерфейса
+
+    Returns:
+        Inline клавиатура с кнопками управления моделями
+    """
+    builder = InlineKeyboardBuilder()
+    
+    # Кнопка "Добавить новую модель"
+    builder.button(
+        text="➕ Добавить новую модель",
+        callback_data="add_new_model_from_list",
+    )
+    
+    # Кнопки удаления для каждой модели
+    for idx, model in enumerate(models):
+        builder.button(
+            text=f"🗑 Удалить модель {idx + 1}",
+            callback_data=f"model_delete_{model.id}",
+        )
+    
+    # Кнопка "Назад"
+    builder.button(
+        text=get_text("back", lang),
+        callback_data="back_to_menu",
+    )
+    
+    builder.adjust(1)  # По одной кнопке в ряд
+    return builder.as_markup()

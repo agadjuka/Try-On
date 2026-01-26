@@ -151,3 +151,28 @@ class CloudStorageService:
             return file_bytes
         except Exception as e:
             raise Exception(f"Ошибка скачивания файла из GCS: {str(e)}") from e
+
+    async def delete_file(self, gs_uri: str) -> None:
+        """
+        Удалить файл из GCS бакета асинхронно.
+
+        Args:
+            gs_uri: URI файла в формате gs://bucket-name/path
+
+        Raises:
+            Exception: При ошибке удаления
+        """
+        bucket_name, path = self._parse_gs_uri(gs_uri)
+        client = self._get_client()
+        bucket = client.bucket(bucket_name)
+
+        def _delete() -> None:
+            """Синхронная функция удаления."""
+            blob = bucket.blob(path)
+            if blob.exists():
+                blob.delete()
+
+        try:
+            await asyncio.to_thread(_delete)
+        except Exception as e:
+            raise Exception(f"Ошибка удаления файла из GCS: {str(e)}") from e

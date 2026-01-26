@@ -15,6 +15,7 @@ from bot.keyboards.user_kb import (
     get_main_menu_keyboard,
     get_gallery_keyboard,
     get_back_keyboard,
+    get_models_list_keyboard,
 )
 from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
@@ -26,7 +27,7 @@ async def handle_add_model_callback(
     lang: str = "ru",
 ) -> None:
     """
-    Обработчик кнопки "Добавить модель".
+    Обработчик кнопки "Добавить модель" из главного меню.
 
     Args:
         callback: Callback запрос
@@ -38,6 +39,53 @@ async def handle_add_model_callback(
         get_text("upload_model_instr", lang),
         reply_markup=get_back_keyboard(lang),
     )
+    await callback.answer()
+
+
+async def handle_add_new_model_from_list(
+    callback: CallbackQuery,
+    state: FSMContext,
+    bot: Bot,
+    lang: str = "ru",
+) -> None:
+    """
+    Обработчик кнопки "Добавить новую модель" из списка моделей.
+
+    Args:
+        callback: Callback запрос
+        state: Контекст FSM
+        bot: Экземпляр бота
+        lang: Язык интерфейса
+    """
+    await state.set_state(ModelStates.waiting_for_model_photo)
+    
+    # Получаем ID сообщений альбома из FSM и удаляем их
+    state_data = await state.get_data()
+    album_message_ids = state_data.get("models_album_message_ids", [])
+    
+    # Удаляем все сообщения альбома
+    for msg_id in album_message_ids:
+        try:
+            await bot.delete_message(
+                chat_id=callback.from_user.id,
+                message_id=msg_id,
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось удалить сообщение альбома {msg_id}: {e}")
+    
+    # Удаляем сообщение с кнопками
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+    
+    # Отправляем новое сообщение с инструкцией
+    await bot.send_message(
+        chat_id=callback.from_user.id,
+        text="📸 Пришлите фото модели (человека).\n\nФото должно быть четким, с хорошим освещением.",
+        reply_markup=get_back_keyboard(lang),
+    )
+    
     await callback.answer()
 
 
@@ -114,6 +162,7 @@ async def handle_model_photo(
 
 async def handle_my_models_callback(
     callback: CallbackQuery,
+    state: FSMContext,
     bot: Bot,
     repo: FirestoreRepo,
     storage_service: CloudStorageService,
@@ -121,9 +170,11 @@ async def handle_my_models_callback(
 ) -> None:
     """
     Обработчик кнопки "Мои модели".
+    Отправляет альбом со всеми моделями и клавиатуру управления.
 
     Args:
         callback: Callback запрос
+        state: Контекст FSM
         bot: Экземпляр бота
         repo: Репозиторий для работы с БД
         storage_service: Сервис для работы с GCS
@@ -142,23 +193,58 @@ async def handle_my_models_callback(
             await callback.answer()
             return
         
-        # Показываем первую модель
-        await show_model_in_gallery(
-            message=callback.message,
-            bot=bot,
-            models=models,
-            current_index=0,
-            storage_service=storage_service,
-            lang=lang,
+        # Удаляем исходное сообщение
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+        
+        # Отправляем альбом со всеми моделями
+        media_group = []
+        for idx, model in enumerate(models):
+            try:
+                photo_bytes = await storage_service.download_file(model.gcs_uri)
+                photo_file = BufferedInputFile(
+                    file=photo_bytes,
+                    filename=f"model_{idx + 1}.jpg",
+                )
+                media_group.append(InputMediaPhoto(media=photo_file, caption=None))
+            except Exception as e:
+                logger.error(f"Ошибка при загрузке фото модели {idx + 1}: {e}")
+        
+        album_message_ids = []
+        if media_group:
+            sent_messages = await bot.send_media_group(
+                chat_id=callback.from_user.id,
+                media=media_group,
+            )
+            album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
+        
+        # Сохраняем ID сообщений альбома в FSM для последующего удаления
+        await state.update_data(models_album_message_ids=album_message_ids)
+        
+        # Отправляем сообщение с клавиатурой управления
+        await bot.send_message(
+            chat_id=callback.from_user.id,
+            text="👤 Ваши модели:",
+            reply_markup=get_models_list_keyboard(models, lang),
         )
+        
         await callback.answer()
         
     except Exception as e:
         logger.error(f"Ошибка при получении моделей: {e}")
-        await callback.message.edit_text(
-            "Произошла ошибка при загрузке моделей.",
-            reply_markup=get_back_keyboard(lang),
-        )
+        try:
+            await callback.message.edit_text(
+                "Произошла ошибка при загрузке моделей.",
+                reply_markup=get_back_keyboard(lang),
+            )
+        except Exception:
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text="Произошла ошибка при загрузке моделей.",
+                reply_markup=get_back_keyboard(lang),
+            )
         await callback.answer()
 
 
@@ -282,6 +368,7 @@ async def handle_model_navigation(
 
 async def handle_model_delete(
     callback: CallbackQuery,
+    state: FSMContext,
     repo: FirestoreRepo,
     bot: Bot,
     storage_service: CloudStorageService,
@@ -289,55 +376,117 @@ async def handle_model_delete(
 ) -> None:
     """
     Обработчик удаления модели.
+    После удаления обновляет список моделей.
 
     Args:
         callback: Callback запрос
+        state: Контекст FSM
         repo: Репозиторий для работы с БД
         bot: Экземпляр бота
         storage_service: Сервис для работы с GCS
         lang: Язык интерфейса
     """
     user_id = str(callback.from_user.id)
-    model_id = callback.data.split("_")[-1]
+    
+    # Извлекаем model_id из callback_data
+    callback_data = callback.data
+    if not callback_data or not callback_data.startswith("model_delete_"):
+        logger.error(f"Неверный формат callback_data: {callback_data}")
+        await callback.answer("Неверный формат данных")
+        return
+    
+    model_id = callback_data.replace("model_delete_", "", 1)
+    logger.info(f"Удаление модели: user_id={user_id}, model_id={model_id}")
     
     try:
-        # Получаем модели до удаления
+        # Получаем модель перед удалением, чтобы получить gcs_uri
         models = await repo.get_user_models(user_id)
-        current_model = next((m for m in models if m.id == model_id), None)
+        logger.info(f"Найдено моделей: {len(models)}, их ID: {[m.id for m in models]}")
         
-        if not current_model:
+        model_to_delete = next((m for m in models if m.id == model_id), None)
+        
+        if not model_to_delete:
+            logger.error(
+                f"Модель не найдена: user_id={user_id}, model_id={model_id}, "
+                f"доступные модели: {[m.id for m in models]}"
+            )
             await callback.answer("Модель не найдена")
             return
         
-        current_index = models.index(current_model)
+        # Удаляем файл из GCS
+        try:
+            await storage_service.delete_file(model_to_delete.gcs_uri)
+            logger.info(f"Файл модели удален из GCS: {model_to_delete.gcs_uri}")
+        except Exception as e:
+            logger.warning(f"Не удалось удалить файл из GCS: {e}")
         
-        # Удаляем модель
+        # Удаляем модель из БД
         await repo.delete_model(user_id, model_id)
         
         # Получаем обновленный список
         models = await repo.get_user_models(user_id)
         
+        # Получаем ID старых сообщений альбома из FSM и удаляем их
+        state_data = await state.get_data()
+        album_message_ids = state_data.get("models_album_message_ids", [])
+        
+        # Удаляем все старые сообщения альбома
+        for msg_id in album_message_ids:
+            try:
+                await bot.delete_message(
+                    chat_id=callback.from_user.id,
+                    message_id=msg_id,
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось удалить сообщение альбома {msg_id}: {e}")
+        
+        # Удаляем сообщение с кнопками
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+        
         if not models:
-            # Если моделей не осталось, возвращаемся в меню
-            await callback.message.edit_text(
-                get_text("models_list_empty", lang),
+            # Если моделей не осталось
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text=get_text("models_list_empty", lang),
                 reply_markup=get_back_keyboard(lang),
             )
             await callback.answer(get_text("model_deleted", lang))
             return
         
-        # Определяем индекс для показа после удаления
-        new_index = min(current_index, len(models) - 1)
+        # Отправляем обновленный альбом со всеми моделями
+        media_group = []
+        for idx, model in enumerate(models):
+            try:
+                photo_bytes = await storage_service.download_file(model.gcs_uri)
+                photo_file = BufferedInputFile(
+                    file=photo_bytes,
+                    filename=f"model_{idx + 1}.jpg",
+                )
+                media_group.append(InputMediaPhoto(media=photo_file, caption=None))
+            except Exception as e:
+                logger.error(f"Ошибка при загрузке фото модели {idx + 1}: {e}")
         
-        # Показываем следующую модель
-        await show_model_in_gallery(
-            message=callback.message,
-            bot=bot,
-            models=models,
-            current_index=new_index,
-            storage_service=storage_service,
-            lang=lang,
+        album_message_ids = []
+        if media_group:
+            sent_messages = await bot.send_media_group(
+                chat_id=callback.from_user.id,
+                media=media_group,
+            )
+            album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
+        
+        # Сохраняем ID новых сообщений альбома в FSM
+        await state.update_data(models_album_message_ids=album_message_ids)
+        
+        # Отправляем обновленное сообщение с клавиатурой
+        await bot.send_message(
+            chat_id=callback.from_user.id,
+            text="👤 Ваши модели:",
+            reply_markup=get_models_list_keyboard(models, lang),
         )
+        
         await callback.answer(get_text("model_deleted", lang))
         
     except Exception as e:
