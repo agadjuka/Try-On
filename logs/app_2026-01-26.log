@@ -575,3 +575,65 @@ RuntimeError: Ошибка API: 403 Client Error: Forbidden for url: https://us-
 2026-01-26 17:30:00 | INFO     | __main__:handle_photo:31 - 📸 АЛЬБОМ: получено 3 фото
 2026-01-26 17:30:00 | INFO     | __main__:handle_photo:32 -    Media group ID: 14155358415786346
 2026-01-26 17:30:00 | INFO     | __main__:handle_photo:33 -    Message IDs: [8223, 8224, 8225]
+2026-01-26 17:31:22 | INFO     | __main__:main:21 - Запуск Telegram бота...
+2026-01-26 17:31:22 | INFO     | __main__:main:46 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 17:31:22 | INFO     | __main__:main:67 - Проверка подключения к Telegram API...
+2026-01-26 17:31:23 | SUCCESS  | __main__:main:70 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 17:31:23 | INFO     | __main__:main:72 - Бот запущен и готов к работе
+2026-01-26 17:31:28 | INFO     | bot.database.repo:add_user:99 - Пользователь 261617302 добавлен/обновлен в Firestore
+2026-01-26 17:31:28 | INFO     | bot.handlers.start:start_command:35 - Пользователь 261617302 обработан в /start
+2026-01-26 17:31:31 | INFO     | bot.database.repo:get_user_models:199 - Найдено 2 моделей для пользователя 261617302
+2026-01-26 17:31:35 | INFO     | bot.handlers.try_on:handle_model_selection_for_try_on:148 - Выбор модели для примерки: user_id=261617302, model_id=model_1769389085844
+2026-01-26 17:31:36 | INFO     | bot.database.repo:get_user_models:199 - Найдено 2 моделей для пользователя 261617302
+2026-01-26 17:31:36 | INFO     | bot.handlers.try_on:handle_model_selection_for_try_on:153 - Найдено моделей: 2, их ID: ['model_1769389125171', 'model_1769389085844']
+2026-01-26 17:31:44 | INFO     | bot.middlewares.album:__call__:64 - 📸 Фото добавлено в альбом 14155359253226162: message_id=8232, текущее количество = 1
+2026-01-26 17:31:44 | INFO     | bot.middlewares.album:__call__:81 - 🚀 Начало сбора альбома 14155359253226162 (первое фото)
+2026-01-26 17:31:44 | INFO     | bot.middlewares.album:__call__:91 - ⏳ Начало ожидания для альбома 14155359253226162, начальное количество: 1
+2026-01-26 17:31:44 | INFO     | bot.middlewares.album:__call__:64 - 📸 Фото добавлено в альбом 14155359253226162: message_id=8233, текущее количество = 2
+2026-01-26 17:31:44 | DEBUG    | bot.middlewares.album:__call__:73 - Альбом 14155359253226162 уже обрабатывается, фото 8233 добавлено в очередь
+2026-01-26 17:31:44 | INFO     | bot.middlewares.album:__call__:64 - 📸 Фото добавлено в альбом 14155359253226162: message_id=8234, текущее количество = 3
+2026-01-26 17:31:44 | DEBUG    | bot.middlewares.album:__call__:73 - Альбом 14155359253226162 уже обрабатывается, фото 8234 добавлено в очередь
+2026-01-26 17:31:45 | INFO     | bot.middlewares.album:__call__:97 - 🔄 Итерация 1/5: собрано 3 фото (media_group_id: 14155359253226162)
+2026-01-26 17:31:45 | INFO     | bot.middlewares.album:__call__:111 - 📈 Количество изменилось: 3 → 3
+2026-01-26 17:31:45 | INFO     | bot.middlewares.album:__call__:97 - 🔄 Итерация 2/5: собрано 3 фото (media_group_id: 14155359253226162)
+2026-01-26 17:31:45 | INFO     | bot.middlewares.album:__call__:97 - 🔄 Итерация 3/5: собрано 3 фото (media_group_id: 14155359253226162)
+2026-01-26 17:31:45 | INFO     | bot.middlewares.album:__call__:106 - ✅ Количество стабилизировалось: 3 фото
+2026-01-26 17:31:45 | INFO     | bot.middlewares.album:__call__:124 - ✅ Альбом собран: 3 фото (media_group_id: 14155359253226162, message_ids: [8232, 8233, 8234])
+2026-01-26 17:31:45 | INFO     | bot.handlers.try_on:handle_garment_photo:346 - Запуск параллельной генерации для 3 фото
+2026-01-26 17:31:46 | INFO     | bot.handlers.try_on:process_single_garment:312 - Загрузка фото одежды 1/3 в GCS: bot_uploads/garments/261617302_20260126_173146_0.jpg
+2026-01-26 17:31:47 | INFO     | bot.handlers.try_on:process_single_garment:321 - Начало генерации примерки 1/3 (garment: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_173146_0.jpg)
+2026-01-26 17:31:47 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 17:31:47 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 17:31:47 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 17:31:48 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_165804.jpg
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_173146_0.jpg
+2026-01-26 17:31:48 | INFO     | bot.handlers.try_on:process_single_garment:312 - Загрузка фото одежды 3/3 в GCS: bot_uploads/garments/261617302_20260126_173148_2.jpg
+2026-01-26 17:31:48 | INFO     | bot.handlers.try_on:process_single_garment:312 - Загрузка фото одежды 2/3 в GCS: bot_uploads/garments/261617302_20260126_173148_1.jpg
+2026-01-26 17:31:48 | INFO     | bot.handlers.try_on:process_single_garment:321 - Начало генерации примерки 3/3 (garment: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_173148_2.jpg)
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_165804.jpg
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_173148_2.jpg
+2026-01-26 17:31:48 | INFO     | bot.handlers.try_on:process_single_garment:321 - Начало генерации примерки 2/3 (garment: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_173148_1.jpg)
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_165804.jpg
+2026-01-26 17:31:48 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_173148_1.jpg
+2026-01-26 17:32:02 | INFO     | bot.services.try_on:generate_try_on:231 - Получено 1 результатов
+2026-01-26 17:32:02 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_173202_0b5cc08c.png
+2026-01-26 17:32:03 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_173202_0b5cc08c.png
+2026-01-26 17:32:03 | INFO     | bot.handlers.try_on:process_single_garment:333 - Примерка 1/3 успешно сгенерирована
+2026-01-26 17:32:04 | INFO     | bot.services.try_on:generate_try_on:231 - Получено 1 результатов
+2026-01-26 17:32:04 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_173204_96f5b031.png
+2026-01-26 17:32:04 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_173204_96f5b031.png
+2026-01-26 17:32:04 | INFO     | bot.services.try_on:generate_try_on:231 - Получено 1 результатов
+2026-01-26 17:32:04 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_173204_3808eefb.png
+2026-01-26 17:32:04 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_173204_3808eefb.png
+2026-01-26 17:32:04 | INFO     | bot.handlers.try_on:process_single_garment:333 - Примерка 2/3 успешно сгенерирована
+2026-01-26 17:32:05 | INFO     | bot.handlers.try_on:process_single_garment:333 - Примерка 3/3 успешно сгенерирована

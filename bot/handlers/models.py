@@ -17,44 +17,7 @@ from bot.keyboards.user_kb import (
     get_back_keyboard,
 )
 from bot.locales.texts import get_text
-
-
-async def get_largest_photo(photos: list) -> Optional[object]:
-    """
-    Получить фото с максимальным размером.
-
-    Args:
-        photos: Список размеров фото
-
-    Returns:
-        Фото с максимальным размером
-    """
-    if not photos:
-        return None
-    return photos[-1]
-
-
-async def download_photo_to_bytes(bot: Bot, photo) -> bytes:
-    """
-    Скачать фото в байты.
-
-    Args:
-        bot: Экземпляр бота
-        photo: Объект фото
-
-    Returns:
-        Байты фото
-    """
-    file = await bot.get_file(photo.file_id)
-    
-    if not file.file_path:
-        raise Exception(f"Не удалось получить file_path для файла {photo.file_id}")
-    
-    file_io = await bot.download_file(file.file_path)
-    file_bytes = file_io.read()
-    file_io.close()
-    
-    return file_bytes
+from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 
 
 async def handle_add_model_callback(

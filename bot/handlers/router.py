@@ -8,7 +8,7 @@ from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
 from bot.states.user_states import ModelStates, TryOnStates
-from bot.handlers import start, models, try_on
+from bot.handlers import start, models, try_on, try_on_selection, try_on_processing
 from bot.middlewares.album import AlbumMiddleware
 
 
@@ -104,7 +104,7 @@ def setup_handlers(
     
     # Callback: Выбор модели для примерки
     async def try_on_model_select_handler(callback, state: FSMContext):
-        await try_on.handle_model_selection_for_try_on(
+        await try_on_selection.handle_model_selection_for_try_on(
             callback, state, bot, repo, lang
         )
     router.callback_query.register(
@@ -115,8 +115,8 @@ def setup_handlers(
     # Фото одежды в состоянии waiting_for_garment_photo
     async def garment_photo_handler(message, state: FSMContext, album=None):
         # album передается из middleware через data, если это альбом
-        await try_on.handle_garment_photo(
-            message, state, bot, repo, storage_service, try_on_service, album, lang
+        await try_on_processing.handle_garment_photo(
+            message, state, bot, storage_service, try_on_service, album, lang
         )
     router.message.register(
         garment_photo_handler,
