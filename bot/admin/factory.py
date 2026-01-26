@@ -1,0 +1,48 @@
+"""Фабрика для создания экземпляра сервиса админ-панели."""
+
+import logging
+from typing import Optional
+
+from aiogram import Bot
+
+from bot.admin.config import get_telegram_admin_group_id
+from bot.admin.service import AdminPanelService
+from bot.admin.topic_storage_factory import get_topic_storage
+
+logger = logging.getLogger(__name__)
+
+# Глобальный экземпляр сервиса
+_admin_service: Optional[AdminPanelService] = None
+
+
+def get_admin_service(bot: Bot) -> Optional[AdminPanelService]:
+    """
+    Получает или создает экземпляр AdminPanelService.
+    
+    Args:
+        bot: Экземпляр Telegram бота
+        
+    Returns:
+        Экземпляр AdminPanelService или None, если админ-панель не настроена
+    """
+    global _admin_service
+    
+    if _admin_service is None:
+        admin_group_id = get_telegram_admin_group_id()
+        if admin_group_id is None:
+            logger.debug("Админ-панель не настроена (TELEGRAM_ADMIN_GROUP_ID не установлен)")
+            return None
+
+        try:
+            storage = get_topic_storage()
+            _admin_service = AdminPanelService(
+                bot=bot,
+                storage=storage,
+                admin_group_id=admin_group_id,
+            )
+            logger.info("Инициализирован AdminPanelService")
+        except Exception as e:
+            logger.warning("Не удалось инициализировать AdminPanelService: %s", str(e))
+            return None
+
+    return _admin_service

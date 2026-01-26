@@ -12,6 +12,7 @@ from bot.services.try_on import VertexTryOnService
 from bot.keyboards.user_kb import get_try_on_result_keyboard, get_main_menu_keyboard
 from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
+from bot.admin.factory import get_admin_service
 
 
 async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Optional[int]]:
@@ -116,6 +117,7 @@ async def send_try_on_results(
     successful_results: List[bytes],
     photo_count: int,
     failed_count: int,
+    bot: Bot,
     lang: str = "ru",
 ) -> None:
     """
@@ -127,8 +129,21 @@ async def send_try_on_results(
         successful_results: Список успешных результатов (байты)
         photo_count: Общее количество фото
         failed_count: Количество неудачных обработок
+        bot: Экземпляр бота
         lang: Язык интерфейса
     """
+    # Отправляем результаты генерации в админ-панель (если настроено)
+    admin_service = get_admin_service(bot)
+    if admin_service and successful_results:
+        try:
+            await admin_service.send_generation_results(
+                user=message.from_user,
+                result_photos=successful_results,
+                caption="Проведена генерация",
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось отправить результаты генерации в админ-панель: {e}")
+    
     if len(successful_results) == 1:
         # Одно фото - отправляем фото отдельно, кнопки отдельно
         logger.info("Отправка одного результата примерки")
@@ -252,6 +267,28 @@ async def handle_garment_photo(
             except Exception as e:
                 logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
 
+        # Отправляем фото одежды в админ-панель (если настроено)
+        admin_service = get_admin_service(bot)
+        if admin_service:
+            try:
+                # Отправляем все фото одежды в админ-панель
+                for idx, garment_msg in enumerate(garment_messages):
+                    largest_photo = await get_largest_photo(garment_msg.photo)
+                    if largest_photo:
+                        photo_bytes = await download_photo_to_bytes(bot, largest_photo)
+                        # Подпись только к первому фото
+                        if idx == 0:
+                            caption = f"Начата генерация для {photo_count} элемента(ов) одежды"
+                        else:
+                            caption = "Добавлено новое фото одежды"
+                        await admin_service.send_garment_photo(
+                            user=message.from_user,
+                            photo_bytes=photo_bytes,
+                            caption=caption,
+                        )
+            except Exception as e:
+                logger.warning(f"Не удалось отправить фото одежды в админ-панель: {e}")
+
         # Уведомляем пользователя и сохраняем ID сообщения для последующего удаления
         processing_message = await message.answer(
             f"📸 Получено {photo_count} фото. Начинаю примерку...\n"
@@ -318,6 +355,7 @@ async def handle_garment_photo(
             successful_results=successful_results,
             photo_count=photo_count,
             failed_count=failed_count,
+            bot=bot,
             lang=lang,
         )
 

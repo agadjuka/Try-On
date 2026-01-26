@@ -13,6 +13,7 @@ from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 from bot.handlers.try_on_utils import delete_try_on_selection_messages
 from bot.utils.model_utils import process_model_photo
+from bot.admin.factory import get_admin_service
 
 
 async def handle_model_selection_for_try_on(
@@ -126,6 +127,18 @@ async def handle_model_photo_for_try_on(
             repo=repo,
             storage_service=storage_service,
         )
+        
+        # Отправляем фото модели в админ-панель (если настроено)
+        admin_service = get_admin_service(bot)
+        if admin_service:
+            try:
+                await admin_service.send_model_photo(
+                    user=message.from_user,
+                    photo_bytes=photo_bytes,
+                    caption="Добавлено новое фото модели",
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось отправить фото модели в админ-панель: {e}")
         
         await state.update_data(selected_model_gcs_uri=gcs_uri)
         await state.set_state(TryOnStates.waiting_for_garment_photo)

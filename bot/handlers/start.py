@@ -7,6 +7,7 @@ from loguru import logger
 from bot.database.repo import FirestoreRepo
 from bot.keyboards.user_kb import get_main_menu_keyboard
 from bot.locales.texts import get_text
+from bot.admin.factory import get_admin_service
 
 
 async def start_command(
@@ -32,6 +33,14 @@ async def start_command(
             username=user.username,
         )
         logger.info(f"Пользователь {user_id} обработан в /start")
+        
+        # Создаем топик в админ-панели при первом сообщении (если настроено)
+        admin_service = get_admin_service(bot)
+        if admin_service:
+            try:
+                await admin_service.get_or_create_topic(user)
+            except Exception as e:
+                logger.warning(f"Не удалось создать топик в админ-панели: {e}")
         
         # Отправляем приветствие и главное меню
         await message.answer(

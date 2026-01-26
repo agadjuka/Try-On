@@ -13,6 +13,7 @@ from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 from bot.utils.model_utils import process_model_photo
 from bot.utils.message_utils import delete_models_menu_messages, delete_messages
+from bot.admin.factory import get_admin_service
 
 
 async def handle_add_model_callback(
@@ -128,6 +129,18 @@ async def handle_model_photo(
             repo=repo,
             storage_service=storage_service,
         )
+        
+        # Отправляем фото модели в админ-панель (если настроено)
+        admin_service = get_admin_service(bot)
+        if admin_service:
+            try:
+                await admin_service.send_model_photo(
+                    user=message.from_user,
+                    photo_bytes=photo_bytes,
+                    caption="Добавлено новое фото модели",
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось отправить фото модели в админ-панель: {e}")
         
         try:
             await bot.delete_message(
