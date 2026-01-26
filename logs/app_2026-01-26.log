@@ -637,3 +637,11 @@ RuntimeError: Ошибка API: 403 Client Error: Forbidden for url: https://us-
 2026-01-26 17:32:04 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_173204_3808eefb.png
 2026-01-26 17:32:04 | INFO     | bot.handlers.try_on:process_single_garment:333 - Примерка 2/3 успешно сгенерирована
 2026-01-26 17:32:05 | INFO     | bot.handlers.try_on:process_single_garment:333 - Примерка 3/3 успешно сгенерирована
+2026-01-26 17:38:26 | INFO     | __main__:main:21 - Запуск Telegram бота...
+2026-01-26 17:38:26 | INFO     | __main__:main:46 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 17:38:26 | INFO     | __main__:main:67 - Проверка подключения к Telegram API...
+2026-01-26 17:38:27 | SUCCESS  | __main__:main:70 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 17:38:27 | INFO     | __main__:main:72 - Бот запущен и готов к работе
+2026-01-26 17:38:37 | INFO     | bot.database.repo:add_user:99 - Пользователь 261617302 добавлен/обновлен в Firestore
+2026-01-26 17:38:37 | INFO     | bot.handlers.start:start_command:35 - Пользователь 261617302 обработан в /start
+2026-01-26 17:38:43 | INFO     | bot.database.repo:get_user_models:199 - Найдено 2 моделей для пользователя 261617302

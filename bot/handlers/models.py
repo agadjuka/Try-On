@@ -359,8 +359,32 @@ async def handle_back_to_menu(
         lang: Язык интерфейса
     """
     await state.clear()
-    await callback.message.edit_text(
-        get_text("welcome", lang),
-        reply_markup=get_main_menu_keyboard(lang),
-    )
+    
+    # Проверяем, является ли сообщение медиа (фото)
+    if callback.message.photo:
+        # Для медиа-сообщений удаляем старое и отправляем новое
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+        await callback.bot.send_message(
+            chat_id=callback.from_user.id,
+            text=get_text("welcome", lang),
+            reply_markup=get_main_menu_keyboard(lang),
+        )
+    else:
+        # Для текстовых сообщений редактируем
+        try:
+            await callback.message.edit_text(
+                get_text("welcome", lang),
+                reply_markup=get_main_menu_keyboard(lang),
+            )
+        except Exception:
+            # Если не удалось отредактировать, отправляем новое
+            await callback.bot.send_message(
+                chat_id=callback.from_user.id,
+                text=get_text("welcome", lang),
+                reply_markup=get_main_menu_keyboard(lang),
+            )
+    
     await callback.answer()
