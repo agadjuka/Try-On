@@ -133,23 +133,16 @@ async def send_try_on_results(
         lang: Язык интерфейса
     """
     # Отправляем результаты генерации в админ-панель (если настроено)
-    logger.info(f"🔍 Попытка отправить результаты генерации в админ-панель для user_id={message.from_user.id} ({len(successful_results)} фото)...")
     admin_service = get_admin_service(bot)
     if admin_service and successful_results:
-        logger.info("✅ AdminPanelService получен, отправка результатов генерации...")
         try:
             await admin_service.send_generation_results(
                 user=message.from_user,
                 result_photos=successful_results,
                 caption="Проведена генерация",
             )
-            logger.success(f"✅ Результаты генерации успешно отправлены в админ-панель")
-        except Exception as e:
-            logger.error(f"❌ Не удалось отправить результаты генерации в админ-панель: {e}", exc_info=True)
-    elif not admin_service:
-        logger.warning("⚠️ AdminPanelService недоступен, результаты генерации не будут отправлены в админ-панель")
-    elif not successful_results:
-        logger.warning("⚠️ Нет успешных результатов для отправки в админ-панель")
+        except Exception:
+            pass
     
     if len(successful_results) == 1:
         # Одно фото - отправляем фото отдельно, кнопки отдельно
@@ -275,33 +268,24 @@ async def handle_garment_photo(
                 logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
 
         # Отправляем фото одежды в админ-панель (если настроено)
-        logger.info(f"🔍 Попытка отправить фото одежды в админ-панель для user_id={message.from_user.id} ({photo_count} фото)...")
         admin_service = get_admin_service(bot)
         if admin_service:
-            logger.info("✅ AdminPanelService получен, отправка фото одежды...")
             try:
-                # Отправляем все фото одежды в админ-панель
                 for idx, garment_msg in enumerate(garment_messages):
-                    logger.info(f"📸 Обработка фото одежды {idx + 1}/{photo_count}...")
                     largest_photo = await get_largest_photo(garment_msg.photo)
                     if largest_photo:
                         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
-                        # Подпись только к первому фото
                         if idx == 0:
                             caption = f"Начата генерация для {photo_count} элемента(ов) одежды"
                         else:
                             caption = "Добавлено новое фото одежды"
-                        logger.info(f"📤 Отправка фото одежды {idx + 1} с подписью: '{caption}'...")
                         await admin_service.send_garment_photo(
                             user=message.from_user,
                             photo_bytes=photo_bytes,
                             caption=caption,
                         )
-                logger.success(f"✅ Все {photo_count} фото одежды отправлены в админ-панель")
-            except Exception as e:
-                logger.error(f"❌ Не удалось отправить фото одежды в админ-панель: {e}", exc_info=True)
-        else:
-            logger.warning("⚠️ AdminPanelService недоступен, фото одежды не будет отправлено в админ-панель")
+            except Exception:
+                pass
 
         # Уведомляем пользователя и сохраняем ID сообщения для последующего удаления
         processing_message = await message.answer(

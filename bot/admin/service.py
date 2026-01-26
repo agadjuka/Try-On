@@ -44,77 +44,43 @@ class AdminPanelService:
             RuntimeError: Если не удалось создать топик и он не существует в хранилище
         """
         user_id = user.id
-        logger.info(f"🔍 Получение или создание топика для user_id={user_id}...")
 
-        # Проверяем, есть ли топик в хранилище (не критично, если не удастся - просто создадим новый)
-        logger.info(f"📋 Проверка существующего топика для user_id={user_id} в хранилище...")
+        # Проверяем, есть ли топик в хранилище
         try:
             topic_id = self.storage.get_topic_id(user_id)
             if topic_id is not None:
-                logger.success(
-                    f"✅ Найден существующий топик для user_id={user_id}: topic_id={topic_id}"
-                )
                 return topic_id
-        except Exception as storage_error:
-            # Ошибка чтения из Firestore не критична - просто создадим новый топик
-            logger.warning(
-                f"⚠️ Не удалось проверить существующий топик в Firestore для user_id={user_id}: {storage_error}. "
-                "Продолжаем создание нового топика."
-            )
+        except Exception:
+            pass
 
         # Создаем новый топик
         topic_name = self._generate_topic_name(user)
-        logger.info(
-            f"🆕 Создание нового топика для user_id={user_id}: '{topic_name}' в группе {self.admin_group_id}"
-        )
 
         try:
-            # Создаем топик в админской группе
-            logger.info(f"📤 Отправка запроса на создание топика в Telegram API...")
             forum_topic = await self.bot.create_forum_topic(
                 chat_id=self.admin_group_id,
                 name=topic_name,
             )
 
             topic_id = forum_topic.message_thread_id
-            logger.success(f"✅ Топик успешно создан в Telegram: topic_id={topic_id}")
+            logger.info(f"Топик создан: {topic_name}")
 
-            # Сохраняем связь в хранилище (не критично, если не удастся - топик уже создан)
-            logger.info(f"💾 Сохранение связи user_id={user_id} -> topic_id={topic_id} в хранилище...")
+            # Сохраняем связь в хранилище (не критично, если не удастся)
             try:
                 self.storage.save_topic(
                     user_id=user_id,
                     topic_id=topic_id,
                     topic_name=topic_name,
                 )
-                logger.success(
-                    f"✅ Топик полностью создан и сохранен: user_id={user_id}, topic_id={topic_id}, name='{topic_name}'"
-                )
-            except Exception as storage_error:
-                # Ошибка сохранения в Firestore не критична - топик уже создан в Telegram
-                logger.warning(
-                    f"⚠️ Топик создан в Telegram (topic_id={topic_id}), но не удалось сохранить в Firestore: {storage_error}. "
-                    "Топик будет работать, но при следующем запуске будет создан новый топик."
-                )
+            except Exception:
+                pass
 
             return topic_id
 
         except Exception as e:
-            # Проверяем, не связана ли ошибка с созданием топика в Telegram
-            if "topic_id" in locals() and "forum_topic" in locals():
-                # Топик создан, но что-то пошло не так - возвращаем topic_id
-                logger.warning(
-                    f"⚠️ Топик создан в Telegram (topic_id={topic_id}), но возникла ошибка: {e}. "
-                    "Возвращаем topic_id несмотря на ошибку."
-                )
+            if "topic_id" in locals():
                 return topic_id
-            
-            error_msg = (
-                f"Ошибка при создании топика для user_id={user_id}: {str(e)}. "
-                "Убедитесь, что бот является администратором группы и имеет права на создание топиков."
-            )
-            logger.error(f"❌ {error_msg}", exc_info=True)
-            raise RuntimeError(error_msg) from e
+            raise RuntimeError(f"Ошибка при создании топика: {e}") from e
 
     async def send_model_photo(
         self,
@@ -131,16 +97,13 @@ class AdminPanelService:
             caption: Подпись к фото
         """
         try:
-            logger.info(f"📸 Отправка фото модели для user_id={user.id} в админ-панель...")
             topic_id = await self.get_or_create_topic(user)
-            logger.info(f"✅ Топик получен: topic_id={topic_id}, размер фото: {len(photo_bytes)} байт")
             
             photo_file = BufferedInputFile(
                 file=photo_bytes,
                 filename="model_photo.jpg",
             )
             
-            logger.info(f"📤 Отправка фото в группу {self.admin_group_id}, топик {topic_id}...")
             await self.bot.send_photo(
                 chat_id=self.admin_group_id,
                 photo=photo_file,
@@ -148,14 +111,9 @@ class AdminPanelService:
                 message_thread_id=topic_id,
             )
             
-            logger.success(
-                f"✅ Фото модели успешно отправлено в админ-панель для user_id={user.id} (topic_id={topic_id})"
-            )
+            logger.info("Фото модели отправлено в админ-панель")
         except Exception as e:
-            logger.error(
-                f"❌ Ошибка при отправке фото модели в админ-панель для user_id={user.id}: {e}",
-                exc_info=True,
-            )
+            logger.error(f"Ошибка отправки фото модели: {e}")
 
     async def send_garment_photo(
         self,
@@ -172,16 +130,13 @@ class AdminPanelService:
             caption: Подпись к фото
         """
         try:
-            logger.info(f"👕 Отправка фото одежды для user_id={user.id} в админ-панель...")
             topic_id = await self.get_or_create_topic(user)
-            logger.info(f"✅ Топик получен: topic_id={topic_id}, размер фото: {len(photo_bytes)} байт")
             
             photo_file = BufferedInputFile(
                 file=photo_bytes,
                 filename="garment_photo.jpg",
             )
             
-            logger.info(f"📤 Отправка фото в группу {self.admin_group_id}, топик {topic_id} с подписью: '{caption}'...")
             await self.bot.send_photo(
                 chat_id=self.admin_group_id,
                 photo=photo_file,
@@ -189,14 +144,9 @@ class AdminPanelService:
                 message_thread_id=topic_id,
             )
             
-            logger.success(
-                f"✅ Фото одежды успешно отправлено в админ-панель для user_id={user.id} (topic_id={topic_id})"
-            )
+            logger.info("Фото одежды отправлено в админ-панель")
         except Exception as e:
-            logger.error(
-                f"❌ Ошибка при отправке фото одежды в админ-панель для user_id={user.id}: {e}",
-                exc_info=True,
-            )
+            logger.error(f"Ошибка отправки фото одежды: {e}")
 
     async def send_generation_results(
         self,
@@ -213,17 +163,12 @@ class AdminPanelService:
             caption: Подпись к фото (будет добавлена только к первому фото)
         """
         if not result_photos:
-            logger.warning("⚠️ Попытка отправить пустой список результатов генерации")
             return
 
         try:
-            logger.info(f"🎨 Отправка результатов генерации для user_id={user.id} в админ-панель ({len(result_photos)} фото)...")
             topic_id = await self.get_or_create_topic(user)
-            logger.info(f"✅ Топик получен: topic_id={topic_id}")
             
             if len(result_photos) == 1:
-                # Одно фото - отправляем отдельно
-                logger.info(f"📤 Отправка одного фото результата ({len(result_photos[0])} байт)...")
                 photo_file = BufferedInputFile(
                     file=result_photos[0],
                     filename="generation_result.jpg",
@@ -235,17 +180,13 @@ class AdminPanelService:
                     caption=caption,
                     message_thread_id=topic_id,
                 )
-                logger.success(f"✅ Одно фото результата отправлено")
             else:
-                # Несколько фото - отправляем альбомом
-                logger.info(f"📤 Подготовка альбома из {len(result_photos)} фото...")
                 media_group = []
                 for idx, photo_bytes in enumerate(result_photos):
                     photo_file = BufferedInputFile(
                         file=photo_bytes,
                         filename=f"generation_result_{idx + 1}.jpg",
                     )
-                    # Подпись только к первому фото
                     media_group.append(
                         InputMediaPhoto(
                             media=photo_file,
@@ -253,22 +194,15 @@ class AdminPanelService:
                         )
                     )
                 
-                logger.info(f"📤 Отправка альбома в группу {self.admin_group_id}, топик {topic_id}...")
                 await self.bot.send_media_group(
                     chat_id=self.admin_group_id,
                     media=media_group,
                     message_thread_id=topic_id,
                 )
-                logger.success(f"✅ Альбом из {len(result_photos)} фото отправлен")
             
-            logger.success(
-                f"✅ Результаты генерации успешно отправлены в админ-панель для user_id={user.id} (topic_id={topic_id}, фото: {len(result_photos)})"
-            )
+            logger.info(f"Результаты генерации отправлены в админ-панель ({len(result_photos)} фото)")
         except Exception as e:
-            logger.error(
-                f"❌ Ошибка при отправке результатов генерации в админ-панель для user_id={user.id}: {e}",
-                exc_info=True,
-            )
+            logger.error(f"Ошибка отправки результатов генерации: {e}")
 
     def _generate_topic_name(self, user: User) -> str:
         """

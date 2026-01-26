@@ -131,21 +131,16 @@ async def handle_model_photo(
         )
         
         # Отправляем фото модели в админ-панель (если настроено)
-        logger.info(f"🔍 Попытка отправить фото модели в админ-панель для user_id={message.from_user.id}...")
         admin_service = get_admin_service(bot)
         if admin_service:
-            logger.info("✅ AdminPanelService получен, отправка фото модели...")
             try:
                 await admin_service.send_model_photo(
                     user=message.from_user,
                     photo_bytes=photo_bytes,
                     caption="Добавлено новое фото модели",
                 )
-                logger.success(f"✅ Фото модели успешно отправлено в админ-панель")
-            except Exception as e:
-                logger.error(f"❌ Не удалось отправить фото модели в админ-панель: {e}", exc_info=True)
-        else:
-            logger.warning("⚠️ AdminPanelService недоступен, фото модели не будет отправлено в админ-панель")
+            except Exception:
+                pass
         
         try:
             await bot.delete_message(

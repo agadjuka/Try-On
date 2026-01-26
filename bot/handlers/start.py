@@ -35,17 +35,12 @@ async def start_command(
         logger.info(f"Пользователь {user_id} обработан в /start")
         
         # Создаем топик в админ-панели при команде /start (если настроено)
-        logger.info(f"🔍 Попытка создать топик в админ-панели для user_id={user.id}...")
         admin_service = get_admin_service(bot)
         if admin_service:
-            logger.info("✅ AdminPanelService получен, создание топика...")
             try:
-                topic_id = await admin_service.get_or_create_topic(user)
-                logger.success(f"✅ Топик успешно создан/получен: topic_id={topic_id} для user_id={user.id}")
-            except Exception as e:
-                logger.error(f"❌ Не удалось создать топик в админ-панели для user_id={user.id}: {e}", exc_info=True)
-        else:
-            logger.warning(f"⚠️ AdminPanelService недоступен (админ-панель не настроена или ошибка инициализации)")
+                await admin_service.get_or_create_topic(user)
+            except Exception:
+                pass
         
         # Отправляем приветствие и главное меню
         await message.answer(

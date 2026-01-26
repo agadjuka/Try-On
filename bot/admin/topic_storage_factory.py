@@ -20,21 +20,10 @@ def get_topic_storage() -> BaseTopicStorage:
     global _topic_storage
     
     if _topic_storage is None:
-        logger.info("🔧 Инициализация хранилища топиков...")
         try:
             _topic_storage = FirestoreTopicStorage()
-            logger.success("✅ FirestoreTopicStorage успешно инициализирован")
-        except ValueError as e:
-            logger.error(
-                f"❌ Не удалось инициализировать FirestoreTopicStorage: {e}. "
-                "Убедитесь, что GOOGLE_CLOUD_PROJECT установлен."
-            )
-            raise
         except Exception as e:
-            logger.error(
-                f"❌ Ошибка при инициализации хранилища топиков: {e}",
-                exc_info=True
-            )
+            logger.error(f"Ошибка инициализации хранилища топиков: {e}")
             raise
     
     return _topic_storage

@@ -46,46 +46,28 @@ class FirestoreTopicStorage(BaseTopicStorage):
         )
         
         if not project_id:
-            logger.error("❌ GOOGLE_CLOUD_PROJECT не найден в переменных окружения")
-            logger.debug(f"🔍 Доступные переменные с 'GOOGLE' или 'PROJECT': {[k for k in os.environ.keys() if 'GOOGLE' in k.upper() or 'PROJECT' in k.upper()]}")
             raise ValueError(
-                "GOOGLE_CLOUD_PROJECT должен быть установлен для использования FirestoreTopicStorage. "
-                "Проверьте переменные окружения: GOOGLE_CLOUD_PROJECT, GOOGLE_CLOUD_PROJECT_ID"
+                "GOOGLE_CLOUD_PROJECT должен быть установлен для использования FirestoreTopicStorage"
             )
         
-        logger.info(f"✅ GOOGLE_CLOUD_PROJECT найден: {project_id}")
-        
-        # Используем ту же логику, что и в основном проекте
-        # Проверяем все возможные варианты имени переменной для database_id
         if database_id is None:
             database_id = (
                 os.getenv("FIRESTORE_DATABASE_ID") or
                 os.getenv("FIRESTORE_DATABASE") or
                 os.getenv("firestore_database_id")
             )
-            # Если не найдено, пытаемся получить из Settings
             if not database_id:
                 try:
                     from bot.core.config import get_settings
                     settings = get_settings()
                     database_id = settings.firestore_database_id
-                    logger.info(f"✅ FIRESTORE_DATABASE_ID получен из Settings: {database_id}")
-                except Exception as e:
-                    logger.warning(f"⚠️ Не удалось получить database_id из Settings: {e}, используем '(default)'")
+                except Exception:
                     database_id = "(default)"
-            else:
-                logger.info(f"✅ FIRESTORE_DATABASE_ID найден в переменных окружения: {database_id}")
-        else:
-            logger.info(f"✅ FIRESTORE_DATABASE_ID передан напрямую: {database_id}")
         
         collection_name = collection_name or "adminpanel"
         
         self.client = firestore.Client(project=project_id, database=database_id)
         self.collection = self.client.collection(collection_name)
-        
-        logger.info(
-            f"✅ Инициализирован FirestoreTopicStorage (project={project_id}, database={database_id}, collection={collection_name})"
-        )
 
     def save_topic(self, user_id: int, topic_id: int, topic_name: str) -> None:
         """
@@ -97,22 +79,13 @@ class FirestoreTopicStorage(BaseTopicStorage):
             topic_name: Название топика
         """
         try:
-            logger.info(f"💾 Сохранение связи в Firestore: user_id={user_id} -> topic_id={topic_id} ({topic_name})")
             doc_ref = self.collection.document(str(user_id))
             doc_ref.set({
                 "user_id": user_id,
                 "topic_id": topic_id,
                 "topic_name": topic_name,
             }, merge=True)
-            
-            logger.success(
-                f"✅ Связь сохранена в Firestore: user_id={user_id} -> topic_id={topic_id} ({topic_name})"
-            )
         except Exception as e:
-            logger.error(
-                f"❌ Ошибка при сохранении связи user_id={user_id} -> topic_id={topic_id}: {e}",
-                exc_info=True
-            )
             raise
 
     def get_topic_id(self, user_id: int) -> int | None:
@@ -126,29 +99,17 @@ class FirestoreTopicStorage(BaseTopicStorage):
             ID топика или None, если связь не найдена
         """
         try:
-            logger.debug(f"🔍 Поиск topic_id для user_id={user_id} в Firestore...")
             doc_ref = self.collection.document(str(user_id))
             doc = doc_ref.get()
             
             if not doc.exists:
-                logger.info(f"ℹ️ Топик для user_id={user_id} не найден в Firestore")
                 return None
             
             data = doc.to_dict()
             topic_id = data.get("topic_id")
             
-            if topic_id is not None:
-                result = int(topic_id)
-                logger.success(f"✅ Найден topic_id={result} для user_id={user_id}")
-                return result
-            else:
-                logger.warning(f"⚠️ Документ для user_id={user_id} существует, но topic_id отсутствует")
-                return None
-        except Exception as e:
-            logger.error(
-                f"❌ Ошибка при получении topic_id для user_id={user_id}: {e}",
-                exc_info=True
-            )
+            return int(topic_id) if topic_id is not None else None
+        except Exception:
             return None
 
     def get_user_id(self, topic_id: int) -> int | None:
