@@ -122,6 +122,17 @@ def setup_handlers(
         lambda c: c.data and c.data.startswith("try_on_select_model_"),
     )
     
+    # Фото модели в состоянии waiting_for_model_photo (для примерки)
+    async def model_photo_for_try_on_handler(message, state: FSMContext):
+        await try_on_selection.handle_model_photo_for_try_on(
+            message, state, bot, repo, storage_service, lang
+        )
+    router.message.register(
+        model_photo_for_try_on_handler,
+        F.photo,
+        TryOnStates.waiting_for_model_photo,
+    )
+    
     # Фото одежды в состоянии waiting_for_garment_photo
     async def garment_photo_handler(message, state: FSMContext, album=None):
         # album передается из middleware через data, если это альбом

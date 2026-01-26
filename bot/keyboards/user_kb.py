@@ -85,7 +85,7 @@ def get_gallery_keyboard(
 
 def get_model_selection_keyboard(
     models: list,
-    lang: str = "ru"
+    lang: str = "ru",
 ) -> InlineKeyboardMarkup:
     """
     Получить клавиатуру для выбора модели при примерке.

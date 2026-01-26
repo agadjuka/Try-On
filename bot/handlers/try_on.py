@@ -37,29 +37,38 @@ async def handle_try_on_callback(
         # Получаем все модели пользователя
         models = await repo.get_user_models(user_id)
 
+        # Удаляем все предыдущие сообщения выбора модели (если есть)
+        await delete_try_on_selection_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
+        
+        # Удаляем исходное сообщение из главного меню
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+        
         if not models:
-            # Удаляем все предыдущие сообщения выбора модели (если есть)
-            await delete_try_on_selection_messages(
-                bot=bot,
+            # Если нет моделей - просим прислать фото
+            from bot.locales.texts import get_text
+            instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,
-                state=state,
-            )
-            
-            # Удаляем исходное сообщение из главного меню
-            try:
-                await callback.message.delete()
-            except Exception:
-                pass
-            
-            # Отправляем сообщение об отсутствии моделей
-            await bot.send_message(
-                chat_id=callback.from_user.id,
-                text=(
-                    "⚠️ У вас пока нет моделей.\n\n"
-                    "Добавьте модель через меню 'Добавить модель'."
-                ),
+                text=get_text("try_on_send_photo", lang),
                 reply_markup=get_back_keyboard(lang),
             )
+            
+            # Сохраняем ID сообщения с инструкцией для последующего удаления
+            await state.update_data(
+                selection_message_id=instruction_message.message_id,
+                album_message_ids=[],
+            )
+            
+            # Устанавливаем состояние ожидания фото модели
+            from bot.states.user_states import TryOnStates
+            await state.set_state(TryOnStates.waiting_for_model_photo)
+            
             await callback.answer()
             return
 
@@ -155,24 +164,42 @@ async def handle_new_try_on_callback(
             try_on_result_album_message_ids=[],
         )
         
+        # Удаляем все предыдущие сообщения выбора модели (если есть)
+        await delete_try_on_selection_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
+        
         # Получаем все модели пользователя
         models = await repo.get_user_models(user_id)
 
+        # Удаляем сообщение с кнопками
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+        
         if not models:
-            # Удаляем сообщение с кнопками
-            try:
-                await callback.message.delete()
-            except Exception:
-                pass
+            # Если нет моделей - просим прислать фото
+            from bot.locales.texts import get_text
+            from bot.states.user_states import TryOnStates
             
-            await bot.send_message(
+            instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,
-                text=(
-                    "⚠️ У вас пока нет моделей.\n\n"
-                    "Добавьте модель через меню 'Добавить модель'."
-                ),
+                text=get_text("try_on_send_photo", lang),
                 reply_markup=get_back_keyboard(lang),
             )
+            
+            # Сохраняем ID сообщения с инструкцией для последующего удаления
+            await state.update_data(
+                selection_message_id=instruction_message.message_id,
+                album_message_ids=[],
+            )
+            
+            # Устанавливаем состояние ожидания фото модели
+            await state.set_state(TryOnStates.waiting_for_model_photo)
+            
             await callback.answer()
             return
 

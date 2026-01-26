@@ -93,6 +93,14 @@ TEXTS = {
         "ru": "Не понимаю. Используй кнопки меню.",
         "en": "I don't understand. Use menu buttons.",
     },
+    "try_on_select_model_or_photo": {
+        "ru": "👤 Выберите модель для примерки или пришлите ваше фото:",
+        "en": "👤 Choose a model for try-on or send your photo:",
+    },
+    "try_on_send_photo": {
+        "ru": "📸 Пришлите ваше фото для примерки:",
+        "en": "📸 Send your photo for try-on:",
+    },
 }
 
 

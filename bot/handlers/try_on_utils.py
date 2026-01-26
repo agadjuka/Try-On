@@ -128,11 +128,18 @@ async def send_models_album(
         await state.update_data(album_message_ids=album_message_ids)
 
         # Отправляем сообщение с кнопками (после фотографий)
+        from bot.locales.texts import get_text
+        from bot.states.user_states import TryOnStates
+        
         selection_message = await bot.send_message(
             chat_id=callback.from_user.id,
-            text="👤 Выберите модель для примерки:",
+            text=get_text("try_on_select_model_or_photo", lang),
             reply_markup=get_model_selection_keyboard(models, lang),
         )
+        
+        # Устанавливаем состояние ожидания выбора модели или фото
+        # Это позволит обработать фото, если пользователь пришлет его вместо нажатия кнопки
+        await state.set_state(TryOnStates.waiting_for_model_photo)
 
         # Сохраняем ID сообщения с кнопками для последующего удаления
         await state.update_data(selection_message_id=selection_message.message_id)
