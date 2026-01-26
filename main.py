@@ -1,90 +1,87 @@
-"""Скрипт для проверки соединений с Google Cloud сервисами и тестирования Try-On API."""
+"""Основной файл для запуска Telegram бота."""
 
 import asyncio
+
+from aiogram import Bot, Dispatcher
+from aiogram.exceptions import TelegramUnauthorizedError
+from aiogram.fsm.storage.memory import MemoryStorage
+from loguru import logger
 
 from bot.core.config import get_settings
 from bot.core.logger import setup_logger
 from bot.database.repo import FirestoreRepo
+from bot.handlers.router import setup_handlers
 from bot.services.storage import CloudStorageService
-from bot.services.try_on import VertexTryOnService
-from loguru import logger
 
 
 async def main() -> None:
-    """Основная функция проверки соединений и тестирования Try-On."""
+    """Основная функция запуска бота."""
     setup_logger()
-    logger.info("Запуск проверки соединений с Google Cloud сервисами...")
+    logger.info("Запуск Telegram бота...")
+
+    # Загружаем настройки
+    try:
+        settings = get_settings()
+    except Exception as e:
+        logger.error(
+            f"Ошибка загрузки настроек: {e}\n"
+            "Убедитесь, что файл .env существует и содержит все необходимые переменные:\n"
+            "- BOT_TOKEN\n"
+            "- GOOGLE_CLOUD_PROJECT_ID\n"
+            "- GOOGLE_CLOUD_REGION\n"
+            "- GCS_BUCKET_NAME"
+        )
+        return
+
+    # Проверяем наличие токена
+    if not settings.bot_token or not settings.bot_token.strip():
+        logger.error(
+            "BOT_TOKEN не найден или пустой в файле .env\n"
+            "Получите токен у @BotFather в Telegram и добавьте в .env файл:\n"
+            "BOT_TOKEN=ваш_токен_бота"
+        )
+        return
+
+    logger.info(f"Конфигурация загружена. Project ID: {settings.google_cloud_project_id}")
+
+    # Инициализируем сервисы
+    repo = FirestoreRepo(settings)
+    storage_service = CloudStorageService(settings)
+
+    # Создаем бота и диспетчер
+    bot = Bot(token=settings.bot_token)
+    dp = Dispatcher(storage=MemoryStorage())
+
+    # Настраиваем хендлеры
+    setup_handlers(
+        router=dp,
+        bot=bot,
+        repo=repo,
+        storage_service=storage_service,
+    )
 
     try:
-        # Загрузка конфигурации
-        settings = get_settings()
-        logger.info(f"Конфигурация загружена. Project ID: {settings.google_cloud_project_id}")
-
-        # Проверка подключения к Firestore
-        logger.info("Проверка подключения к Firestore...")
-        firestore_repo = FirestoreRepo(settings)
-        firestore_connected = await firestore_repo.check_connection()
-
-        if not firestore_connected:
-            logger.error("Не удалось подключиться к Firestore")
-            return
-
-        # Проверка загрузки файла в GCS
-        logger.info("Проверка загрузки файла в Google Cloud Storage...")
-        storage_service = CloudStorageService(settings)
-
-        test_content = b"Test file for connection check"
-        test_path = "test/connection_check.txt"
-
-        try:
-            gs_uri = await storage_service.upload_file(
-                file_bytes=test_content,
-                destination_path=test_path,
-                content_type="text/plain",
-            )
-            logger.success(f"Файл успешно загружен: {gs_uri}")
-        except Exception as e:
-            logger.error(f"Ошибка загрузки файла в GCS: {str(e)}")
-            return
-
-        logger.success("Все проверки пройдены успешно!")
-
-        # Тестирование Try-On сервиса
-        logger.info("\n" + "="*60)
-        logger.info("Тестирование Vertex AI Try-On сервиса...")
-        logger.info("="*60)
-
-        # Тестовые GCS URI (замените на реальные ссылки на ваши изображения)
-        person_gcs_uri = "gs://your-bucket-name/path/to/person/image.jpg"
-        garment_gcs_uri = "gs://your-bucket-name/path/to/garment/image.jpg"
-
-        logger.warning(
-            f"ВНИМАНИЕ: Используются тестовые GCS URI.\n"
-            f"Person: {person_gcs_uri}\n"
-            f"Garment: {garment_gcs_uri}\n"
-            f"Замените их на реальные ссылки перед запуском!"
+        logger.info("Проверка подключения к Telegram API...")
+        # Проверяем подключение перед запуском polling
+        me = await bot.get_me()
+        logger.success(f"Бот успешно подключен: @{me.username} ({me.first_name})")
+        
+        logger.info("Бот запущен и готов к работе")
+        await dp.start_polling(bot)
+    except TelegramUnauthorizedError:
+        logger.error(
+            "Ошибка авторизации: неверный токен бота\n"
+            "Проверьте BOT_TOKEN в файле .env:\n"
+            "1. Получите новый токен у @BotFather в Telegram\n"
+            "2. Убедитесь, что токен скопирован полностью без пробелов\n"
+            "3. Формат в .env: BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
         )
-
-        try:
-            try_on_service = VertexTryOnService(settings)
-            result_uri = await try_on_service.generate_try_on(
-                person_gcs_uri=person_gcs_uri,
-                garment_gcs_uri=garment_gcs_uri,
-                storage_service=storage_service,
-            )
-            logger.success(f"Try-On генерация завершена успешно!")
-            logger.success(f"Результат сохранен: {result_uri}")
-        except Exception as e:
-            logger.error(f"Ошибка при генерации Try-On: {str(e)}")
-            logger.exception(e)
-
     except Exception as e:
-        logger.error(f"Критическая ошибка: {str(e)}")
-        raise
+        logger.error(f"Критическая ошибка: {e}")
+        logger.exception(e)
     finally:
-        # Закрываем соединения
-        if "firestore_repo" in locals():
-            await firestore_repo.close()
+        await bot.session.close()
+        await repo.close()
 
 
 if __name__ == "__main__":

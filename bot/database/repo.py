@@ -36,7 +36,10 @@ class FirestoreRepo:
         """
         if self._client is None:
             try:
-                self._client = AsyncClient(project=self.settings.google_cloud_project_id)
+                self._client = AsyncClient(
+                    project=self.settings.google_cloud_project_id,
+                    database=self.settings.firestore_database_id
+                )
             except DefaultCredentialsError as e:
                 raise DefaultCredentialsError(
                     "Не найдены учетные данные Google Cloud. "
@@ -133,8 +136,123 @@ class FirestoreRepo:
         logger.info(f"Изображение {image_id} сохранено в Firestore")
         return image_id
 
+    async def add_model(
+        self,
+        user_id: str,
+        gcs_uri: str,
+        model_id: Optional[str] = None,
+    ) -> str:
+        """
+        Добавить модель пользователя в подколлекцию users/{user_id}/models.
+
+        Args:
+            user_id: ID пользователя
+            gcs_uri: URI изображения модели в GCS (gs://...)
+            model_id: Кастомный ID модели (если не указан, генерируется автоматически)
+
+        Returns:
+            ID модели в Firestore
+        """
+        client = self._get_client()
+
+        if model_id is None:
+            # Генерируем ID на основе timestamp
+            model_id = f"model_{int(datetime.utcnow().timestamp() * 1000)}"
+
+        model_data = PersonImage(
+            id=model_id,
+            user_id=user_id,
+            gcs_uri=gcs_uri,
+            is_active=False,  # По умолчанию неактивна
+            created_at=datetime.utcnow(),
+        )
+
+        # Сохраняем в подколлекцию users/{user_id}/models
+        doc_ref = client.collection("users").document(user_id).collection("models").document(model_id)
+        await doc_ref.set(model_data.model_dump())
+
+        logger.info(f"Модель {model_id} добавлена для пользователя {user_id}")
+        return model_id
+
+    async def get_user_models(self, user_id: str) -> list[PersonImage]:
+        """
+        Получить все модели пользователя.
+
+        Args:
+            user_id: ID пользователя
+
+        Returns:
+            Список моделей пользователя
+        """
+        client = self._get_client()
+        models_ref = client.collection("users").document(user_id).collection("models")
+        
+        models = []
+        async for doc in models_ref.stream():
+            data = doc.to_dict()
+            if data:
+                models.append(PersonImage(**data))
+        
+        # Сортируем по дате создания (новые первыми)
+        models.sort(key=lambda x: x.created_at, reverse=True)
+        
+        logger.info(f"Найдено {len(models)} моделей для пользователя {user_id}")
+        return models
+
+    async def set_active_model(self, user_id: str, model_id: str) -> None:
+        """
+        Установить модель как активную (остальные деактивировать).
+
+        Args:
+            user_id: ID пользователя
+            model_id: ID модели для активации
+        """
+        client = self._get_client()
+        models_ref = client.collection("users").document(user_id).collection("models")
+        
+        # Получаем все модели пользователя
+        async for doc in models_ref.stream():
+            doc_ref = models_ref.document(doc.id)
+            if doc.id == model_id:
+                await doc_ref.update({"is_active": True})
+            else:
+                await doc_ref.update({"is_active": False})
+        
+        logger.info(f"Модель {model_id} установлена как активная для пользователя {user_id}")
+
+    async def delete_model(self, user_id: str, model_id: str) -> None:
+        """
+        Удалить модель пользователя.
+
+        Args:
+            user_id: ID пользователя
+            model_id: ID модели для удаления
+        """
+        client = self._get_client()
+        doc_ref = client.collection("users").document(user_id).collection("models").document(model_id)
+        await doc_ref.delete()
+        
+        logger.info(f"Модель {model_id} удалена для пользователя {user_id}")
+
+    async def get_active_model(self, user_id: str) -> Optional[PersonImage]:
+        """
+        Получить активную модель пользователя.
+
+        Args:
+            user_id: ID пользователя
+
+        Returns:
+            Активная модель или None, если нет активной модели
+        """
+        models = await self.get_user_models(user_id)
+        for model in models:
+            if model.is_active:
+                return model
+        return None
+
     async def close(self) -> None:
         """Закрыть соединение с Firestore."""
-        if self._client:
+        if self._client is not None:
             await self._client.close()
+            self._client = None
             logger.info("Соединение с Firestore закрыто")

@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     google_cloud_region: str
     gcs_bucket_name: str
     bot_token: str
+    
+    # Название базы данных Firestore
+    firestore_database_id: str = "(default)"
 
     model_config = SettingsConfigDict(
         env_file=".env",

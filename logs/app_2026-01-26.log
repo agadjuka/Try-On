@@ -215,3 +215,159 @@
 }
 2026-01-26 16:30:04 | ERROR    | bot.services.try_on:generate_try_on:277 - Ошибка при запросе к API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
 2026-01-26 16:30:04 | ERROR    | __main__:handle_garment_photo:263 - Ошибка API при генерации: Ошибка API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 403, 'message': "Image editing failed with the following error: cloud-lvm@prod.google.com does not have storage.objects.get access to the Google Cloud Storage object. Permission 'storage.objects.get' denied on resource (or it may not exist). cloud-lvm@prod.google.com does not have storage.objects.get access to the Google Cloud Storage object. Permission 'storage.objects.get' denied on resource (or it may not exist).; ", 'status': 'PERMISSION_DENIED'}}
+2026-01-26 16:34:32 | INFO     | __main__:main:321 - Запуск тестового бота...
+2026-01-26 16:34:32 | INFO     | __main__:main:346 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 16:34:32 | INFO     | __main__:main:386 - Проверка подключения к Telegram API...
+2026-01-26 16:34:33 | SUCCESS  | __main__:main:389 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:34:33 | INFO     | __main__:main:390 - Бот запущен и готов к работе
+2026-01-26 16:34:43 | INFO     | __main__:handle_model_photo:123 - Сохранение фото модели в Cloud Storage: bot_uploads/models/261617302_20260126_163443.jpg
+2026-01-26 16:34:45 | INFO     | __main__:handle_model_photo:128 - Фото модели сохранено: gs://try_on_ketly/bot_uploads/models/261617302_20260126_163443.jpg
+2026-01-26 16:34:49 | INFO     | __main__:handle_garment_photo:212 - Сохранение фото одежды в Cloud Storage: bot_uploads/garments/261617302_20260126_163449.jpg
+2026-01-26 16:34:50 | INFO     | __main__:handle_garment_photo:217 - Фото одежды сохранено: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_163449.jpg
+2026-01-26 16:34:50 | INFO     | __main__:handle_garment_photo:220 - ============================================================
+2026-01-26 16:34:50 | INFO     | __main__:handle_garment_photo:221 - ВЫЗОВ generate_try_on с GCS URI - ОДИН РАЗ
+2026-01-26 16:34:50 | INFO     | __main__:handle_garment_photo:222 - ============================================================
+2026-01-26 16:34:50 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 16:34:50 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 16:34:50 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 16:34:50 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:34:50 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:34:50 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_163443.jpg
+2026-01-26 16:34:50 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_163449.jpg
+2026-01-26 16:35:08 | INFO     | bot.services.try_on:generate_try_on:231 - Получено 1 результатов
+2026-01-26 16:35:08 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_163508_aaef68e9.png
+2026-01-26 16:35:08 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_163508_aaef68e9.png
+2026-01-26 16:35:08 | INFO     | __main__:handle_garment_photo:231 - ============================================================
+2026-01-26 16:35:08 | INFO     | __main__:handle_garment_photo:232 - generate_try_on ЗАВЕРШЕН УСПЕШНО
+2026-01-26 16:35:08 | INFO     | __main__:handle_garment_photo:233 - ============================================================
+2026-01-26 16:50:57 | INFO     | __main__:main:16 - Запуск проверки соединений с Google Cloud сервисами...
+2026-01-26 16:50:57 | INFO     | __main__:main:21 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 16:50:57 | INFO     | __main__:main:24 - Проверка подключения к Firestore...
+2026-01-26 16:51:00 | INFO     | bot.database.repo:check_connection:63 - Подключение к Firestore успешно установлено
+2026-01-26 16:51:00 | INFO     | __main__:main:33 - Проверка загрузки файла в Google Cloud Storage...
+2026-01-26 16:51:01 | SUCCESS  | __main__:main:45 - Файл успешно загружен: gs://try_on_ketly/test/connection_check.txt
+2026-01-26 16:51:01 | SUCCESS  | __main__:main:50 - Все проверки пройдены успешно!
+2026-01-26 16:51:01 | INFO     | __main__:main:53 - 
+============================================================
+2026-01-26 16:51:01 | INFO     | __main__:main:54 - Тестирование Vertex AI Try-On сервиса...
+2026-01-26 16:51:01 | INFO     | __main__:main:55 - ============================================================
+2026-01-26 16:51:01 | WARNING  | __main__:main:61 - ВНИМАНИЕ: Используются тестовые GCS URI.
+Person: gs://your-bucket-name/path/to/person/image.jpg
+Garment: gs://your-bucket-name/path/to/garment/image.jpg
+Замените их на реальные ссылки перед запуском!
+2026-01-26 16:51:01 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 16:51:01 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 16:51:01 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 16:51:02 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:51:02 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:51:02 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://your-bucket-name/path/to/person/image.jpg
+2026-01-26 16:51:02 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://your-bucket-name/path/to/garment/image.jpg
+2026-01-26 16:51:03 | ERROR    | bot.services.try_on:generate_try_on:272 - Детали ошибки: {
+  "error": {
+    "code": 403,
+    "message": "Image editing failed with the following error: The billing account for the owning project is disabled in state closed The billing account for the owning project is disabled in state closed; ",
+    "status": "PERMISSION_DENIED"
+  }
+}
+2026-01-26 16:51:03 | ERROR    | bot.services.try_on:generate_try_on:277 - Ошибка при запросе к API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:51:03 | ERROR    | __main__:main:78 - Ошибка при генерации Try-On: Ошибка API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 403, 'message': 'Image editing failed with the following error: The billing account for the owning project is disabled in state closed The billing account for the owning project is disabled in state closed; ', 'status': 'PERMISSION_DENIED'}}
+2026-01-26 16:51:03 | ERROR    | __main__:main:79 - Ошибка API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 403, 'message': 'Image editing failed with the following error: The billing account for the owning project is disabled in state closed The billing account for the owning project is disabled in state closed; ', 'status': 'PERMISSION_DENIED'}}
+Traceback (most recent call last):
+
+  File "d:\Работа\Ai Агенты\Скрипты\virtual_try_on\bot\services\try_on.py", line 218, in generate_try_on
+    result = await asyncio.to_thread(_make_request)
+                   │       │         └ <function VertexTryOnService.generate_try_on.<locals>._make_request at 0x0000017702BD3EB0>
+                   │       └ <function to_thread at 0x000001777F56DD80>
+                   └ <module 'asyncio' from 'C:\\Users\\Илья\\AppData\\Local\\Programs\\Python\\Python310\\lib\\asyncio\\__init__.py'>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+                 │    │                     └ functools.partial(<built-in method run of _contextvars.Context object at 0x0000017702B56900>, <function VertexTryOnService.ge...
+                 │    └ <function BaseEventLoop.run_in_executor at 0x000001777F55DE10>
+                 └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             │        │            └ None
+             │        └ None
+             └ None
+
+  File "d:\Работа\Ai Агенты\Скрипты\virtual_try_on\bot\services\try_on.py", line 213, in _make_request
+    response.raise_for_status()
+    │        └ <function Response.raise_for_status at 0x0000017702613130>
+    └ <Response [403]>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+          │         │                        └ <Response [403]>
+          │         └ '403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-centra...
+          └ <class 'requests.exceptions.HTTPError'>
+
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+
+
+The above exception was the direct cause of the following exception:
+
+
+Traceback (most recent call last):
+
+  File "d:\Работа\Ai Агенты\Скрипты\virtual_try_on\main.py", line 91, in <module>
+    asyncio.run(main())
+    │       │   └ <function main at 0x000001777EC8D090>
+    │       └ <function run at 0x000001777EC8D510>
+    └ <module 'asyncio' from 'C:\\Users\\Илья\\AppData\\Local\\Programs\\Python\\Python310\\lib\\asyncio\\__init__.py'>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+           │    │                  └ <coroutine object main at 0x0000017702B1ADC0>
+           │    └ <function BaseEventLoop.run_until_complete at 0x000001777F55D630>
+           └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 636, in run_until_complete
+    self.run_forever()
+    │    └ <function ProactorEventLoop.run_forever at 0x000001777F60D000>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\asyncio\windows_events.py", line 321, in run_forever
+    super().run_forever()
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 603, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x000001777F55F0A0>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 1909, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x000001777F4BAA70>
+    └ <Handle Task.task_wakeup(<Future finis...001:predict')>)>
+
+  File "C:\Users\Илья\AppData\Local\Programs\Python\Python310\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle Task.task_wakeup(<Future finis...001:predict')>)>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle Task.task_wakeup(<Future finis...001:predict')>)>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle Task.task_wakeup(<Future finis...001:predict')>)>
+
+> File "d:\Работа\Ai Агенты\Скрипты\virtual_try_on\main.py", line 70, in main
+    result_uri = await try_on_service.generate_try_on(
+                       │              └ <function VertexTryOnService.generate_try_on at 0x0000017702B5C9D0>
+                       └ <bot.services.try_on.VertexTryOnService object at 0x0000017702B2B3A0>
+
+  File "d:\Работа\Ai Агенты\Скрипты\virtual_try_on\bot\services\try_on.py", line 278, in generate_try_on
+    raise RuntimeError(
+
+RuntimeError: Ошибка API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 403, 'message': 'Image editing failed with the following error: The billing account for the owning project is disabled in state closed The billing account for the owning project is disabled in state closed; ', 'status': 'PERMISSION_DENIED'}}
+2026-01-26 16:55:33 | INFO     | __main__:main:20 - Запуск Telegram бота...
+2026-01-26 16:55:33 | INFO     | __main__:main:45 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 16:55:33 | INFO     | __main__:main:64 - Проверка подключения к Telegram API...
+2026-01-26 16:55:34 | SUCCESS  | __main__:main:67 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:55:34 | INFO     | __main__:main:69 - Бот запущен и готов к работе
+2026-01-26 16:56:30 | INFO     | __main__:main:20 - Запуск Telegram бота...
+2026-01-26 16:56:30 | INFO     | __main__:main:45 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 16:56:30 | INFO     | __main__:main:64 - Проверка подключения к Telegram API...
+2026-01-26 16:56:31 | SUCCESS  | __main__:main:67 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:56:31 | INFO     | __main__:main:69 - Бот запущен и готов к работе
+2026-01-26 16:56:35 | INFO     | bot.database.repo:add_user:99 - Пользователь 261617302 добавлен/обновлен в Firestore
+2026-01-26 16:56:35 | INFO     | bot.handlers.start:start_command:35 - Пользователь 261617302 обработан в /start
