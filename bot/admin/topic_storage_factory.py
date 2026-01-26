@@ -1,12 +1,10 @@
 """Фабрика для создания экземпляра хранилища топиков."""
 
-import logging
 import os
+from loguru import logger
 
 from bot.admin.firestore_topic_storage import FirestoreTopicStorage
 from bot.admin.topic_storage import BaseTopicStorage
-
-logger = logging.getLogger(__name__)
 
 # Глобальный экземпляр хранилища
 _topic_storage: BaseTopicStorage | None = None
@@ -22,20 +20,20 @@ def get_topic_storage() -> BaseTopicStorage:
     global _topic_storage
     
     if _topic_storage is None:
+        logger.info("🔧 Инициализация хранилища топиков...")
         try:
             _topic_storage = FirestoreTopicStorage()
-            logger.info("Инициализирован FirestoreTopicStorage")
+            logger.success("✅ FirestoreTopicStorage успешно инициализирован")
         except ValueError as e:
             logger.error(
-                "Не удалось инициализировать FirestoreTopicStorage: %s. "
-                "Убедитесь, что GOOGLE_CLOUD_PROJECT установлен.",
-                str(e),
+                f"❌ Не удалось инициализировать FirestoreTopicStorage: {e}. "
+                "Убедитесь, что GOOGLE_CLOUD_PROJECT установлен."
             )
             raise
         except Exception as e:
             logger.error(
-                "Ошибка при инициализации хранилища топиков: %s",
-                str(e),
+                f"❌ Ошибка при инициализации хранилища топиков: {e}",
+                exc_info=True
             )
             raise
     

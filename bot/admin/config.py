@@ -1,9 +1,11 @@
 """Конфигурация для админ-панели на базе Telegram Forum Topics."""
 
-import logging
 import os
+from loguru import logger
+from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 
 def get_telegram_admin_group_id() -> int | None:
@@ -13,16 +15,29 @@ def get_telegram_admin_group_id() -> int | None:
     Returns:
         ID группы или None, если не установлен
     """
-    group_id_str = os.getenv("TELEGRAM_ADMIN_GROUP_ID")
+    logger.info("🔍 Проверка переменной окружения TELEGRAM_ADMIN_GROUP_ID...")
+    
+    # Проверяем все возможные варианты имени переменной
+    group_id_str = (
+        os.getenv("TELEGRAM_ADMIN_GROUP_ID") or 
+        os.getenv("telegram_admin_group_id") or
+        os.getenv("TELEGRAM_ADMIN_GROUP_ID".lower())
+    )
+    
     if not group_id_str:
-        logger.debug("TELEGRAM_ADMIN_GROUP_ID не установлен")
+        logger.warning("⚠️ TELEGRAM_ADMIN_GROUP_ID не установлен - админ-панель отключена")
+        logger.debug(f"🔍 Проверка всех переменных окружения, содержащих 'ADMIN': {[k for k in os.environ.keys() if 'ADMIN' in k.upper()]}")
         return None
     
+    # Убираем пробелы и переносы строк
+    group_id_str = group_id_str.strip()
+    
     try:
-        return int(group_id_str)
+        group_id = int(group_id_str)
+        logger.success(f"✅ TELEGRAM_ADMIN_GROUP_ID найден: {group_id}")
+        return group_id
     except ValueError:
         logger.error(
-            "TELEGRAM_ADMIN_GROUP_ID должен быть числом, получено: %s",
-            group_id_str
+            f"❌ TELEGRAM_ADMIN_GROUP_ID должен быть числом, получено: '{group_id_str}' (тип: {type(group_id_str).__name__})"
         )
         return None
