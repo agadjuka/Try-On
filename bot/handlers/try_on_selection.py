@@ -45,19 +45,18 @@ async def handle_model_selection_for_try_on(
         return
     
     model_id = callback_data.replace("try_on_select_model_", "", 1)
-    logger.info(f"Выбор модели для примерки: user_id={user_id}, model_id={model_id}")
 
     try:
+        # Сохраняем старые ID ДО любых изменений state
+        state_data = await state.get_data()
+        old_album_ids = state_data.get("album_message_ids", [])
+        old_selection_id = state_data.get("selection_message_id")
+        
         models = await repo.get_user_models(user_id)
-        logger.info(f"Найдено моделей: {len(models)}, их ID: {[m.id for m in models]}")
         
         selected_model = next((m for m in models if m.id == model_id), None)
 
         if not selected_model:
-            logger.error(
-                f"Модель не найдена: user_id={user_id}, model_id={model_id}, "
-                f"доступные модели: {[m.id for m in models]}"
-            )
             return
 
         await state.update_data(selected_model_gcs_uri=selected_model.gcs_uri)
@@ -72,12 +71,12 @@ async def handle_model_selection_for_try_on(
         
         await state.update_data(garment_instruction_message_id=instruction_message.message_id)
 
-        # ПОТОМ удаляем старые сообщения
-        await delete_try_on_selection_messages(
-            bot=bot,
-            chat_id=callback.from_user.id,
-            state=state,
-        )
+        # ПОТОМ удаляем старые по СОХРАНЁННЫМ ID
+        from bot.utils.message_utils import delete_messages
+        old_ids_to_delete = list(old_album_ids)
+        if old_selection_id:
+            old_ids_to_delete.append(old_selection_id)
+        await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
 
     except Exception as e:
         logger.error(f"Ошибка в handle_model_selection_for_try_on: {e}")
@@ -108,6 +107,11 @@ async def handle_model_photo_for_try_on(
         return
 
     try:
+        # Сохраняем старые ID ДО любых изменений state
+        state_data = await state.get_data()
+        old_album_ids = state_data.get("album_message_ids", [])
+        old_selection_id = state_data.get("selection_message_id")
+        
         user_id = str(message.from_user.id)
         
         largest_photo = await get_largest_photo(message.photo)
@@ -152,20 +156,20 @@ async def handle_model_photo_for_try_on(
         
         await state.update_data(garment_instruction_message_id=instruction_message.message_id)
         
-        # ПОТОМ удаляем старые
+        # ПОТОМ удаляем старые по СОХРАНЁННЫМ ID
         try:
             await bot.delete_message(
                 chat_id=message.from_user.id,
                 message_id=processing_message_id,
             )
-        except Exception as e:
-            logger.warning(f"Не удалось удалить сообщение 'Обрабатываю...': {e}")
+        except Exception:
+            pass
         
-        await delete_try_on_selection_messages(
-            bot=bot,
-            chat_id=message.from_user.id,
-            state=state,
-        )
+        from bot.utils.message_utils import delete_messages
+        old_ids_to_delete = list(old_album_ids)
+        if old_selection_id:
+            old_ids_to_delete.append(old_selection_id)
+        await delete_messages(bot, message.from_user.id, old_ids_to_delete)
         
     except Exception as e:
         logger.error(f"Ошибка при обработке фото модели для примерки: {e}")

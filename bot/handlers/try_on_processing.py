@@ -267,26 +267,6 @@ async def handle_garment_photo(
             except Exception as e:
                 logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
 
-        # Отправляем фото одежды в админ-панель (если настроено)
-        admin_service = get_admin_service(bot)
-        if admin_service:
-            try:
-                for idx, garment_msg in enumerate(garment_messages):
-                    largest_photo = await get_largest_photo(garment_msg.photo)
-                    if largest_photo:
-                        photo_bytes = await download_photo_to_bytes(bot, largest_photo)
-                        if idx == 0:
-                            caption = f"Начата генерация для {photo_count} элемента(ов) одежды"
-                        else:
-                            caption = "Добавлено новое фото одежды"
-                        await admin_service.send_garment_photo(
-                            user=message.from_user,
-                            photo_bytes=photo_bytes,
-                            caption=caption,
-                        )
-            except Exception:
-                pass
-
         # Уведомляем пользователя и сохраняем ID сообщения для последующего удаления
         processing_message = await message.answer(
             f"📸 Получено {photo_count} фото. Начинаю примерку...\n"
@@ -308,7 +288,38 @@ async def handle_garment_photo(
             )
             for idx, msg in enumerate(garment_messages)
         ]
+        
+        # Запускаем задачи обработки (не ждем завершения)
+        # Отправляем фото в админ-панель параллельно с обработкой
+        async def send_photos_to_admin():
+            """Отправляет фото одежды в админ-панель."""
+            admin_service = get_admin_service(bot)
+            if admin_service:
+                try:
+                    for idx, garment_msg in enumerate(garment_messages):
+                        largest_photo = await get_largest_photo(garment_msg.photo)
+                        if largest_photo:
+                            photo_bytes = await download_photo_to_bytes(bot, largest_photo)
+                            if idx == 0:
+                                caption = f"Начата генерация для {photo_count} элемента(ов) одежды"
+                            else:
+                                caption = "Добавлено новое фото одежды"
+                            await admin_service.send_garment_photo(
+                                user=message.from_user,
+                                photo_bytes=photo_bytes,
+                                caption=caption,
+                            )
+                except Exception:
+                    pass
+        
+        # Запускаем отправку в админ-панель параллельно с обработкой
+        admin_task = asyncio.create_task(send_photos_to_admin())
+        
+        # Ждем завершения обработки
         results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Ждем завершения отправки в админ-панель (если еще не завершилась)
+        await admin_task
 
         # Фильтруем успешные результаты
         successful_results: List[bytes] = []

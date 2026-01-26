@@ -77,7 +77,6 @@ async def send_models_album(
         existing_result_album_ids = state_data_before.get("try_on_result_album_message_ids", [])
         old_album_ids = state_data_before.get("album_message_ids", [])
         old_selection_id = state_data_before.get("selection_message_id")
-        logger.info(f"Сохраняем ID фотографий результата перед отправкой альбома моделей: {existing_result_album_ids}")
         
         # Скачиваем фото параллельно (уже оптимизировано в prepare_models_media_group)
         media_group = await prepare_models_media_group(models, storage_service)
@@ -100,7 +99,6 @@ async def send_models_album(
             album_message_ids=album_message_ids,
             try_on_result_album_message_ids=existing_result_album_ids,
         )
-        logger.info(f"Восстановили ID фотографий результата после отправки альбома моделей: {existing_result_album_ids}")
 
         # Отправляем сообщение с кнопками (после фотографий)
         selection_message = await bot.send_message(

@@ -145,7 +145,6 @@ async def handle_new_try_on_callback(
         old_album_ids = state_data.get("album_message_ids", [])
         old_selection_id = state_data.get("selection_message_id")
         result_message_id = state_data.get("try_on_result_message_id")
-        logger.info(f"Сохраняем ID фотографий результата перед обработкой: {result_album_message_ids}")
         
         # Получаем все модели пользователя
         models = await repo.get_user_models(user_id)

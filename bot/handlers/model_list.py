@@ -160,32 +160,27 @@ async def handle_model_delete(
     # Мгновенно отвечаем с сообщением об удалении
     await callback.answer(get_text("model_deleted", lang))
     
-    # Сохраняем старые ID ДО любых изменений state
+    # Сохраняем ТЕКУЩИЕ отображаемые ID ДО любых изменений state
+    # Это те сообщения, которые нужно удалить (альбом + сообщение с кнопками)
     state_data = await state.get_data()
-    old_album_ids = state_data.get("models_album_message_ids", [])
-    old_menu_id = state_data.get("models_menu_message_id")
+    current_album_ids = state_data.get("models_album_message_ids", [])
+    current_menu_id = state_data.get("models_menu_message_id")
+    callback_message_id = callback.message.message_id if callback.message else None
     
     model_id = callback_data.replace("model_delete_", "", 1)
-    logger.info(f"Удаление модели: user_id={user_id}, model_id={model_id}")
     
     try:
         models = await repo.get_user_models(user_id)
-        logger.info(f"Найдено моделей: {len(models)}, их ID: {[m.id for m in models]}")
         
         model_to_delete = next((m for m in models if m.id == model_id), None)
         
         if not model_to_delete:
-            logger.error(
-                f"Модель не найдена: user_id={user_id}, model_id={model_id}, "
-                f"доступные модели: {[m.id for m in models]}"
-            )
             return
         
         try:
             await storage_service.delete_file(model_to_delete.gcs_uri)
-            logger.info(f"Файл модели удален из GCS: {model_to_delete.gcs_uri}")
-        except Exception as e:
-            logger.warning(f"Не удалось удалить файл из GCS: {e}")
+        except Exception:
+            pass
         
         await repo.delete_model(user_id, model_id)
         
@@ -202,11 +197,13 @@ async def handle_model_delete(
                 models_menu_message_id=empty_list_message.message_id,
                 models_album_message_ids=[],
             )
-            # ПОТОМ удаляем старое по сохранённым ID
-            old_ids_to_delete = list(old_album_ids)
-            if old_menu_id:
-                old_ids_to_delete.append(old_menu_id)
-            await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+            # ПОТОМ удаляем ВСЕ старые сообщения: альбом + сообщение с кнопками + само сообщение callback
+            ids_to_delete = list(current_album_ids)
+            if current_menu_id:
+                ids_to_delete.append(current_menu_id)
+            if callback_message_id and callback_message_id not in ids_to_delete:
+                ids_to_delete.append(callback_message_id)
+            await delete_messages(bot, callback.from_user.id, ids_to_delete)
             return
         
         media_group = await prepare_models_media_group(models, storage_service)
@@ -231,11 +228,13 @@ async def handle_model_delete(
             models_menu_message_id=menu_message.message_id,
         )
         
-        # ПОТОМ удаляем старое по сохранённым ID
-        old_ids_to_delete = list(old_album_ids)
-        if old_menu_id:
-            old_ids_to_delete.append(old_menu_id)
-        await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+        # ПОТОМ удаляем ВСЕ старые сообщения: альбом + сообщение с кнопками + само сообщение callback
+        ids_to_delete = list(current_album_ids)
+        if current_menu_id:
+            ids_to_delete.append(current_menu_id)
+        if callback_message_id and callback_message_id not in ids_to_delete:
+            ids_to_delete.append(callback_message_id)
+        await delete_messages(bot, callback.from_user.id, ids_to_delete)
         
     except Exception as e:
         logger.error(f"Ошибка при удалении модели: {e}")

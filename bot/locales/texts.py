@@ -14,8 +14,8 @@ TEXTS = {
         "en": "👤 My Photos",
     },
     "menu_try_on": {
-        "ru": "👔 Примерка",
-        "en": "👔 Try On",
+        "ru": "👗 Примерка",
+        "en": "👗 Try On",
     },
     "new_try_on": {
         "ru": "🔄 Новая примерка",
