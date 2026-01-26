@@ -8,7 +8,7 @@ from loguru import logger
 from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
 from bot.keyboards.user_kb import get_back_keyboard
-from bot.handlers.try_on_utils import send_models_album
+from bot.handlers.try_on_utils import send_models_album, delete_try_on_selection_messages
 
 
 async def handle_try_on_callback(
@@ -38,9 +38,26 @@ async def handle_try_on_callback(
         models = await repo.get_user_models(user_id)
 
         if not models:
-            await callback.message.edit_text(
-                "⚠️ У вас пока нет моделей.\n\n"
-                "Добавьте модель через меню 'Добавить модель'.",
+            # Удаляем все предыдущие сообщения выбора модели (если есть)
+            await delete_try_on_selection_messages(
+                bot=bot,
+                chat_id=callback.from_user.id,
+                state=state,
+            )
+            
+            # Удаляем исходное сообщение из главного меню
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
+            
+            # Отправляем сообщение об отсутствии моделей
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text=(
+                    "⚠️ У вас пока нет моделей.\n\n"
+                    "Добавьте модель через меню 'Добавить модель'."
+                ),
                 reply_markup=get_back_keyboard(lang),
             )
             await callback.answer()
@@ -63,8 +80,21 @@ async def handle_try_on_callback(
 
     except Exception as e:
         logger.error(f"Ошибка в handle_try_on_callback: {e}")
-        await callback.message.edit_text(
-            "❌ Произошла ошибка. Попробуйте позже.",
+        # Удаляем все предыдущие сообщения выбора модели (если есть)
+        await delete_try_on_selection_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
+        # Удаляем исходное сообщение
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
+        # Отправляем сообщение об ошибке
+        await bot.send_message(
+            chat_id=callback.from_user.id,
+            text="❌ Произошла ошибка. Попробуйте позже.",
             reply_markup=get_back_keyboard(lang),
         )
         await callback.answer()

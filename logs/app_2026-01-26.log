@@ -719,3 +719,49 @@ RuntimeError: Ошибка API: 403 Client Error: Forbidden for url: https://us-
 2026-01-26 18:15:15 | INFO     | bot.database.repo:delete_model:237 - Модель model_1769393555646 удалена для пользователя 261617302
 2026-01-26 18:15:15 | INFO     | bot.database.repo:get_user_models:201 - Найдено 2 моделей для пользователя 261617302
 2026-01-26 18:15:28 | INFO     | bot.database.repo:get_user_models:201 - Найдено 2 моделей для пользователя 261617302
+2026-01-26 18:15:44 | DEBUG    | bot.middlewares.album:__call__:56 - Сообщение без media_group_id (не альбом): message_id=8313
+2026-01-26 18:15:46 | INFO     | bot.handlers.models:handle_model_photo:168 - Сохранение фото модели в Cloud Storage: bot_uploads/models/261617302_20260126_181546.jpg
+2026-01-26 18:15:46 | INFO     | bot.handlers.models:handle_model_photo:173 - Фото модели сохранено: gs://try_on_ketly/bot_uploads/models/261617302_20260126_181546.jpg
+2026-01-26 18:15:46 | INFO     | bot.database.repo:add_model:174 - Модель model_1769393746640 добавлена для пользователя 261617302
+2026-01-26 18:15:46 | INFO     | bot.handlers.models:handle_model_photo:180 - Модель model_1769393746640 сохранена в БД
+2026-01-26 18:15:51 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:16:23 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:16:28 | INFO     | bot.handlers.try_on_selection:handle_model_selection_for_try_on:40 - Выбор модели для примерки: user_id=261617302, model_id=model_1769393746640
+2026-01-26 18:16:29 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:16:29 | INFO     | bot.handlers.try_on_selection:handle_model_selection_for_try_on:45 - Найдено моделей: 3, их ID: ['model_1769393746640', 'model_1769391991446', 'model_1769389085844']
+2026-01-26 18:19:31 | INFO     | __main__:main:21 - Запуск Telegram бота...
+2026-01-26 18:19:31 | INFO     | __main__:main:46 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 18:19:31 | INFO     | __main__:main:67 - Проверка подключения к Telegram API...
+2026-01-26 18:19:31 | SUCCESS  | __main__:main:70 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 18:19:31 | INFO     | __main__:main:72 - Бот запущен и готов к работе
+2026-01-26 18:19:36 | INFO     | bot.database.repo:add_user:99 - Пользователь 261617302 добавлен/обновлен в Firestore
+2026-01-26 18:19:36 | INFO     | bot.handlers.start:start_command:35 - Пользователь 261617302 обработан в /start
+2026-01-26 18:19:41 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:19:48 | INFO     | bot.handlers.models:handle_model_delete:471 - Удаление модели: user_id=261617302, model_id=model_1769393746640
+2026-01-26 18:19:48 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:19:48 | INFO     | bot.handlers.models:handle_model_delete:476 - Найдено моделей: 3, их ID: ['model_1769393746640', 'model_1769391991446', 'model_1769389085844']
+2026-01-26 18:19:48 | INFO     | bot.handlers.models:handle_model_delete:491 - Файл модели удален из GCS: gs://try_on_ketly/bot_uploads/models/261617302_20260126_181546.jpg
+2026-01-26 18:19:49 | INFO     | bot.database.repo:delete_model:237 - Модель model_1769393746640 удалена для пользователя 261617302
+2026-01-26 18:19:49 | INFO     | bot.database.repo:get_user_models:201 - Найдено 2 моделей для пользователя 261617302
+2026-01-26 18:20:04 | DEBUG    | bot.middlewares.album:__call__:56 - Сообщение без media_group_id (не альбом): message_id=8336
+2026-01-26 18:20:06 | INFO     | bot.handlers.models:handle_model_photo:170 - Сохранение фото модели в Cloud Storage: bot_uploads/models/261617302_20260126_182006.jpg
+2026-01-26 18:20:06 | INFO     | bot.handlers.models:handle_model_photo:175 - Фото модели сохранено: gs://try_on_ketly/bot_uploads/models/261617302_20260126_182006.jpg
+2026-01-26 18:20:06 | INFO     | bot.database.repo:add_model:174 - Модель model_1769394006545 добавлена для пользователя 261617302
+2026-01-26 18:20:06 | INFO     | bot.handlers.models:handle_model_photo:182 - Модель model_1769394006545 сохранена в БД
+2026-01-26 18:20:13 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:20:22 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:20:29 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:20:33 | INFO     | bot.handlers.try_on_selection:handle_model_selection_for_try_on:40 - Выбор модели для примерки: user_id=261617302, model_id=model_1769391991446
+2026-01-26 18:20:33 | INFO     | bot.database.repo:get_user_models:201 - Найдено 3 моделей для пользователя 261617302
+2026-01-26 18:20:33 | INFO     | bot.handlers.try_on_selection:handle_model_selection_for_try_on:45 - Найдено моделей: 3, их ID: ['model_1769394006545', 'model_1769391991446', 'model_1769389085844']
+2026-01-26 18:20:43 | DEBUG    | bot.middlewares.album:__call__:56 - Сообщение без media_group_id (не альбом): message_id=8354
+2026-01-26 18:20:44 | INFO     | bot.handlers.try_on_processing:handle_garment_photo:223 - Запуск параллельной генерации для 1 фото
+2026-01-26 18:20:45 | INFO     | bot.handlers.try_on_processing:process_single_garment:61 - Загрузка фото одежды 1/1 в GCS: bot_uploads/garments/261617302_20260126_182045_0.jpg
+2026-01-26 18:20:45 | INFO     | bot.handlers.try_on_processing:process_single_garment:70 - Начало генерации примерки 1/1 (garment: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_182045_0.jpg)
+2026-01-26 18:20:45 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 18:20:45 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 18:20:45 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 18:20:46 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 18:20:46 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 18:20:46 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_174631.jpg
+2026-01-26 18:20:46 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_182045_0.jpg

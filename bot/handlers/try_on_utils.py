@@ -1,5 +1,6 @@
 """Вспомогательные функции для примерки."""
 
+import asyncio
 from typing import List
 
 from aiogram import Bot
@@ -9,6 +10,54 @@ from loguru import logger
 
 from bot.services.storage import CloudStorageService
 from bot.keyboards.user_kb import get_back_keyboard, get_model_selection_keyboard
+
+
+async def delete_try_on_selection_messages(
+    bot: Bot,
+    chat_id: int,
+    state: FSMContext,
+) -> None:
+    """
+    Удалить все сообщения выбора модели для примерки (фотографии и сообщение с кнопками).
+    Удаление происходит параллельно.
+
+    Args:
+        bot: Экземпляр бота
+        chat_id: ID чата
+        state: Контекст FSM
+    """
+    state_data = await state.get_data()
+    album_message_ids = state_data.get("album_message_ids", [])
+    selection_message_id = state_data.get("selection_message_id")
+    
+    # Собираем все ID сообщений для удаления
+    message_ids_to_delete = list(album_message_ids)
+    if selection_message_id:
+        message_ids_to_delete.append(selection_message_id)
+    
+    if not message_ids_to_delete:
+        return
+    
+    # Удаляем все сообщения параллельно
+    delete_tasks = []
+    for msg_id in message_ids_to_delete:
+        delete_tasks.append(
+            bot.delete_message(chat_id=chat_id, message_id=msg_id)
+        )
+    
+    # Выполняем удаление параллельно, игнорируем ошибки
+    results = await asyncio.gather(*delete_tasks, return_exceptions=True)
+    
+    # Логируем ошибки, если есть
+    for idx, result in enumerate(results):
+        if isinstance(result, Exception):
+            logger.warning(f"Не удалось удалить сообщение {message_ids_to_delete[idx]}: {result}")
+    
+    # Очищаем данные из FSM
+    await state.update_data(
+        album_message_ids=[],
+        selection_message_id=None,
+    )
 
 
 async def send_models_album(
@@ -55,8 +104,18 @@ async def send_models_album(
             await callback.answer()
             return False
 
+        # Удаляем все предыдущие сообщения выбора модели (если есть)
+        await delete_try_on_selection_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
+        
         # Удаляем исходное сообщение с кнопкой "Примерка"
-        await callback.message.delete()
+        try:
+            await callback.message.delete()
+        except Exception:
+            pass
 
         # Отправляем альбом с фото моделей
         sent_messages = await bot.send_media_group(
@@ -75,7 +134,7 @@ async def send_models_album(
             reply_markup=get_model_selection_keyboard(models, lang),
         )
 
-        # Сохраняем ID сообщения с кнопками для последующего редактирования
+        # Сохраняем ID сообщения с кнопками для последующего удаления
         await state.update_data(selection_message_id=selection_message.message_id)
 
         return True

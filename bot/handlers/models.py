@@ -155,8 +155,10 @@ async def handle_model_photo(
             await message.answer("Не удалось получить фото.")
             return
         
-        # Скачиваем фото
-        await message.answer(get_text("processing", lang))
+        # Отправляем сообщение "Обрабатываю..." и сохраняем его ID
+        processing_message = await message.answer(get_text("processing", lang))
+        processing_message_id = processing_message.message_id
+        
         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
         
         # Генерируем уникальный путь в GCS
@@ -178,6 +180,15 @@ async def handle_model_photo(
             gcs_uri=gcs_uri,
         )
         logger.info(f"Модель {model_id} сохранена в БД")
+        
+        # Удаляем сообщение "Обрабатываю..."
+        try:
+            await bot.delete_message(
+                chat_id=message.from_user.id,
+                message_id=processing_message_id,
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось удалить сообщение 'Обрабатываю...': {e}")
         
         # Сбрасываем состояние
         await state.clear()
@@ -553,7 +564,7 @@ async def handle_back_to_menu(
 ) -> None:
     """
     Обработчик кнопки "Назад".
-    Удаляет все сообщения меню моделей и возвращает в главное меню.
+    Удаляет все сообщения меню моделей/примерки и возвращает в главное меню.
 
     Args:
         callback: Callback запрос
@@ -561,12 +572,36 @@ async def handle_back_to_menu(
         bot: Экземпляр бота
         lang: Язык интерфейса
     """
+    # Импортируем функцию удаления сообщений примерки
+    from bot.handlers.try_on_utils import delete_try_on_selection_messages
+    
+    # Получаем данные из FSM
+    state_data = await state.get_data()
+    
     # Удаляем все сообщения меню моделей (фотографии и сообщение с кнопками)
     await delete_models_menu_messages(
         bot=bot,
         chat_id=callback.from_user.id,
         state=state,
     )
+    
+    # Удаляем все сообщения выбора модели для примерки
+    await delete_try_on_selection_messages(
+        bot=bot,
+        chat_id=callback.from_user.id,
+        state=state,
+    )
+    
+    # Удаляем сообщение с инструкцией "Пришлите фото одежды" (если есть)
+    garment_instruction_message_id = state_data.get("garment_instruction_message_id")
+    if garment_instruction_message_id:
+        try:
+            await bot.delete_message(
+                chat_id=callback.from_user.id,
+                message_id=garment_instruction_message_id,
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
     
     # Очищаем состояние
     await state.clear()

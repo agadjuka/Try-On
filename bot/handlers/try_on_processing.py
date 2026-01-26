@@ -201,11 +201,23 @@ async def handle_garment_photo(
         garment_messages = garment_messages[:5]
         photo_count = len(garment_messages)
 
-        # Уведомляем пользователя
-        await message.answer(
+        # Удаляем сообщение с инструкцией "Пришлите фото одежды" (если есть)
+        garment_instruction_message_id = state_data.get("garment_instruction_message_id")
+        if garment_instruction_message_id:
+            try:
+                await bot.delete_message(
+                    chat_id=message.from_user.id,
+                    message_id=garment_instruction_message_id,
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
+
+        # Уведомляем пользователя и сохраняем ID сообщения для последующего удаления
+        processing_message = await message.answer(
             f"📸 Получено {photo_count} фото. Начинаю примерку...\n"
             "⏳ Это займет 15-20 секунд."
         )
+        processing_message_id = processing_message.message_id
 
         # Запускаем обработку всех фото параллельно
         logger.info(f"Запуск параллельной генерации для {photo_count} фото")
@@ -236,6 +248,15 @@ async def handle_garment_photo(
                 successful_results.append(result)
             else:
                 failed_count += 1
+
+        # Удаляем сообщение "Начинаю примерку..."
+        try:
+            await bot.delete_message(
+                chat_id=message.from_user.id,
+                message_id=processing_message_id,
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось удалить сообщение 'Начинаю примерку...': {e}")
 
         # Отправляем результаты пользователю
         if not successful_results:

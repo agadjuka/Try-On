@@ -54,54 +54,32 @@ async def handle_model_selection_for_try_on(
             await callback.answer("Модель не найдена")
             return
 
-        # Получаем данные из FSM
-        state_data = await state.get_data()
-        album_message_ids = state_data.get("album_message_ids", [])
-        selection_message_id = state_data.get("selection_message_id")
-
-        # Удаляем альбом с фотографиями моделей
-        for msg_id in album_message_ids:
-            try:
-                await bot.delete_message(
-                    chat_id=callback.from_user.id,
-                    message_id=msg_id,
-                )
-            except Exception as e:
-                logger.warning(f"Не удалось удалить сообщение {msg_id}: {e}")
+        # Импортируем функцию удаления
+        from bot.handlers.try_on_utils import delete_try_on_selection_messages
+        
+        # Удаляем все сообщения выбора модели (фотографии и сообщение с кнопками) параллельно
+        await delete_try_on_selection_messages(
+            bot=bot,
+            chat_id=callback.from_user.id,
+            state=state,
+        )
 
         # Сохраняем выбранную модель в FSM
         await state.update_data(selected_model_gcs_uri=selected_model.gcs_uri)
         await state.set_state(TryOnStates.waiting_for_garment_photo)
 
-        # Редактируем сообщение с кнопками, заменяя его на инструкцию
-        instruction_text = (
-            "📸 Пришлите фото одежды (до 5 штук).\n\n"
-            "Можно отправить одно фото или несколько фото одним альбомом."
+        # Отправляем новое сообщение с инструкцией
+        instruction_message = await bot.send_message(
+            chat_id=callback.from_user.id,
+            text=(
+                "📸 Пришлите фото одежды (до 5 штук).\n\n"
+                "Можно отправить одно фото или несколько фото одним альбомом."
+            ),
+            reply_markup=get_back_keyboard(lang),
         )
-
-        if selection_message_id:
-            try:
-                await bot.edit_message_text(
-                    chat_id=callback.from_user.id,
-                    message_id=selection_message_id,
-                    text=instruction_text,
-                    reply_markup=get_back_keyboard(lang),
-                )
-            except Exception as e:
-                logger.error(f"Ошибка при редактировании сообщения: {e}")
-                # Если не удалось отредактировать, отправляем новое
-                await bot.send_message(
-                    chat_id=callback.from_user.id,
-                    text=instruction_text,
-                    reply_markup=get_back_keyboard(lang),
-                )
-        else:
-            # Если ID сообщения не найден, отправляем новое
-            await bot.send_message(
-                chat_id=callback.from_user.id,
-                text=instruction_text,
-                reply_markup=get_back_keyboard(lang),
-            )
+        
+        # Сохраняем ID сообщения с инструкцией для последующего удаления
+        await state.update_data(garment_instruction_message_id=instruction_message.message_id)
 
         await callback.answer("Модель выбрана")
 
