@@ -114,11 +114,21 @@ async def handle_model_photo(
         await message.answer("Загружаю фото модели...")
         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
         
-        # Кодируем в base64 (как в старой версии)
-        photo_base64 = base64.b64encode(photo_bytes).decode("utf-8")
+        # Генерируем уникальный путь в GCS
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        user_id = message.from_user.id
+        destination_path = f"bot_uploads/models/{user_id}_{timestamp}.jpg"
         
-        # Сохраняем base64 в FSM (не загружаем в GCS перед запросом)
-        await state.update_data(model_base64=photo_base64)
+        # Загружаем фото модели в Cloud Storage
+        logger.info(f"Сохранение фото модели в Cloud Storage: {destination_path}")
+        gcs_uri = await storage_service.upload_image(
+            file_bytes=photo_bytes,
+            destination_path=destination_path,
+        )
+        logger.info(f"Фото модели сохранено: {gcs_uri}")
+        
+        # Сохраняем GCS URI в FSM
+        await state.update_data(model_gcs_uri=gcs_uri)
         
         # Переключаем состояние
         await state.set_state(GenStates.waiting_for_garment)
@@ -156,9 +166,9 @@ async def handle_garment_photo(
     try:
         # Получаем данные из FSM
         data = await state.get_data()
-        model_base64 = data.get("model_base64")
+        model_gcs_uri = data.get("model_gcs_uri")
         
-        if not model_base64:
+        if not model_gcs_uri:
             await message.answer(
                 "Не найдено фото модели. Нажми /start для начала."
             )
@@ -193,18 +203,28 @@ async def handle_garment_photo(
         # Скачиваем фото одежды
         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
         
-        # Кодируем в base64 (как в старой версии)
-        garment_base64 = base64.b64encode(photo_bytes).decode("utf-8")
+        # Генерируем уникальный путь в GCS
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        user_id = message.from_user.id
+        destination_path = f"bot_uploads/garments/{user_id}_{timestamp}.jpg"
+        
+        # Загружаем фото одежды в Cloud Storage
+        logger.info(f"Сохранение фото одежды в Cloud Storage: {destination_path}")
+        garment_gcs_uri = await storage_service.upload_image(
+            file_bytes=photo_bytes,
+            destination_path=destination_path,
+        )
+        logger.info(f"Фото одежды сохранено: {garment_gcs_uri}")
         
         # Логируем перед вызовом API
         logger.info("=" * 60)
-        logger.info("ВЫЗОВ generate_try_on - ОДИН РАЗ")
+        logger.info("ВЫЗОВ generate_try_on с GCS URI - ОДИН РАЗ")
         logger.info("=" * 60)
         
-        # Генерируем try-on используя base64 (как в старой версии)
+        # Генерируем try-on используя GCS URI
         result_gcs_uri = await try_on_service.generate_try_on(
-            person_image_base64=model_base64,
-            product_image_base64=garment_base64,
+            person_gcs_uri=model_gcs_uri,
+            garment_gcs_uri=garment_gcs_uri,
             storage_service=storage_service,
         )
         

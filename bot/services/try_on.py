@@ -77,8 +77,8 @@ class VertexTryOnService:
 
     def _build_request_body(
         self,
-        person_image_base64: str,
-        product_image_base64: str,
+        person_gcs_uri: str,
+        garment_gcs_uri: str,
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = True,
@@ -90,11 +90,11 @@ class VertexTryOnService:
         seed: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        Создать тело запроса для API с использованием base64 (как в старой версии).
+        Создать тело запроса для API с использованием GCS URI.
 
         Args:
-            person_image_base64: Base64-encoded изображение модели
-            product_image_base64: Base64-encoded изображение одежды
+            person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
+            garment_gcs_uri: URI изображения одежды в GCS (gs://bucket/path)
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
             add_watermark: Добавлять водяной знак (по умолчанию: True)
@@ -113,13 +113,13 @@ class VertexTryOnService:
                 {
                     "personImage": {
                         "image": {
-                            "bytesBase64Encoded": person_image_base64
+                            "gcsUri": person_gcs_uri
                         }
                     },
                     "productImages": [
                         {
                             "image": {
-                                "bytesBase64Encoded": product_image_base64
+                                "gcsUri": garment_gcs_uri
                             }
                         }
                     ]
@@ -152,19 +152,19 @@ class VertexTryOnService:
 
     async def generate_try_on(
         self,
-        person_image_base64: str,
-        product_image_base64: str,
+        person_gcs_uri: str,
+        garment_gcs_uri: str,
         storage_service: CloudStorageService,
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = True,
     ) -> str:
         """
-        Генерировать изображение примерки асинхронно (используя base64 как в старой версии).
+        Генерировать изображение примерки асинхронно (используя GCS URI).
 
         Args:
-            person_image_base64: Base64-encoded изображение модели
-            product_image_base64: Base64-encoded изображение одежды
+            person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
+            garment_gcs_uri: URI изображения одежды в GCS (gs://bucket/path)
             storage_service: Сервис для загрузки результата в GCS
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
@@ -179,13 +179,13 @@ class VertexTryOnService:
         """
         # Логируем начало генерации для отслеживания
         logger.info("=" * 60)
-        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON")
+        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI")
         logger.info("=" * 60)
         
         access_token = self._get_access_token()
         request_body = self._build_request_body(
-            person_image_base64=person_image_base64,
-            product_image_base64=product_image_base64,
+            person_gcs_uri=person_gcs_uri,
+            garment_gcs_uri=garment_gcs_uri,
             base_steps=base_steps,
             sample_count=sample_count,
             add_watermark=add_watermark,
@@ -198,8 +198,8 @@ class VertexTryOnService:
 
         api_url = self._get_api_url()
         logger.info(f"Отправка ОДНОГО запроса к Vertex AI API: {api_url}")
-        logger.debug(f"Person image size (base64): {len(person_image_base64)} символов")
-        logger.debug(f"Product image size (base64): {len(product_image_base64)} символов")
+        logger.info(f"Person GCS URI: {person_gcs_uri}")
+        logger.info(f"Garment GCS URI: {garment_gcs_uri}")
 
         # Используем синхронный requests через asyncio.to_thread, как в старой версии
         def _make_request() -> dict:

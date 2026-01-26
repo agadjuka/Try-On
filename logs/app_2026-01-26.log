@@ -121,3 +121,97 @@
 }
 2026-01-26 16:15:53 | ERROR    | bot.services.try_on:generate_try_on:277 - Ошибка при запросе к API: 429 Client Error: Too Many Requests for url: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict
 2026-01-26 16:15:53 | ERROR    | __main__:handle_garment_photo:243 - Ошибка API при генерации: Ошибка API: 429 Client Error: Too Many Requests for url: https://asia-southeast1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/asia-southeast1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 429, 'message': 'Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: virtual-try-on-001. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-26 16:16:48 | INFO     | __main__:main:301 - Запуск тестового бота...
+2026-01-26 16:16:48 | INFO     | __main__:main:326 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 16:16:48 | INFO     | __main__:main:366 - Проверка подключения к Telegram API...
+2026-01-26 16:16:49 | SUCCESS  | __main__:main:369 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:16:49 | INFO     | __main__:main:370 - Бот запущен и готов к работе
+2026-01-26 16:16:57 | INFO     | __main__:handle_garment_photo:200 - ============================================================
+2026-01-26 16:16:57 | INFO     | __main__:handle_garment_photo:201 - ВЫЗОВ generate_try_on - ОДИН РАЗ
+2026-01-26 16:16:57 | INFO     | __main__:handle_garment_photo:202 - ============================================================
+2026-01-26 16:16:57 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 16:16:57 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON
+2026-01-26 16:16:57 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 16:16:58 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:16:58 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:16:58 | DEBUG    | bot.services.try_on:generate_try_on:201 - Person image size (base64): 100708 символов
+2026-01-26 16:16:58 | DEBUG    | bot.services.try_on:generate_try_on:202 - Product image size (base64): 127472 символов
+2026-01-26 16:17:14 | INFO     | bot.services.try_on:generate_try_on:231 - Получено 1 результатов
+2026-01-26 16:17:14 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_161714_806734fb.png
+2026-01-26 16:17:15 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_161714_806734fb.png
+2026-01-26 16:17:15 | INFO     | __main__:handle_garment_photo:211 - ============================================================
+2026-01-26 16:17:15 | INFO     | __main__:handle_garment_photo:212 - generate_try_on ЗАВЕРШЕН УСПЕШНО
+2026-01-26 16:17:15 | INFO     | __main__:handle_garment_photo:213 - ============================================================
+2026-01-26 16:18:22 | INFO     | __main__:main:301 - Запуск тестового бота...
+2026-01-26 16:18:22 | INFO     | __main__:main:326 - Конфигурация загружена. Project ID: carrental-480202
+2026-01-26 16:18:22 | INFO     | __main__:main:366 - Проверка подключения к Telegram API...
+2026-01-26 16:18:22 | SUCCESS  | __main__:main:369 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:18:22 | INFO     | __main__:main:370 - Бот запущен и готов к работе
+2026-01-26 16:18:34 | INFO     | __main__:handle_garment_photo:200 - ============================================================
+2026-01-26 16:18:34 | INFO     | __main__:handle_garment_photo:201 - ВЫЗОВ generate_try_on - ОДИН РАЗ
+2026-01-26 16:18:34 | INFO     | __main__:handle_garment_photo:202 - ============================================================
+2026-01-26 16:18:34 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 16:18:34 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON
+2026-01-26 16:18:34 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 16:18:34 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:18:34 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:18:34 | DEBUG    | bot.services.try_on:generate_try_on:201 - Person image size (base64): 100708 символов
+2026-01-26 16:18:34 | DEBUG    | bot.services.try_on:generate_try_on:202 - Product image size (base64): 127472 символов
+2026-01-26 16:18:36 | ERROR    | bot.services.try_on:generate_try_on:272 - Детали ошибки: {
+  "error": {
+    "code": 429,
+    "message": "Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: virtual-try-on-001. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.",
+    "status": "RESOURCE_EXHAUSTED"
+  }
+}
+2026-01-26 16:18:36 | ERROR    | bot.services.try_on:generate_try_on:277 - Ошибка при запросе к API: 429 Client Error: Too Many Requests for url: https://us-central1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:18:36 | ERROR    | __main__:handle_garment_photo:243 - Ошибка API при генерации: Ошибка API: 429 Client Error: Too Many Requests for url: https://us-central1-aiplatform.googleapis.com/v1/projects/carrental-480202/locations/us-central1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 429, 'message': 'Quota exceeded for aiplatform.googleapis.com/online_prediction_requests_per_base_model with base model: virtual-try-on-001. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.', 'status': 'RESOURCE_EXHAUSTED'}}
+2026-01-26 16:22:18 | INFO     | __main__:main:301 - Запуск тестового бота...
+2026-01-26 16:22:18 | INFO     | __main__:main:326 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 16:22:18 | INFO     | __main__:main:366 - Проверка подключения к Telegram API...
+2026-01-26 16:22:19 | SUCCESS  | __main__:main:369 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:22:19 | INFO     | __main__:main:370 - Бот запущен и готов к работе
+2026-01-26 16:22:35 | INFO     | __main__:handle_garment_photo:200 - ============================================================
+2026-01-26 16:22:35 | INFO     | __main__:handle_garment_photo:201 - ВЫЗОВ generate_try_on - ОДИН РАЗ
+2026-01-26 16:22:35 | INFO     | __main__:handle_garment_photo:202 - ============================================================
+2026-01-26 16:22:35 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 16:22:35 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON
+2026-01-26 16:22:35 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 16:22:36 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:22:36 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:22:36 | DEBUG    | bot.services.try_on:generate_try_on:201 - Person image size (base64): 100708 символов
+2026-01-26 16:22:36 | DEBUG    | bot.services.try_on:generate_try_on:202 - Product image size (base64): 127472 символов
+2026-01-26 16:22:51 | INFO     | bot.services.try_on:generate_try_on:231 - Получено 1 результатов
+2026-01-26 16:22:51 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_162251_277f85dd.png
+2026-01-26 16:22:53 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_162251_277f85dd.png
+2026-01-26 16:22:53 | INFO     | __main__:handle_garment_photo:211 - ============================================================
+2026-01-26 16:22:53 | INFO     | __main__:handle_garment_photo:212 - generate_try_on ЗАВЕРШЕН УСПЕШНО
+2026-01-26 16:22:53 | INFO     | __main__:handle_garment_photo:213 - ============================================================
+2026-01-26 16:29:44 | INFO     | __main__:main:321 - Запуск тестового бота...
+2026-01-26 16:29:44 | INFO     | __main__:main:346 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 16:29:44 | INFO     | __main__:main:386 - Проверка подключения к Telegram API...
+2026-01-26 16:29:45 | SUCCESS  | __main__:main:389 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 16:29:45 | INFO     | __main__:main:390 - Бот запущен и готов к работе
+2026-01-26 16:29:53 | INFO     | __main__:handle_model_photo:123 - Сохранение фото модели в Cloud Storage: bot_uploads/models/261617302_20260126_162953.jpg
+2026-01-26 16:29:54 | INFO     | __main__:handle_model_photo:128 - Фото модели сохранено: gs://try_on_ketly/bot_uploads/models/261617302_20260126_162953.jpg
+2026-01-26 16:30:01 | INFO     | __main__:handle_garment_photo:212 - Сохранение фото одежды в Cloud Storage: bot_uploads/garments/261617302_20260126_163001.jpg
+2026-01-26 16:30:01 | INFO     | __main__:handle_garment_photo:217 - Фото одежды сохранено: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_163001.jpg
+2026-01-26 16:30:01 | INFO     | __main__:handle_garment_photo:220 - ============================================================
+2026-01-26 16:30:01 | INFO     | __main__:handle_garment_photo:221 - ВЫЗОВ generate_try_on с GCS URI - ОДИН РАЗ
+2026-01-26 16:30:01 | INFO     | __main__:handle_garment_photo:222 - ============================================================
+2026-01-26 16:30:01 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 16:30:01 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 16:30:01 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 16:30:02 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 16:30:02 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:30:02 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_162953.jpg
+2026-01-26 16:30:02 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_163001.jpg
+2026-01-26 16:30:04 | ERROR    | bot.services.try_on:generate_try_on:272 - Детали ошибки: {
+  "error": {
+    "code": 403,
+    "message": "Image editing failed with the following error: cloud-lvm@prod.google.com does not have storage.objects.get access to the Google Cloud Storage object. Permission 'storage.objects.get' denied on resource (or it may not exist). cloud-lvm@prod.google.com does not have storage.objects.get access to the Google Cloud Storage object. Permission 'storage.objects.get' denied on resource (or it may not exist).; ",
+    "status": "PERMISSION_DENIED"
+  }
+}
+2026-01-26 16:30:04 | ERROR    | bot.services.try_on:generate_try_on:277 - Ошибка при запросе к API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 16:30:04 | ERROR    | __main__:handle_garment_photo:263 - Ошибка API при генерации: Ошибка API: 403 Client Error: Forbidden for url: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict. Детали: {'error': {'code': 403, 'message': "Image editing failed with the following error: cloud-lvm@prod.google.com does not have storage.objects.get access to the Google Cloud Storage object. Permission 'storage.objects.get' denied on resource (or it may not exist). cloud-lvm@prod.google.com does not have storage.objects.get access to the Google Cloud Storage object. Permission 'storage.objects.get' denied on resource (or it may not exist).; ", 'status': 'PERMISSION_DENIED'}}
