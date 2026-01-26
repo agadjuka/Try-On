@@ -1,6 +1,5 @@
 """Вспомогательные функции для примерки."""
 
-import asyncio
 from typing import List
 
 from aiogram import Bot
@@ -10,6 +9,8 @@ from loguru import logger
 
 from bot.services.storage import CloudStorageService
 from bot.keyboards.user_kb import get_back_keyboard, get_model_selection_keyboard
+from bot.locales.texts import get_text
+from bot.utils.message_utils import delete_messages
 
 
 async def delete_try_on_selection_messages(
@@ -19,7 +20,6 @@ async def delete_try_on_selection_messages(
 ) -> None:
     """
     Удалить все сообщения выбора модели для примерки (фотографии и сообщение с кнопками).
-    Удаление происходит параллельно.
 
     Args:
         bot: Экземпляр бота
@@ -30,28 +30,11 @@ async def delete_try_on_selection_messages(
     album_message_ids = state_data.get("album_message_ids", [])
     selection_message_id = state_data.get("selection_message_id")
     
-    # Собираем все ID сообщений для удаления
     message_ids_to_delete = list(album_message_ids)
     if selection_message_id:
         message_ids_to_delete.append(selection_message_id)
     
-    if not message_ids_to_delete:
-        return
-    
-    # Удаляем все сообщения параллельно
-    delete_tasks = []
-    for msg_id in message_ids_to_delete:
-        delete_tasks.append(
-            bot.delete_message(chat_id=chat_id, message_id=msg_id)
-        )
-    
-    # Выполняем удаление параллельно, игнорируем ошибки
-    results = await asyncio.gather(*delete_tasks, return_exceptions=True)
-    
-    # Логируем ошибки, если есть
-    for idx, result in enumerate(results):
-        if isinstance(result, Exception):
-            logger.warning(f"Не удалось удалить сообщение {message_ids_to_delete[idx]}: {result}")
+    await delete_messages(bot, chat_id, message_ids_to_delete)
     
     # Очищаем данные из FSM
     # Важно: сохраняем существующие try_on_result_album_message_ids, чтобы не удалить фотографии результата
@@ -86,22 +69,13 @@ async def send_models_album(
         True если успешно, False иначе
     """
     try:
-        media_group = []
-        for idx, model in enumerate(models):
-            try:
-                # Скачиваем фото из GCS
-                photo_bytes = await storage_service.download_file(model.gcs_uri)
-                photo_file = BufferedInputFile(
-                    file=photo_bytes,
-                    filename=f"model_{idx + 1}.jpg",
-                )
-                media_group.append(InputMediaPhoto(media=photo_file, caption=None))
-            except Exception as e:
-                logger.error(f"Ошибка при загрузке фото модели {idx + 1}: {e}")
+        from bot.utils.model_utils import prepare_models_media_group
+        
+        media_group = await prepare_models_media_group(models, storage_service)
 
         if not media_group:
             await callback.message.edit_text(
-                "❌ Не удалось загрузить фото моделей.",
+                get_text("models_album_error", lang),
                 reply_markup=get_back_keyboard(lang),
             )
             await callback.answer()
@@ -142,7 +116,6 @@ async def send_models_album(
         logger.info(f"Восстановили ID фотографий результата после отправки альбома моделей: {existing_result_album_ids}")
 
         # Отправляем сообщение с кнопками (после фотографий)
-        from bot.locales.texts import get_text
         from bot.states.user_states import TryOnStates
         
         selection_message = await bot.send_message(

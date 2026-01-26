@@ -81,6 +81,70 @@ TEXTS = {
         "ru": "📸 Пришлите ваше фото для примерки:",
         "en": "📸 Send your photo for try-on:",
     },
+    "my_photos_title": {
+        "ru": "👤 Ваши фото:",
+        "en": "👤 Your photos:",
+    },
+    "try_on_garment_instr": {
+        "ru": "📸 Пришлите фото одежды (до 5 штук).\n\nМожно отправить одно фото или несколько фото одним сообщением.",
+        "en": "📸 Send photos of clothing (up to 5).\n\nYou can send one photo or several photos in one message.",
+    },
+    "try_on_ready": {
+        "ru": "✅ Примерка готова!",
+        "en": "✅ Try-on ready!",
+    },
+    "models_load_error": {
+        "ru": "Произошла ошибка при загрузке моделей.",
+        "en": "An error occurred while loading models.",
+    },
+    "model_gallery_error": {
+        "ru": "Ошибка при загрузке фото модели.",
+        "en": "Error loading model photo.",
+    },
+    "send_photo_please": {
+        "ru": "Пожалуйста, отправьте фото.",
+        "en": "Please send a photo.",
+    },
+    "photo_get_error": {
+        "ru": "Не удалось получить фото.",
+        "en": "Failed to get photo.",
+    },
+    "no_photos": {
+        "ru": "Нет фото",
+        "en": "No photos",
+    },
+    "unknown_command": {
+        "ru": "Неизвестная команда",
+        "en": "Unknown command",
+    },
+    "list_end": {
+        "ru": "Достигнут конец списка",
+        "en": "End of list reached",
+    },
+    "navigation_error": {
+        "ru": "Ошибка при навигации",
+        "en": "Navigation error",
+    },
+    "invalid_data_format": {
+        "ru": "Неверный формат данных",
+        "en": "Invalid data format",
+    },
+    "photo_not_found": {
+        "ru": "Фото не найдено",
+        "en": "Photo not found",
+    },
+    "models_album_error": {
+        "ru": "❌ Не удалось загрузить фото моделей.",
+        "en": "❌ Failed to load model photos.",
+    },
+    "photo_selected": {
+        "ru": "Фото выбрано",
+        "en": "Photo selected",
+    },
+    "error_occurred": {
+        "ru": "Произошла ошибка",
+        "en": "An error occurred",
+    },
 }
 
 

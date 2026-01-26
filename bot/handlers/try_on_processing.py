@@ -10,6 +10,7 @@ from loguru import logger
 
 from bot.services.try_on import VertexTryOnService
 from bot.keyboards.user_kb import get_try_on_result_keyboard, get_main_menu_keyboard
+from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 
 
@@ -143,9 +144,8 @@ async def send_try_on_results(
         )
         logger.info(f"Фото результата отправлено, message_id: {photo_message.message_id}")
         
-        # Отправляем текст с кнопками ОТДЕЛЬНО
         result_message = await message.answer(
-            text="✅ Примерка готова!",
+            text=get_text("try_on_ready", lang),
             reply_markup=get_try_on_result_keyboard(lang),
         )
         logger.info(f"Сообщение с кнопками отправлено, message_id: {result_message.message_id}")
