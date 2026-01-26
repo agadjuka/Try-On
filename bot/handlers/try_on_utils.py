@@ -54,9 +54,12 @@ async def delete_try_on_selection_messages(
             logger.warning(f"Не удалось удалить сообщение {message_ids_to_delete[idx]}: {result}")
     
     # Очищаем данные из FSM
+    # Важно: сохраняем существующие try_on_result_album_message_ids, чтобы не удалить фотографии результата
+    existing_result_album_ids = state_data.get("try_on_result_album_message_ids", [])
     await state.update_data(
         album_message_ids=[],
         selection_message_id=None,
+        try_on_result_album_message_ids=existing_result_album_ids,  # Сохраняем фотографии результата
     )
 
 
@@ -117,6 +120,12 @@ async def send_models_album(
         except Exception:
             pass
 
+        # Сохраняем существующие try_on_result_album_message_ids ПЕРЕД отправкой нового альбома
+        # Это важно, чтобы не потерять ID фотографий результата
+        state_data_before = await state.get_data()
+        existing_result_album_ids = state_data_before.get("try_on_result_album_message_ids", [])
+        logger.info(f"Сохраняем ID фотографий результата перед отправкой альбома моделей: {existing_result_album_ids}")
+        
         # Отправляем альбом с фото моделей
         sent_messages = await bot.send_media_group(
             chat_id=callback.from_user.id,
@@ -124,8 +133,13 @@ async def send_models_album(
         )
 
         # Сохраняем ID сообщений альбома в FSM для последующего удаления
+        # Важно: сохраняем существующие try_on_result_album_message_ids, чтобы не удалить фотографии результата
         album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
-        await state.update_data(album_message_ids=album_message_ids)
+        await state.update_data(
+            album_message_ids=album_message_ids,
+            try_on_result_album_message_ids=existing_result_album_ids,  # Сохраняем фотографии результата
+        )
+        logger.info(f"Восстановили ID фотографий результата после отправки альбома моделей: {existing_result_album_ids}")
 
         # Отправляем сообщение с кнопками (после фотографий)
         from bot.locales.texts import get_text

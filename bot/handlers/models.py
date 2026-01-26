@@ -636,6 +636,17 @@ async def handle_back_to_menu(
         except Exception as e:
             logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
     
+    # Удаляем только сообщение с кнопками результата примерки (фотографии остаются в чате)
+    result_message_id = state_data.get("try_on_result_message_id")
+    if result_message_id:
+        try:
+            await bot.delete_message(
+                chat_id=callback.from_user.id,
+                message_id=result_message_id,
+            )
+        except Exception as e:
+            logger.warning(f"Не удалось удалить сообщение с кнопками результата: {e}")
+    
     # Очищаем состояние
     await state.clear()
     

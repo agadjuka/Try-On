@@ -135,36 +135,24 @@ async def handle_new_try_on_callback(
         # Получаем данные из FSM
         state_data = await state.get_data()
         
-        # Удаляем сообщение с результатом примерки
-        result_message_id = state_data.get("try_on_result_message_id")
+        # Сохраняем ID фотографий результата, чтобы они не удалились
         result_album_message_ids = state_data.get("try_on_result_album_message_ids", [])
+        logger.info(f"Сохраняем ID фотографий результата перед обработкой: {result_album_message_ids}")
         
-        # Собираем все ID сообщений для удаления
-        message_ids_to_delete = list(result_album_message_ids)
+        # Удаляем только сообщение с кнопками (фотографии результата остаются в чате)
+        result_message_id = state_data.get("try_on_result_message_id")
+        
         if result_message_id:
-            message_ids_to_delete.append(result_message_id)
-        
-        # Удаляем все сообщения с результатом параллельно
-        import asyncio
-        delete_tasks = []
-        for msg_id in message_ids_to_delete:
-            delete_tasks.append(
-                bot.delete_message(chat_id=callback.from_user.id, message_id=msg_id)
-            )
-        
-        if delete_tasks:
-            results = await asyncio.gather(*delete_tasks, return_exceptions=True)
-            for idx, result in enumerate(results):
-                if isinstance(result, Exception):
-                    logger.warning(f"Не удалось удалить сообщение {message_ids_to_delete[idx]}: {result}")
-        
-        # Очищаем данные результата из FSM
-        await state.update_data(
-            try_on_result_message_id=None,
-            try_on_result_album_message_ids=[],
-        )
+            try:
+                await bot.delete_message(
+                    chat_id=callback.from_user.id,
+                    message_id=result_message_id,
+                )
+            except Exception as e:
+                logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
         
         # Удаляем все предыдущие сообщения выбора модели (если есть)
+        # Важно: это удаляет только album_message_ids (фотографии моделей), не try_on_result_album_message_ids
         await delete_try_on_selection_messages(
             bot=bot,
             chat_id=callback.from_user.id,
@@ -180,6 +168,14 @@ async def handle_new_try_on_callback(
         except Exception:
             pass
         
+        # Восстанавливаем ID фотографий результата в FSM (чтобы они не удалились)
+        # Очищаем только ID сообщения с кнопками
+        await state.update_data(
+            try_on_result_message_id=None,
+            try_on_result_album_message_ids=result_album_message_ids,  # Восстанавливаем
+        )
+        logger.info(f"Восстановили ID фотографий результата в FSM после удаления сообщений: {result_album_message_ids}")
+        
         if not models:
             # Если нет моделей - просим прислать фото
             from bot.locales.texts import get_text
@@ -192,9 +188,11 @@ async def handle_new_try_on_callback(
             )
             
             # Сохраняем ID сообщения с инструкцией для последующего удаления
+            # Сохраняем существующие try_on_result_album_message_ids, чтобы не удалить фотографии результата
             await state.update_data(
                 selection_message_id=instruction_message.message_id,
                 album_message_ids=[],
+                try_on_result_album_message_ids=result_album_message_ids,  # Сохраняем фотографии результата
             )
             
             # Устанавливаем состояние ожидания фото модели

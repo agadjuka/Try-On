@@ -84,7 +84,7 @@ class VertexTryOnService:
         person_generation: str = "allow_adult",
         safety_setting: str = "block_medium_and_above",
         output_mime_type: str = "image/png",
-        compression_quality: int = 75,
+        compression_quality: int = 0,
         storage_uri: Optional[str] = None,
         seed: Optional[int] = None,
     ) -> Dict[str, Any]:
