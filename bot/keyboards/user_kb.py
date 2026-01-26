@@ -43,7 +43,6 @@ def get_gallery_keyboard(
     current_index: int,
     total_count: int,
     model_id: str,
-    is_active: bool,
     lang: str = "ru"
 ) -> InlineKeyboardMarkup:
     """
@@ -53,7 +52,6 @@ def get_gallery_keyboard(
         current_index: Текущий индекс (0-based)
         total_count: Общее количество моделей
         model_id: ID текущей модели
-        is_active: Активна ли текущая модель
         lang: Язык интерфейса
 
     Returns:
@@ -77,13 +75,40 @@ def get_gallery_keyboard(
         builder.adjust(len(nav_row))
     
     builder.button(
-        text=get_text("select", lang) if not is_active else "✅ Активна",
-        callback_data=f"model_select_{model_id}",
-    )
-    builder.button(
         text=get_text("delete", lang),
         callback_data=f"model_delete_{model_id}",
     )
+    builder.button(
+        text=get_text("back", lang),
+        callback_data="back_to_menu",
+    )
+    
+    builder.adjust(1)  # По одной кнопке в ряд
+    return builder.as_markup()
+
+
+def get_model_selection_keyboard(
+    models: list,
+    lang: str = "ru"
+) -> InlineKeyboardMarkup:
+    """
+    Получить клавиатуру для выбора модели при примерке.
+
+    Args:
+        models: Список моделей
+        lang: Язык интерфейса
+
+    Returns:
+        Inline клавиатура с кнопками выбора модели
+    """
+    builder = InlineKeyboardBuilder()
+    
+    for idx, model in enumerate(models):
+        builder.button(
+            text=f"Модель {idx + 1}",
+            callback_data=f"try_on_select_model_{model.id}",
+        )
+    
     builder.button(
         text=get_text("back", lang),
         callback_data="back_to_menu",

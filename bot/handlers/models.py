@@ -132,11 +132,6 @@ async def handle_model_photo(
         )
         logger.info(f"Модель {model_id} сохранена в БД")
         
-        # Если это первая модель, делаем её активной
-        models = await repo.get_user_models(user_id)
-        if len(models) == 1:
-            await repo.set_active_model(user_id, model_id)
-        
         # Сбрасываем состояние
         await state.clear()
         
@@ -248,7 +243,6 @@ async def show_model_in_gallery(
             current_index=current_index,
             total_count=len(models),
             model_id=model.id,
-            is_active=model.is_active,
             lang=lang,
         )
         
@@ -321,51 +315,6 @@ async def handle_model_navigation(
     except Exception as e:
         logger.error(f"Ошибка при навигации по моделям: {e}")
         await callback.answer("Ошибка при навигации")
-
-
-async def handle_model_select(
-    callback: CallbackQuery,
-    repo: FirestoreRepo,
-    bot: Bot,
-    storage_service: CloudStorageService,
-    lang: str = "ru",
-) -> None:
-    """
-    Обработчик выбора активной модели.
-
-    Args:
-        callback: Callback запрос
-        repo: Репозиторий для работы с БД
-        bot: Экземпляр бота
-        storage_service: Сервис для работы с GCS
-        lang: Язык интерфейса
-    """
-    user_id = str(callback.from_user.id)
-    model_id = callback.data.split("_")[-1]
-    
-    try:
-        await repo.set_active_model(user_id, model_id)
-        
-        # Обновляем галерею
-        models = await repo.get_user_models(user_id)
-        current_model = next((m for m in models if m.id == model_id), None)
-        
-        if current_model:
-            current_index = models.index(current_model)
-            await show_model_in_gallery(
-                message=callback.message,
-                bot=bot,
-                models=models,
-                current_index=current_index,
-                storage_service=storage_service,
-                lang=lang,
-            )
-        
-        await callback.answer(get_text("model_set_active", lang))
-        
-    except Exception as e:
-        logger.error(f"Ошибка при выборе модели: {e}")
-        await callback.answer(get_text("set_active_error", lang))
 
 
 async def handle_model_delete(

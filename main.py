@@ -12,6 +12,7 @@ from bot.core.logger import setup_logger
 from bot.database.repo import FirestoreRepo
 from bot.handlers.router import setup_handlers
 from bot.services.storage import CloudStorageService
+from bot.services.try_on import VertexTryOnService
 
 
 async def main() -> None:
@@ -47,6 +48,7 @@ async def main() -> None:
     # Инициализируем сервисы
     repo = FirestoreRepo(settings)
     storage_service = CloudStorageService(settings)
+    try_on_service = VertexTryOnService(settings)
 
     # Создаем бота и диспетчер
     bot = Bot(token=settings.bot_token)
@@ -58,6 +60,7 @@ async def main() -> None:
         bot=bot,
         repo=repo,
         storage_service=storage_service,
+        try_on_service=try_on_service,
     )
 
     try:

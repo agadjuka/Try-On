@@ -6,8 +6,10 @@ from aiogram.fsm.context import FSMContext
 
 from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
-from bot.states.user_states import ModelStates
-from bot.handlers import start, models
+from bot.services.try_on import VertexTryOnService
+from bot.states.user_states import ModelStates, TryOnStates
+from bot.handlers import start, models, try_on
+from bot.middlewares.album import AlbumMiddleware
 
 
 def setup_handlers(
@@ -15,6 +17,7 @@ def setup_handlers(
     bot,
     repo: FirestoreRepo,
     storage_service: CloudStorageService,
+    try_on_service: VertexTryOnService,
 ) -> None:
     """
     Настроить все хендлеры.
@@ -24,8 +27,13 @@ def setup_handlers(
         bot: Экземпляр бота
         repo: Репозиторий для работы с БД
         storage_service: Сервис для работы с GCS
+        try_on_service: Сервис для генерации примерки
     """
     lang = "ru"  # TODO: получать из настроек пользователя
+    
+    # Регистрируем middleware для альбомов
+    album_middleware = AlbumMiddleware(delay=0.8)
+    router.message.middleware(album_middleware)
     
     # Команда /start
     async def start_handler(message):
@@ -67,14 +75,6 @@ def setup_handlers(
         lambda c: c.data and (c.data.startswith("model_prev_") or c.data.startswith("model_next_")),
     )
     
-    # Callback: Выбрать модель
-    async def model_select_handler(callback):
-        await models.handle_model_select(callback, repo, bot, storage_service, lang)
-    router.callback_query.register(
-        model_select_handler,
-        lambda c: c.data and c.data.startswith("model_select_"),
-    )
-    
     # Callback: Удалить модель
     async def model_delete_handler(callback):
         await models.handle_model_delete(callback, repo, bot, storage_service, lang)
@@ -90,4 +90,36 @@ def setup_handlers(
         model_photo_handler,
         F.photo,
         ModelStates.waiting_for_model_photo,
+    )
+    
+    # Callback: Примерка
+    async def try_on_handler(callback, state: FSMContext):
+        await try_on.handle_try_on_callback(
+            callback, state, bot, repo, storage_service, lang
+        )
+    router.callback_query.register(
+        try_on_handler,
+        F.data == "try_on",
+    )
+    
+    # Callback: Выбор модели для примерки
+    async def try_on_model_select_handler(callback, state: FSMContext):
+        await try_on.handle_model_selection_for_try_on(
+            callback, state, bot, repo, lang
+        )
+    router.callback_query.register(
+        try_on_model_select_handler,
+        lambda c: c.data and c.data.startswith("try_on_select_model_"),
+    )
+    
+    # Фото одежды в состоянии waiting_for_garment_photo
+    async def garment_photo_handler(message, state: FSMContext, album=None):
+        # album передается из middleware через data, если это альбом
+        await try_on.handle_garment_photo(
+            message, state, bot, repo, storage_service, try_on_service, album, lang
+        )
+    router.message.register(
+        garment_photo_handler,
+        F.photo,
+        TryOnStates.waiting_for_garment_photo,
     )
