@@ -508,3 +508,70 @@ RuntimeError: Ошибка API: 403 Client Error: Forbidden for url: https://us-
 2026-01-26 17:21:06 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_172106_15fe5613.png
 2026-01-26 17:21:06 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_172106_15fe5613.png
 2026-01-26 17:21:07 | INFO     | bot.handlers.try_on:process_single_garment:333 - Примерка 1/1 успешно сгенерирована
+2026-01-26 17:23:33 | INFO     | __main__:main:21 - Запуск Telegram бота...
+2026-01-26 17:23:33 | INFO     | __main__:main:46 - Конфигурация загружена. Project ID: didi-rent
+2026-01-26 17:23:33 | INFO     | __main__:main:67 - Проверка подключения к Telegram API...
+2026-01-26 17:23:34 | SUCCESS  | __main__:main:70 - Бот успешно подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 17:23:34 | INFO     | __main__:main:72 - Бот запущен и готов к работе
+2026-01-26 17:23:37 | INFO     | bot.database.repo:add_user:99 - Пользователь 261617302 добавлен/обновлен в Firestore
+2026-01-26 17:23:37 | INFO     | bot.handlers.start:start_command:35 - Пользователь 261617302 обработан в /start
+2026-01-26 17:23:40 | INFO     | bot.database.repo:get_user_models:199 - Найдено 2 моделей для пользователя 261617302
+2026-01-26 17:23:47 | INFO     | bot.handlers.try_on:handle_model_selection_for_try_on:148 - Выбор модели для примерки: user_id=261617302, model_id=model_1769389085844
+2026-01-26 17:23:47 | INFO     | bot.database.repo:get_user_models:199 - Найдено 2 моделей для пользователя 261617302
+2026-01-26 17:23:47 | INFO     | bot.handlers.try_on:handle_model_selection_for_try_on:153 - Найдено моделей: 2, их ID: ['model_1769389125171', 'model_1769389085844']
+2026-01-26 17:24:01 | DEBUG    | bot.middlewares.album:__call__:64 - Добавлено фото в альбом 14155355546455426: текущее количество = 1
+2026-01-26 17:24:02 | INFO     | bot.middlewares.album:__call__:95 - Альбом собран: 1 фото (media_group_id: 14155355546455426)
+2026-01-26 17:24:03 | INFO     | bot.handlers.try_on:handle_garment_photo:346 - Запуск параллельной генерации для 1 фото
+2026-01-26 17:24:04 | INFO     | bot.handlers.try_on:process_single_garment:312 - Загрузка фото одежды 1/1 в GCS: bot_uploads/garments/261617302_20260126_172404_0.jpg
+2026-01-26 17:24:04 | INFO     | bot.handlers.try_on:process_single_garment:321 - Начало генерации примерки 1/1 (garment: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_172404_0.jpg)
+2026-01-26 17:24:04 | INFO     | bot.services.try_on:generate_try_on:181 - ============================================================
+2026-01-26 17:24:04 | INFO     | bot.services.try_on:generate_try_on:182 - НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI
+2026-01-26 17:24:04 | INFO     | bot.services.try_on:generate_try_on:183 - ============================================================
+2026-01-26 17:24:05 | DEBUG    | bot.services.try_on:_get_access_token:67 - Access token получен через Application Default Credentials
+2026-01-26 17:24:05 | INFO     | bot.services.try_on:generate_try_on:200 - Отправка ОДНОГО запроса к Vertex AI API: https://us-central1-aiplatform.googleapis.com/v1/projects/didi-rent/locations/us-central1/publishers/google/models/virtual-try-on-001:predict
+2026-01-26 17:24:05 | INFO     | bot.services.try_on:generate_try_on:201 - Person GCS URI: gs://try_on_ketly/bot_uploads/models/261617302_20260126_165804.jpg
+2026-01-26 17:24:05 | INFO     | bot.services.try_on:generate_try_on:202 - Garment GCS URI: gs://try_on_ketly/bot_uploads/garments/261617302_20260126_172404_0.jpg
+2026-01-26 17:25:19 | INFO     | bot.services.try_on:generate_try_on:231 - Получено 1 результатов
+2026-01-26 17:25:19 | INFO     | bot.services.try_on:generate_try_on:257 - Загрузка результата в GCS: try_on_results/20260126_172519_58bef518.png
+2026-01-26 17:25:19 | SUCCESS  | bot.services.try_on:generate_try_on:264 - Результат успешно загружен: gs://try_on_ketly/try_on_results/20260126_172519_58bef518.png
+2026-01-26 17:25:19 | INFO     | bot.handlers.try_on:process_single_garment:333 - Примерка 1/1 успешно сгенерирована
+2026-01-26 17:27:01 | INFO     | __main__:main:67 - Запуск тестового бота для проверки альбомов...
+2026-01-26 17:27:01 | INFO     | __main__:main:93 - Проверка подключения к Telegram API...
+2026-01-26 17:27:02 | SUCCESS  | __main__:main:95 - Тестовый бот подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 17:27:02 | INFO     | __main__:main:96 - Бот готов к тестированию. Отправьте фото для проверки.
+2026-01-26 17:27:09 | DEBUG    | bot.middlewares.album:__call__:64 - Добавлено фото в альбом 14155357051972402: текущее количество = 1
+2026-01-26 17:27:11 | INFO     | bot.middlewares.album:__call__:95 - Альбом собран: 1 фото (media_group_id: 14155357051972402)
+2026-01-26 17:27:11 | INFO     | __main__:handle_photo:31 - 📸 АЛЬБОМ: получено 1 фото
+2026-01-26 17:27:11 | INFO     | __main__:handle_photo:32 -    Media group ID: 14155357051972402
+2026-01-26 17:27:11 | INFO     | __main__:handle_photo:33 -    Message IDs: [8215]
+2026-01-26 17:27:36 | INFO     | __main__:main:67 - Запуск тестового бота для проверки альбомов...
+2026-01-26 17:27:36 | INFO     | __main__:main:93 - Проверка подключения к Telegram API...
+2026-01-26 17:27:38 | SUCCESS  | __main__:main:95 - Тестовый бот подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 17:27:38 | INFO     | __main__:main:96 - Бот готов к тестированию. Отправьте фото для проверки.
+2026-01-26 17:27:43 | DEBUG    | bot.middlewares.album:__call__:64 - Добавлено фото в альбом 14155357323225506: текущее количество = 1
+2026-01-26 17:27:43 | DEBUG    | bot.middlewares.album:__call__:84 - Итерация 1: собрано 1 фото (media_group_id: 14155357323225506)
+2026-01-26 17:27:44 | DEBUG    | bot.middlewares.album:__call__:84 - Итерация 2: собрано 1 фото (media_group_id: 14155357323225506)
+2026-01-26 17:27:44 | INFO     | bot.middlewares.album:__call__:108 - Альбом собран: 1 фото (media_group_id: 14155357323225506)
+2026-01-26 17:27:44 | INFO     | __main__:handle_photo:31 - 📸 АЛЬБОМ: получено 1 фото
+2026-01-26 17:27:44 | INFO     | __main__:handle_photo:32 -    Media group ID: 14155357323225506
+2026-01-26 17:27:44 | INFO     | __main__:handle_photo:33 -    Message IDs: [8219]
+2026-01-26 17:29:50 | INFO     | __main__:main:67 - Запуск тестового бота для проверки альбомов...
+2026-01-26 17:29:50 | INFO     | __main__:main:93 - Проверка подключения к Telegram API...
+2026-01-26 17:29:51 | SUCCESS  | __main__:main:95 - Тестовый бот подключен: @devpolling_bot (Dev Polling Bot)
+2026-01-26 17:29:51 | INFO     | __main__:main:96 - Бот готов к тестированию. Отправьте фото для проверки.
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:64 - 📸 Фото добавлено в альбом 14155358415786346: message_id=8223, текущее количество = 1
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:81 - 🚀 Начало сбора альбома 14155358415786346 (первое фото)
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:91 - ⏳ Начало ожидания для альбома 14155358415786346, начальное количество: 1
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:64 - 📸 Фото добавлено в альбом 14155358415786346: message_id=8224, текущее количество = 2
+2026-01-26 17:30:00 | DEBUG    | bot.middlewares.album:__call__:73 - Альбом 14155358415786346 уже обрабатывается, фото 8224 добавлено в очередь
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:64 - 📸 Фото добавлено в альбом 14155358415786346: message_id=8225, текущее количество = 3
+2026-01-26 17:30:00 | DEBUG    | bot.middlewares.album:__call__:73 - Альбом 14155358415786346 уже обрабатывается, фото 8225 добавлено в очередь
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:97 - 🔄 Итерация 1/5: собрано 3 фото (media_group_id: 14155358415786346)
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:111 - 📈 Количество изменилось: 3 → 3
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:97 - 🔄 Итерация 2/5: собрано 3 фото (media_group_id: 14155358415786346)
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:97 - 🔄 Итерация 3/5: собрано 3 фото (media_group_id: 14155358415786346)
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:106 - ✅ Количество стабилизировалось: 3 фото
+2026-01-26 17:30:00 | INFO     | bot.middlewares.album:__call__:124 - ✅ Альбом собран: 3 фото (media_group_id: 14155358415786346, message_ids: [8223, 8224, 8225])
+2026-01-26 17:30:00 | INFO     | __main__:handle_photo:31 - 📸 АЛЬБОМ: получено 3 фото
+2026-01-26 17:30:00 | INFO     | __main__:handle_photo:32 -    Media group ID: 14155358415786346
+2026-01-26 17:30:00 | INFO     | __main__:handle_photo:33 -    Message IDs: [8223, 8224, 8225]

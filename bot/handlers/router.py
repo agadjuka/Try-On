@@ -32,7 +32,7 @@ def setup_handlers(
     lang = "ru"  # TODO: получать из настроек пользователя
     
     # Регистрируем middleware для альбомов
-    album_middleware = AlbumMiddleware(delay=0.8)
+    album_middleware = AlbumMiddleware(delay=1.5)
     router.message.middleware(album_middleware)
     
     # Команда /start
