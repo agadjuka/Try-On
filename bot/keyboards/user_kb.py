@@ -169,3 +169,36 @@ def get_models_list_keyboard(
     
     builder.adjust(1)  # По одной кнопке в ряд
     return builder.as_markup()
+
+
+def get_try_on_result_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
+    """
+    Получить клавиатуру для результата примерки.
+    Кнопка "Новая примерка" сверху, остальные кнопки главного меню ниже.
+
+    Args:
+        lang: Язык интерфейса
+
+    Returns:
+        Inline клавиатура с результатом примерки
+    """
+    builder = InlineKeyboardBuilder()
+    
+    # Кнопка "Новая примерка" сверху
+    builder.button(
+        text=get_text("new_try_on", lang),
+        callback_data="new_try_on",
+    )
+    
+    # Остальные кнопки главного меню
+    builder.button(
+        text=get_text("menu_add_model", lang),
+        callback_data="add_model"
+    )
+    builder.button(
+        text=get_text("menu_my_models", lang),
+        callback_data="my_models"
+    )
+    
+    builder.adjust(1)  # По одной кнопке в ряд
+    return builder.as_markup()

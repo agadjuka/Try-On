@@ -56,12 +56,7 @@ async def delete_models_menu_messages(
         )
     
     # Выполняем удаление параллельно, игнорируем ошибки
-    results = await asyncio.gather(*delete_tasks, return_exceptions=True)
-    
-    # Логируем ошибки, если есть
-    for idx, result in enumerate(results):
-        if isinstance(result, Exception):
-            logger.warning(f"Не удалось удалить сообщение {message_ids_to_delete[idx]}: {result}")
+    await asyncio.gather(*delete_tasks, return_exceptions=True)
     
     # Очищаем данные из FSM
     await state.update_data(
@@ -188,7 +183,7 @@ async def handle_model_photo(
                 message_id=processing_message_id,
             )
         except Exception as e:
-            logger.warning(f"Не удалось удалить сообщение 'Обрабатываю...': {e}")
+            logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
         
         # Сбрасываем состояние
         await state.clear()
@@ -434,7 +429,7 @@ async def handle_model_navigation(
         await callback.answer()
         
     except Exception as e:
-        logger.error(f"Ошибка при навигации по моделям: {e}")
+        logger.error(f"Ошибка при получении моделей: {e}")
         await callback.answer("Ошибка при навигации")
 
 

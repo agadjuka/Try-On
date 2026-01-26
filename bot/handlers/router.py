@@ -102,6 +102,16 @@ def setup_handlers(
         F.data == "try_on",
     )
     
+    # Callback: Новая примерка (из результата)
+    async def new_try_on_handler(callback, state: FSMContext):
+        await try_on.handle_new_try_on_callback(
+            callback, state, bot, repo, storage_service, lang
+        )
+    router.callback_query.register(
+        new_try_on_handler,
+        F.data == "new_try_on",
+    )
+    
     # Callback: Выбор модели для примерки
     async def try_on_model_select_handler(callback, state: FSMContext):
         await try_on_selection.handle_model_selection_for_try_on(

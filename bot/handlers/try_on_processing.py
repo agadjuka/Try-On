@@ -11,7 +11,7 @@ from loguru import logger
 
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
-from bot.keyboards.user_kb import get_main_menu_keyboard
+from bot.keyboards.user_kb import get_try_on_result_keyboard, get_main_menu_keyboard
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 
 
@@ -115,10 +115,16 @@ async def send_try_on_results(
             file=successful_results[0],
             filename="try_on_result.jpg",
         )
-        await message.answer_photo(
+        result_message = await message.answer_photo(
             photo=photo_file,
             caption="✅ Примерка готова!",
-            reply_markup=get_main_menu_keyboard(lang),
+            reply_markup=get_try_on_result_keyboard(lang),
+        )
+        
+        # Сохраняем ID сообщения с результатом для последующего удаления
+        await state.update_data(
+            try_on_result_message_id=result_message.message_id,
+            try_on_result_album_message_ids=[],
         )
     else:
         # Несколько фото - отправляем альбомом
@@ -135,10 +141,17 @@ async def send_try_on_results(
             )
             media_group.append(InputMediaPhoto(media=photo_file, caption=caption))
 
-        await message.answer_media_group(media=media_group)
-        await message.answer(
+        sent_messages = await message.answer_media_group(media=media_group)
+        result_message = await message.answer(
             f"✅ Готово! Успешно обработано {len(successful_results)} из {photo_count} фото.",
-            reply_markup=get_main_menu_keyboard(lang),
+            reply_markup=get_try_on_result_keyboard(lang),
+        )
+        
+        # Сохраняем ID сообщений с результатом для последующего удаления
+        album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
+        await state.update_data(
+            try_on_result_album_message_ids=album_message_ids,
+            try_on_result_message_id=result_message.message_id,
         )
 
     if failed_count > 0:

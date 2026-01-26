@@ -177,7 +177,6 @@ class VertexTryOnService:
             ValueError: Если ответ API не содержит predictions
             RuntimeError: При ошибке запроса к API или обработки ответа
         """
-        # Логируем начало генерации для отслеживания
         logger.info("=" * 60)
         logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON с GCS URI")
         logger.info("=" * 60)

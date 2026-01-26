@@ -98,3 +98,99 @@ async def handle_try_on_callback(
             reply_markup=get_back_keyboard(lang),
         )
         await callback.answer()
+
+
+async def handle_new_try_on_callback(
+    callback: CallbackQuery,
+    state: FSMContext,
+    bot: Bot,
+    repo: FirestoreRepo,
+    storage_service: CloudStorageService,
+    lang: str = "ru",
+) -> None:
+    """
+    Обработчик кнопки "Новая примерка" из результата примерки.
+    Удаляет сообщение с результатом и показывает экран выбора модели.
+
+    Args:
+        callback: Callback запрос
+        state: Контекст FSM
+        bot: Экземпляр бота
+        repo: Репозиторий для работы с БД
+        storage_service: Сервис для работы с GCS
+        lang: Язык интерфейса
+    """
+    user_id = str(callback.from_user.id)
+
+    try:
+        # Получаем данные из FSM
+        state_data = await state.get_data()
+        
+        # Удаляем сообщение с результатом примерки
+        result_message_id = state_data.get("try_on_result_message_id")
+        result_album_message_ids = state_data.get("try_on_result_album_message_ids", [])
+        
+        # Собираем все ID сообщений для удаления
+        message_ids_to_delete = list(result_album_message_ids)
+        if result_message_id:
+            message_ids_to_delete.append(result_message_id)
+        
+        # Удаляем все сообщения с результатом параллельно
+        import asyncio
+        delete_tasks = []
+        for msg_id in message_ids_to_delete:
+            delete_tasks.append(
+                bot.delete_message(chat_id=callback.from_user.id, message_id=msg_id)
+            )
+        
+        if delete_tasks:
+            results = await asyncio.gather(*delete_tasks, return_exceptions=True)
+            for idx, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.warning(f"Не удалось удалить сообщение {message_ids_to_delete[idx]}: {result}")
+        
+        # Очищаем данные результата из FSM
+        await state.update_data(
+            try_on_result_message_id=None,
+            try_on_result_album_message_ids=[],
+        )
+        
+        # Получаем все модели пользователя
+        models = await repo.get_user_models(user_id)
+
+        if not models:
+            # Удаляем сообщение с кнопками
+            try:
+                await callback.message.delete()
+            except Exception:
+                pass
+            
+            await bot.send_message(
+                chat_id=callback.from_user.id,
+                text=(
+                    "⚠️ У вас пока нет моделей.\n\n"
+                    "Добавьте модель через меню 'Добавить модель'."
+                ),
+                reply_markup=get_back_keyboard(lang),
+            )
+            await callback.answer()
+            return
+
+        # Отправляем альбом с моделями (send_models_album удалит callback.message сам)
+        success = await send_models_album(
+            callback=callback,
+            state=state,
+            bot=bot,
+            models=models,
+            storage_service=storage_service,
+            lang=lang,
+        )
+
+        if success:
+            await callback.answer()
+        else:
+            await callback.answer("Произошла ошибка")
+
+    except Exception as e:
+        logger.error(f"Ошибка в handle_try_on_callback: {e}")
+        await callback.answer("Произошла ошибка")

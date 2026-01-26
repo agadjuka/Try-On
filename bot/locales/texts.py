@@ -17,6 +17,10 @@ TEXTS = {
         "ru": "👔 Примерка",
         "en": "👔 Try On",
     },
+    "new_try_on": {
+        "ru": "🔄 Новая примерка",
+        "en": "🔄 New Try On",
+    },
     "menu_settings": {
         "ru": "⚙️ Настройки",
         "en": "⚙️ Settings",
