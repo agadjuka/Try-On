@@ -94,6 +94,7 @@ async def process_single_garment(
 
 async def send_try_on_results(
     message: Message,
+    state: FSMContext,
     successful_results: List[bytes],
     photo_count: int,
     failed_count: int,
@@ -104,6 +105,7 @@ async def send_try_on_results(
 
     Args:
         message: Сообщение от пользователя
+        state: Контекст FSM
         successful_results: Список успешных результатов (байты)
         photo_count: Общее количество фото
         failed_count: Количество неудачных обработок
@@ -111,6 +113,7 @@ async def send_try_on_results(
     """
     if len(successful_results) == 1:
         # Одно фото - отправляем как обычное фото
+        logger.info("Отправка одного результата примерки")
         photo_file = BufferedInputFile(
             file=successful_results[0],
             filename="try_on_result.jpg",
@@ -120,6 +123,7 @@ async def send_try_on_results(
             caption="✅ Примерка готова!",
             reply_markup=get_try_on_result_keyboard(lang),
         )
+        logger.info(f"Результат отправлен, message_id: {result_message.message_id}")
         
         # Сохраняем ID сообщения с результатом для последующего удаления
         await state.update_data(
@@ -128,24 +132,24 @@ async def send_try_on_results(
         )
     else:
         # Несколько фото - отправляем альбомом
+        logger.info(f"Подготовка альбома из {len(successful_results)} фото")
         media_group = []
         for idx, result_bytes in enumerate(successful_results):
             photo_file = BufferedInputFile(
                 file=result_bytes,
                 filename=f"try_on_result_{idx + 1}.jpg",
             )
-            caption = (
-                f"✅ Примерка {idx + 1}/{len(successful_results)}"
-                if idx == len(successful_results) - 1
-                else None
-            )
-            media_group.append(InputMediaPhoto(media=photo_file, caption=caption))
+            media_group.append(InputMediaPhoto(media=photo_file, caption=None))
 
+        logger.info(f"Отправка альбома из {len(media_group)} фото")
         sent_messages = await message.answer_media_group(media=media_group)
+        logger.info(f"Альбом отправлен, получено {len(sent_messages) if sent_messages else 0} сообщений")
+        
         result_message = await message.answer(
             f"✅ Готово! Успешно обработано {len(successful_results)} из {photo_count} фото.",
             reply_markup=get_try_on_result_keyboard(lang),
         )
+        logger.info(f"Сообщение с кнопками отправлено, message_id: {result_message.message_id}")
         
         # Сохраняем ID сообщений с результатом для последующего удаления
         album_message_ids = [msg.message_id for msg in sent_messages] if sent_messages else []
@@ -153,6 +157,7 @@ async def send_try_on_results(
             try_on_result_album_message_ids=album_message_ids,
             try_on_result_message_id=result_message.message_id,
         )
+        logger.info(f"ID сообщений сохранены в FSM: album={album_message_ids}, result={result_message.message_id}")
 
     if failed_count > 0:
         await message.answer(
@@ -282,22 +287,33 @@ async def handle_garment_photo(
             return
 
         # Отправляем результаты
+        logger.info(f"Отправка {len(successful_results)} результатов пользователю")
         await send_try_on_results(
             message=message,
+            state=state,
             successful_results=successful_results,
             photo_count=photo_count,
             failed_count=failed_count,
             lang=lang,
         )
+        logger.info("Результаты успешно отправлены пользователю")
 
         # Сбрасываем состояние
+        logger.info("Очистка состояния FSM")
         await state.clear()
+        logger.info("Обработка примерки завершена успешно")
 
     except Exception as e:
-        logger.error(f"Ошибка в handle_garment_photo: {e}")
-        await message.answer(
-            "❌ Произошла ошибка при генерации примерки.\n"
-            "Попробуйте еще раз или нажмите /start.",
-            reply_markup=get_main_menu_keyboard(lang),
-        )
-        await state.clear()
+        logger.error(f"Ошибка в handle_garment_photo: {e}", exc_info=True)
+        try:
+            await message.answer(
+                "❌ Произошла ошибка при генерации примерки.\n"
+                "Попробуйте еще раз или нажмите /start.",
+                reply_markup=get_main_menu_keyboard(lang),
+            )
+        except Exception as send_error:
+            logger.error(f"Не удалось отправить сообщение об ошибке: {send_error}")
+        try:
+            await state.clear()
+        except Exception as clear_error:
+            logger.error(f"Не удалось очистить состояние: {clear_error}")
