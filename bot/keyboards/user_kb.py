@@ -1,7 +1,7 @@
 """Клавиатуры для пользовательского интерфейса."""
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot.locales.texts import get_text
 
@@ -171,34 +171,145 @@ def get_models_list_keyboard(
     return builder.as_markup()
 
 
-def get_try_on_result_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
+def get_try_on_result_keyboard(
+    lang: str = "ru",
+    photo_count: int = 1,
+    download_menu_open: bool = False,
+) -> InlineKeyboardMarkup:
     """
     Получить клавиатуру для результата примерки.
-    Кнопка "Новая примерка" сверху, остальные кнопки главного меню ниже.
+    Кнопка "Новая примерка" сверху, кнопка "Скачать в высоком качестве" на втором месте,
+    остальные кнопки главного меню ниже.
 
     Args:
         lang: Язык интерфейса
+        photo_count: Количество обработанных фото (1-5)
+        download_menu_open: Открыто ли меню скачивания
 
     Returns:
         Inline клавиатура с результатом примерки
     """
-    builder = InlineKeyboardBuilder()
+    # Создаем клавиатуру через явные ряды для правильного расположения
+    keyboard = []
     
-    # Кнопка "Новая примерка" сверху
-    builder.button(
-        text=get_text("new_try_on", lang),
-        callback_data="new_try_on",
-    )
+    # Ряд 1: Кнопка "Новая примерка"
+    keyboard.append([
+        InlineKeyboardButton(
+            text=get_text("new_try_on", lang),
+            callback_data="new_try_on",
+        )
+    ])
     
-    # Остальные кнопки главного меню
-    builder.button(
-        text=get_text("menu_add_model", lang),
-        callback_data="add_model"
-    )
-    builder.button(
-        text=get_text("menu_my_models", lang),
-        callback_data="my_models"
-    )
+    # Ряд 2: Кнопка "Скачать в высоком качестве"
+    if photo_count > 1:
+        keyboard.append([
+            InlineKeyboardButton(
+                text=get_text("download_hq", lang),
+                callback_data="toggle_download_menu",
+            )
+        ])
+        
+        # Если меню открыто, добавляем кнопки для каждого фото
+        if download_menu_open:
+            if photo_count == 2:
+                # 2 фото - по одной в ряду
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=1),
+                        callback_data="download_photo_1",
+                    )
+                ])
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=2),
+                        callback_data="download_photo_2",
+                    )
+                ])
+            elif photo_count == 3:
+                # 3 фото - в одном ряду
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=1),
+                        callback_data="download_photo_1",
+                    ),
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=2),
+                        callback_data="download_photo_2",
+                    ),
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=3),
+                        callback_data="download_photo_3",
+                    ),
+                ])
+            elif photo_count == 4:
+                # 4 фото - 2 ряда по 2 кнопки
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=1),
+                        callback_data="download_photo_1",
+                    ),
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=2),
+                        callback_data="download_photo_2",
+                    ),
+                ])
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=3),
+                        callback_data="download_photo_3",
+                    ),
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=4),
+                        callback_data="download_photo_4",
+                    ),
+                ])
+            elif photo_count == 5:
+                # 5 фото - 2 ряда (3 + 2)
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=1),
+                        callback_data="download_photo_1",
+                    ),
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=2),
+                        callback_data="download_photo_2",
+                    ),
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=3),
+                        callback_data="download_photo_3",
+                    ),
+                ])
+                keyboard.append([
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=4),
+                        callback_data="download_photo_4",
+                    ),
+                    InlineKeyboardButton(
+                        text=get_text("photo_number", lang).format(number=5),
+                        callback_data="download_photo_5",
+                    ),
+                ])
+    else:
+        # Для одного фото - просто кнопка (пока не рабочая)
+        keyboard.append([
+            InlineKeyboardButton(
+                text=get_text("download_hq", lang),
+                callback_data="download_photo_single",
+            )
+        ])
     
-    builder.adjust(1)  # По одной кнопке в ряд
-    return builder.as_markup()
+    # Остальные кнопки главного меню - каждая в отдельном ряду
+    keyboard.append([
+        InlineKeyboardButton(
+            text=get_text("menu_add_model", lang),
+            callback_data="add_model"
+        )
+    ])
+    keyboard.append([
+        InlineKeyboardButton(
+            text=get_text("menu_my_models", lang),
+            callback_data="my_models"
+        )
+    ])
+    
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)

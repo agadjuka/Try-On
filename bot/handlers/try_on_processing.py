@@ -18,7 +18,7 @@ from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 from bot.admin.factory import get_admin_service
 
 
-async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Optional[int]]:
+async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Optional[int], int, int, bool]:
     """
     Сохранить ID сообщений результатов примерки из FSM.
     
@@ -26,19 +26,26 @@ async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Op
         state: Контекст FSM
         
     Returns:
-        Кортеж (список ID фото, ID сообщения с кнопками)
+        Кортеж (список ID фото, ID сообщения с кнопками, количество успешных фото, общее количество фото, состояние меню)
     """
     state_data = await state.get_data()
+    photo_count = state_data.get("try_on_photo_count", 1)
     return (
         state_data.get("try_on_result_album_message_ids", []),
-        state_data.get("try_on_result_message_id")
+        state_data.get("try_on_result_message_id"),
+        photo_count,
+        state_data.get("try_on_total_photo_count", photo_count),
+        state_data.get("download_menu_open", False),
     )
 
 
 async def _restore_result_message_ids(
     state: FSMContext,
     album_ids: List[int],
-    message_id: Optional[int]
+    message_id: Optional[int],
+    photo_count: int = 1,
+    total_photo_count: int = 1,
+    download_menu_open: bool = False,
 ) -> None:
     """
     Восстановить ID сообщений результатов примерки в FSM после очистки состояния.
@@ -47,11 +54,17 @@ async def _restore_result_message_ids(
         state: Контекст FSM
         album_ids: Список ID фото результатов
         message_id: ID сообщения с кнопками
+        photo_count: Количество успешно обработанных фото
+        total_photo_count: Общее количество отправленных фото
+        download_menu_open: Состояние меню скачивания
     """
     if album_ids or message_id:
         await state.update_data(
             try_on_result_album_message_ids=album_ids,
             try_on_result_message_id=message_id,
+            try_on_photo_count=photo_count,
+            try_on_total_photo_count=total_photo_count,
+            download_menu_open=download_menu_open,
         )
 
 
@@ -196,7 +209,11 @@ async def send_try_on_results(
         
         result_message = await message.answer(
             text=get_text("try_on_ready", lang),
-            reply_markup=get_try_on_result_keyboard(lang),
+            reply_markup=get_try_on_result_keyboard(
+                lang=lang,
+                photo_count=len(successful_results),
+                download_menu_open=False,
+            ),
         )
         logger.info(f"Сообщение с кнопками отправлено, message_id: {result_message.message_id}")
         
@@ -204,6 +221,9 @@ async def send_try_on_results(
         await state.update_data(
             try_on_result_album_message_ids=[photo_message.message_id],
             try_on_result_message_id=result_message.message_id,
+            try_on_photo_count=len(successful_results),
+            try_on_total_photo_count=photo_count,
+            download_menu_open=False,
         )
     else:
         # Несколько фото - отправляем альбомом
@@ -221,8 +241,12 @@ async def send_try_on_results(
         logger.info(f"Альбом отправлен, получено {len(sent_messages) if sent_messages else 0} сообщений")
         
         result_message = await message.answer(
-            f"✅ Готово! Успешно обработано {len(successful_results)} из {photo_count} фото.",
-            reply_markup=get_try_on_result_keyboard(lang),
+            f"✅ Готово! Успешно обработано {len(successful_results)} из {photo_count} фото.\nВ случае неудовлетворительного результата, попробуйте выбрать другое исходное фото.",
+            reply_markup=get_try_on_result_keyboard(
+                lang=lang,
+                photo_count=len(successful_results),
+                download_menu_open=False,
+            ),
         )
         logger.info(f"Сообщение с кнопками отправлено, message_id: {result_message.message_id}")
         
@@ -231,6 +255,9 @@ async def send_try_on_results(
         await state.update_data(
             try_on_result_album_message_ids=album_message_ids,
             try_on_result_message_id=result_message.message_id,
+            try_on_photo_count=len(successful_results),
+            try_on_total_photo_count=photo_count,
+            download_menu_open=False,
         )
 
     if failed_count > 0:
@@ -388,7 +415,7 @@ async def handle_garment_photo(
 
         # Отправляем результаты пользователю
         if not successful_results:
-            album_ids, msg_id = await _preserve_result_message_ids(state)
+            album_ids, msg_id, photo_count, total_count, menu_open = await _preserve_result_message_ids(state)
             
             await message.answer(
                 "❌ Не удалось сгенерировать примерку для ни одного фото.\n"
@@ -397,7 +424,7 @@ async def handle_garment_photo(
             )
             
             await state.clear()
-            await _restore_result_message_ids(state, album_ids, msg_id)
+            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open)
             return
 
         # Отправляем результаты
@@ -415,18 +442,18 @@ async def handle_garment_photo(
         )
 
         # Сохраняем ID результатов перед очисткой состояния
-        album_ids, msg_id = await _preserve_result_message_ids(state)
+        album_ids, msg_id, photo_count, total_count, menu_open = await _preserve_result_message_ids(state)
         await state.clear()
-        await _restore_result_message_ids(state, album_ids, msg_id)
+        await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open)
 
     except Exception as e:
         logger.error(f"Ошибка в handle_garment_photo: {e}", exc_info=True)
         
         # Сохраняем ID результатов перед очисткой
         try:
-            album_ids, msg_id = await _preserve_result_message_ids(state)
+            album_ids, msg_id, photo_count, total_count, menu_open = await _preserve_result_message_ids(state)
         except Exception:
-            album_ids, msg_id = [], None
+            album_ids, msg_id, photo_count, total_count, menu_open = [], None, 1, 1, False
         
         try:
             await message.answer(
@@ -439,6 +466,6 @@ async def handle_garment_photo(
         
         try:
             await state.clear()
-            await _restore_result_message_ids(state, album_ids, msg_id)
+            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open)
         except Exception as clear_error:
             logger.error(f"Не удалось очистить состояние: {clear_error}")

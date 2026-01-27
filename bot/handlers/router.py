@@ -16,6 +16,7 @@ from bot.handlers import (
     try_on,
     try_on_selection,
     try_on_processing,
+    download_menu,
 )
 from bot.middlewares.album import AlbumMiddleware
 
@@ -164,4 +165,24 @@ def setup_handlers(
         garment_photo_handler,
         F.photo,
         TryOnStates.waiting_for_garment_photo,
+    )
+    
+    # Callback: Переключение меню скачивания
+    async def toggle_download_menu_handler(callback, state):
+        await download_menu.handle_toggle_download_menu(callback, state, bot, lang)
+    
+    router.callback_query.register(
+        toggle_download_menu_handler,
+        F.data == "toggle_download_menu",
+    )
+    
+    # Callback: Скачивание отдельного фото
+    async def download_photo_handler(callback, state):
+        await download_menu.handle_download_photo(callback, state, bot, lang)
+    
+    router.callback_query.register(
+        download_photo_handler,
+        lambda c: c.data and (
+            c.data.startswith("download_photo_") or c.data == "download_photo_single"
+        ),
     )

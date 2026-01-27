@@ -145,6 +145,14 @@ TEXTS = {
         "ru": "Произошла ошибка",
         "en": "An error occurred",
     },
+    "download_hq": {
+        "ru": "⬇️ Скачать в высоком качестве",
+        "en": "⬇️ Download in high quality",
+    },
+    "photo_number": {
+        "ru": "Фото {number}",
+        "en": "Photo {number}",
+    },
 }
 
 
