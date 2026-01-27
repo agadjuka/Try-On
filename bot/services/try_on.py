@@ -80,7 +80,7 @@ class VertexTryOnService:
         garment_bytes: bytes,
         base_steps: int = 32,
         sample_count: int = 1,
-        add_watermark: bool = True,
+        add_watermark: bool = False,
         person_generation: str = "allow_adult",
         safety_setting: str = "block_medium_and_above",
         output_mime_type: str = "image/png",
@@ -159,7 +159,7 @@ class VertexTryOnService:
         garment_bytes: bytes,
         base_steps: int = 32,
         sample_count: int = 1,
-        add_watermark: bool = True,
+        add_watermark: bool = False,
     ) -> bytes:
         """
         Генерировать изображение примерки асинхронно.

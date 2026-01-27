@@ -32,7 +32,7 @@ async def _download_single_photo(
         photo_bytes = await storage_service.download_file(model.gcs_uri)
         photo_file = BufferedInputFile(
             file=photo_bytes,
-            filename=f"model_{idx + 1}.jpg",
+            filename=f"model_{idx + 1}.png",
         )
         return idx, InputMediaPhoto(media=photo_file, caption=None)
     except Exception as e:
@@ -94,7 +94,7 @@ async def process_model_photo(
         Кортеж (model_id, gcs_uri)
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    destination_path = f"bot_uploads/models/{user_id}_{timestamp}.jpg"
+    destination_path = f"bot_uploads/models/{user_id}_{timestamp}.png"
     
     logger.info(f"Сохранение фото модели в Cloud Storage: {destination_path}")
     gcs_uri = await storage_service.upload_image(

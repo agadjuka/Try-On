@@ -52,7 +52,7 @@ class CloudStorageService:
 
         Args:
             file_bytes: Байты файла для загрузки
-            destination_path: Путь назначения в бакете (например, 'images/user123/photo.jpg')
+            destination_path: Путь назначения в бакете (например, 'images/user123/photo.png')
 
         Returns:
             URI файла в формате gs://bucket-name/path
@@ -66,7 +66,7 @@ class CloudStorageService:
         def _upload() -> str:
             """Синхронная функция загрузки."""
             blob = bucket.blob(destination_path)
-            blob.upload_from_string(file_bytes, content_type="image/jpeg")
+            blob.upload_from_string(file_bytes, content_type="image/png")
             return f"gs://{self.settings.gcs_bucket_name}/{destination_path}"
 
         try:

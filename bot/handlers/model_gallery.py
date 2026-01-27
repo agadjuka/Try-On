@@ -39,7 +39,7 @@ async def show_model_in_gallery(
         
         photo_file = BufferedInputFile(
             file=photo_bytes,
-            filename="model.jpg"
+            filename="model.png"
         )
         
         media = InputMediaPhoto(

@@ -101,7 +101,7 @@ class AdminPanelService:
             
             photo_file = BufferedInputFile(
                 file=photo_bytes,
-                filename="model_photo.jpg",
+                filename="model_photo.png",
             )
             
             await self.bot.send_photo(
@@ -134,7 +134,7 @@ class AdminPanelService:
             
             photo_file = BufferedInputFile(
                 file=photo_bytes,
-                filename="garment_photo.jpg",
+                filename="garment_photo.png",
             )
             
             await self.bot.send_photo(
@@ -171,7 +171,7 @@ class AdminPanelService:
             if len(result_photos) == 1:
                 photo_file = BufferedInputFile(
                     file=result_photos[0],
-                    filename="generation_result.jpg",
+                    filename="generation_result.png",
                 )
                 
                 await self.bot.send_photo(
@@ -185,7 +185,7 @@ class AdminPanelService:
                 for idx, photo_bytes in enumerate(result_photos):
                     photo_file = BufferedInputFile(
                         file=photo_bytes,
-                        filename=f"generation_result_{idx + 1}.jpg",
+                        filename=f"generation_result_{idx + 1}.png",
                     )
                     media_group.append(
                         InputMediaPhoto(

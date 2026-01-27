@@ -149,7 +149,7 @@ async def send_try_on_results(
         logger.info("Отправка одного результата примерки")
         photo_file = BufferedInputFile(
             file=successful_results[0],
-            filename="try_on_result.jpg",
+            filename="try_on_result.png",
         )
         
         # Отправляем фото БЕЗ кнопок
@@ -177,7 +177,7 @@ async def send_try_on_results(
         for idx, result_bytes in enumerate(successful_results):
             photo_file = BufferedInputFile(
                 file=result_bytes,
-                filename=f"try_on_result_{idx + 1}.jpg",
+                filename=f"try_on_result_{idx + 1}.png",
             )
             media_group.append(InputMediaPhoto(media=photo_file, caption=None))
 
