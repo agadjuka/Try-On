@@ -12,6 +12,7 @@ from bot.database.repo import FirestoreRepo
 from bot.handlers.router import setup_handlers
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
+from bot.services.upscale import UpscaleService
 
 # Глобальные объекты для переиспользования в webhook режиме
 _webhook_bot: Bot | None = None
@@ -19,6 +20,7 @@ _webhook_dispatcher: Dispatcher | None = None
 _webhook_repo: FirestoreRepo | None = None
 _webhook_storage_service: CloudStorageService | None = None
 _webhook_try_on_service: VertexTryOnService | None = None
+_webhook_upscale_service: UpscaleService | None = None
 _initialized: bool = False
 
 
@@ -29,7 +31,7 @@ async def init_webhook_services() -> None:
     чтобы избежать cold start задержек при первом запросе.
     """
     global _webhook_bot, _webhook_dispatcher, _initialized
-    global _webhook_repo, _webhook_storage_service, _webhook_try_on_service
+    global _webhook_repo, _webhook_storage_service, _webhook_try_on_service, _webhook_upscale_service
     
     if _initialized:
         logger.info("ℹ️ Сервисы уже инициализированы")
@@ -56,6 +58,9 @@ async def init_webhook_services() -> None:
     logger.info("🎨 Инициализация Try-On сервиса...")
     _webhook_try_on_service = VertexTryOnService(settings)
     
+    logger.info("🔍 Инициализация Upscale сервиса...")
+    _webhook_upscale_service = UpscaleService(settings)
+    
     # Настраиваем хендлеры
     logger.info("📋 Настройка хендлеров...")
     setup_handlers(
@@ -64,6 +69,7 @@ async def init_webhook_services() -> None:
         repo=_webhook_repo,
         storage_service=_webhook_storage_service,
         try_on_service=_webhook_try_on_service,
+        upscale_service=_webhook_upscale_service,
     )
     
     _initialized = True

@@ -153,6 +153,14 @@ TEXTS = {
         "ru": "Фото {number}",
         "en": "Photo {number}",
     },
+    "upscaling": {
+        "ru": "⏳ Увеличиваю качество изображения...",
+        "en": "⏳ Increasing image quality...",
+    },
+    "upscale_error": {
+        "ru": "❌ Ошибка при увеличении качества изображения.",
+        "en": "❌ Error increasing image quality.",
+    },
 }
 
 

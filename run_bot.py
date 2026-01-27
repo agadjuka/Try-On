@@ -13,6 +13,7 @@ from bot.database.repo import FirestoreRepo
 from bot.handlers.router import setup_handlers
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
+from bot.services.upscale import UpscaleService
 
 
 async def main() -> None:
@@ -49,6 +50,7 @@ async def main() -> None:
     repo = FirestoreRepo(settings)
     storage_service = CloudStorageService(settings)
     try_on_service = VertexTryOnService(settings)
+    upscale_service = UpscaleService(settings)
 
     # Создаем бота и диспетчер
     bot = Bot(token=settings.bot_token)
@@ -61,6 +63,7 @@ async def main() -> None:
         repo=repo,
         storage_service=storage_service,
         try_on_service=try_on_service,
+        upscale_service=upscale_service,
     )
 
     try:

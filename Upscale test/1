@@ -1,0 +1,176 @@
+Imagen upscale API
+
+Preview
+
+This product or feature is subject to the "Pre-GA Offerings Terms" in the General Service Terms section of the Service Specific Terms. Pre-GA products and features are available "as is" and might have limited support. For more information, see the launch stage descriptions.
+
+Supported model versions
+Imagen upscale supports the following models:
+
+imagen-4.0-upscale-preview
+For more information about the features that the model supports, see Imagen models.
+
+HTTP request
+
+
+curl -X POST \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json" \
+https://REGION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/REGION/publishers/google/models/MODEL_ID:predict \
+
+-d '{
+  "instances": [
+    {
+      "prompt": string,
+      "image": {
+        // Union field can be only one of the following:
+        "bytesBase64Encoded": string,
+        "gcsUri": string,
+        // End of list of possible types for union field.
+      },
+    }
+  ],
+  "parameters": {
+    "mode": "upscale",
+    "storageUri": string,
+    "outputOptions": {
+      "mimeType": string,
+      "compressionQuality": integer
+    },
+    "upscaleConfig": {
+      "upscaleFactor": string
+    }
+  }
+}'
+Instances
+Instances
+Union field image.
+
+The image that you are upscaling. You can provide either a bytesBase64Encoded string that encodes an image or a gcsUri string URI to a Cloud Storage bucket location.
+
+bytesBase64Encoded	
+string
+
+A bytes base64-encoded string of an image or a video file.
+
+gcsUri	
+string
+
+A string URI to a Cloud Storage bucket location.
+
+Parameters
+Parameters
+mode	
+string
+
+Required. For upscale requests pass the string "upscale".
+
+storageUri	
+string
+
+Optional. A string URI to a Cloud Storage bucket location that is used to store the generated images. If a Cloud Storage bucket isn't provided, then base64-encoded image bytes are returned in the response.
+
+outputOptions	
+outputOptions
+
+Optional. Describes the output image format in an outputOptions object.
+
+upscaleConfig.upscaleFactor	
+string
+
+The scaling factor for the upscaled image. The following values are accepted:
+
+"x2"
+"x3"
+"x4"
+Output options object
+The outputOptions object describes the image output.
+
+Parameters
+outputOptions.mimeType	
+Optional: string
+
+The image output format. The following values are supported:
+
+"image/png": Save as a PNG image.
+"image/jpeg": Save as a JPEG image.
+The default value is "image/png".
+
+outputOptions.compressionQuality	
+Optional: int
+
+The level of compression if the output type is "image/jpeg". Accepted values are 0- 100. The default value is 75.
+
+Sample request
+REST
+Before using any of the request data, make the following replacements:
+
+REGION: The region that your project is located in. For more information about supported regions, see Generative AI on Vertex AI locations.
+PROJECT_ID: Your Google Cloud project ID.
+BASE64_SUBJECT_IMAGE: A base64-encoded image of the subject image.
+ADD_WATERMARK: An optional Boolean value. Set to true to enable watermarked images, or false to disable watermarked images. The default value is true.
+GCS_IMAGE_PATH: A Cloud Storage path to an image file.
+GCS_OUTPUT_PATH: the Cloud Storage path to store the generated output to.
+OUTPUT_MIMETYPE: An optional string that defines the output file type of the image. The following values are accepted: "image/png" or "image/jpeg". The default is "image/png".
+COMPRESSION_QUALITY: An optional integer value that specifies the level of detail that the model preserves for JPEG images. The following range of values are accepted: 0 - 100. The higher value specifies a higher compression level. The default is 75.
+UPSCALE_FACTOR: The scaling factor for the upscaled image. The final output resolution of the image after applying the upscale factor must not exceed 17 megapixels. The following values are accepted:
+"x2"
+"x3"
+"x4"
+HTTP method and URL:
+
+
+
+POST https://REGION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/REGION/publishers/google/models/imagen-4.0-upscale-preview:predict
+Request JSON body:
+
+
+
+{
+  "instances": [
+    {
+      "prompt": "Upscale the image",
+      "image": {
+        // use one of the following to specify the image to upscale
+        "bytesBase64Encoded": "BASE64_SUBJECT_IMAGE"
+        "gcsUri": "GCS_IMAGE_PATH"
+        // end of base image input options
+      },
+    }
+  ],
+  "parameters": {
+    "mode": "upscale",
+    "storageUri": "GCS_OUTPUT_PATH",
+    "outputOptions": {
+      "mimeType": "OUTPUT_MIMETYPE",
+      "compressionQuality": COMPRESSION_QUALITY
+    },
+    "upscaleConfig": {
+      "upscaleFactor": "UPSCALE_FACTOR"
+    }
+  }
+}
+To send your request, choose one of these options:
+
+curl
+PowerShell
+Note: The following command assumes that you have logged in to the gcloud CLI with your user account by running gcloud init or gcloud auth login , or by using Cloud Shell, which automatically logs you into the gcloud CLI . You can check the currently active account by running gcloud auth list.
+Save the request body in a file named request.json, and execute the following command:
+
+
+
+curl -X POST \
+     -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+     -H "Content-Type: application/json; charset=utf-8" \
+     -d @request.json \
+     "https://REGION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/REGION/publishers/google/models/imagen-4.0-upscale-preview:predict"
+The request returns an image object. In this example, an image objects is returned as a prediction object with a base64-encoded image.
+
+{
+  "predictions": [
+    {
+      "mimeType": "image/png",
+      "bytesBase64Encoded": "BASE64_IMG_BYTES"
+    }
+  ]
+}
