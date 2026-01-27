@@ -74,7 +74,7 @@ TEXTS = {
         "en": "I don't understand. Use menu buttons.",
     },
     "try_on_select_model_or_photo": {
-        "ru": "👤 Выберите фото для примерки из сохранённых или пришлите ваше фото",
+        "ru": "👤 Выберите Ваше фото для примерки из сохранённых или пришлите ваше фото",
         "en": "👤 Choose your photo for try-on or send your photo",
     },
     "try_on_send_photo": {

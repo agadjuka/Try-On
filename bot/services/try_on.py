@@ -27,7 +27,9 @@ class VertexTryOnService:
         self.project_id = settings.google_cloud_project_id
         self.region = settings.google_cloud_region
         self.model_id = "virtual-try-on-001"
-        self._access_token: Optional[str] = None
+        # Храним не сам токен, а креденшелы — токен будем получать каждый раз,
+        # чтобы он не протухал при долгой работе контейнера
+        self._credentials = None
 
     def _get_api_url(self) -> str:
         """
@@ -44,8 +46,9 @@ class VertexTryOnService:
 
     def _get_access_token(self) -> str:
         """
-        Получить access token через Application Default Credentials.
-        Точно так же, как в старой версии (api_client.py).
+        Получить актуальный access token через Application Default Credentials.
+        Токен НЕ кэшируется в виде строки, каждый раз берём его из креденшелов,
+        которые при необходимости сами обновляются.
 
         Returns:
             Access token для авторизации
@@ -53,18 +56,21 @@ class VertexTryOnService:
         Raises:
             RuntimeError: Если не удалось получить токен
         """
-        if self._access_token:
-            return self._access_token
-
         try:
-            credentials, _ = default()
+            # Инициализируем креденшелы один раз
+            if self._credentials is None:
+                self._credentials, _ = default()
 
-            if not credentials.valid:
-                credentials.refresh(Request())
+            # При необходимости обновляем (если истёк или ещё не получен)
+            if not self._credentials.valid:
+                self._credentials.refresh(Request())
 
-            self._access_token = credentials.token
-            logger.debug("Access token получен через Application Default Credentials")
-            return self._access_token
+            token = self._credentials.token
+            if not token:
+                raise RuntimeError("Пустой access token из креденшелов")
+
+            logger.debug("Access token получен из Application Default Credentials")
+            return token
 
         except Exception as e:
             logger.error(f"Ошибка при получении access token: {e}")

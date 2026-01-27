@@ -48,7 +48,7 @@ def main():
         "--source . "
         "--region asia-southeast1 "
         "--allow-unauthenticated "
-        "--memory 1Gi"
+        "--memory 512Mib"
     )
     
     try:

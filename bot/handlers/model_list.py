@@ -1,5 +1,7 @@
 """Обработчики списка моделей."""
 
+import asyncio
+
 from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InputMediaPhoto, BufferedInputFile
@@ -7,6 +9,7 @@ from loguru import logger
 
 from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
+from bot.services.result_cleanup import cleanup_user_results
 from bot.states.user_states import ModelStates
 from bot.keyboards.user_kb import (
     get_main_menu_keyboard,

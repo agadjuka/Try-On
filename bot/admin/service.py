@@ -1,5 +1,6 @@
 """Сервис для работы с админ-панелью на базе Telegram Forum Topics."""
 
+import asyncio
 from typing import Optional, List
 from loguru import logger
 
@@ -11,6 +12,9 @@ from bot.admin.topic_storage import BaseTopicStorage
 
 class AdminPanelService:
     """Сервис для управления админ-панелью через Forum Topics."""
+
+    # Таймаут для операций отправки в админ-панель (30 секунд)
+    SEND_TIMEOUT = 30.0
 
     def __init__(
         self,
@@ -97,21 +101,29 @@ class AdminPanelService:
             caption: Подпись к фото
         """
         try:
-            topic_id = await self.get_or_create_topic(user)
+            topic_id = await asyncio.wait_for(
+                self.get_or_create_topic(user),
+                timeout=self.SEND_TIMEOUT
+            )
             
             photo_file = BufferedInputFile(
                 file=photo_bytes,
                 filename="model_photo.png",
             )
             
-            await self.bot.send_photo(
-                chat_id=self.admin_group_id,
-                photo=photo_file,
-                caption=caption,
-                message_thread_id=topic_id,
+            await asyncio.wait_for(
+                self.bot.send_photo(
+                    chat_id=self.admin_group_id,
+                    photo=photo_file,
+                    caption=caption,
+                    message_thread_id=topic_id,
+                ),
+                timeout=self.SEND_TIMEOUT
             )
             
             logger.info("Фото модели отправлено в админ-панель")
+        except asyncio.TimeoutError:
+            logger.error(f"Таймаут отправки фото модели в админ-панель (превышен лимит {self.SEND_TIMEOUT}с)")
         except Exception as e:
             logger.error(f"Ошибка отправки фото модели: {e}")
 
@@ -130,21 +142,29 @@ class AdminPanelService:
             caption: Подпись к фото
         """
         try:
-            topic_id = await self.get_or_create_topic(user)
+            topic_id = await asyncio.wait_for(
+                self.get_or_create_topic(user),
+                timeout=self.SEND_TIMEOUT
+            )
             
             photo_file = BufferedInputFile(
                 file=photo_bytes,
                 filename="garment_photo.png",
             )
             
-            await self.bot.send_photo(
-                chat_id=self.admin_group_id,
-                photo=photo_file,
-                caption=caption,
-                message_thread_id=topic_id,
+            await asyncio.wait_for(
+                self.bot.send_photo(
+                    chat_id=self.admin_group_id,
+                    photo=photo_file,
+                    caption=caption,
+                    message_thread_id=topic_id,
+                ),
+                timeout=self.SEND_TIMEOUT
             )
             
             logger.info("Фото одежды отправлено в админ-панель")
+        except asyncio.TimeoutError:
+            logger.error(f"Таймаут отправки фото одежды в админ-панель (превышен лимит {self.SEND_TIMEOUT}с)")
         except Exception as e:
             logger.error(f"Ошибка отправки фото одежды: {e}")
 
@@ -166,7 +186,11 @@ class AdminPanelService:
             return
 
         try:
-            topic_id = await self.get_or_create_topic(user)
+            # Получаем или создаем топик с таймаутом
+            topic_id = await asyncio.wait_for(
+                self.get_or_create_topic(user),
+                timeout=self.SEND_TIMEOUT
+            )
             
             if len(result_photos) == 1:
                 photo_file = BufferedInputFile(
@@ -174,11 +198,15 @@ class AdminPanelService:
                     filename="generation_result.png",
                 )
                 
-                await self.bot.send_photo(
-                    chat_id=self.admin_group_id,
-                    photo=photo_file,
-                    caption=caption,
-                    message_thread_id=topic_id,
+                # Отправляем фото с таймаутом
+                await asyncio.wait_for(
+                    self.bot.send_photo(
+                        chat_id=self.admin_group_id,
+                        photo=photo_file,
+                        caption=caption,
+                        message_thread_id=topic_id,
+                    ),
+                    timeout=self.SEND_TIMEOUT
                 )
             else:
                 media_group = []
@@ -194,13 +222,19 @@ class AdminPanelService:
                         )
                     )
                 
-                await self.bot.send_media_group(
-                    chat_id=self.admin_group_id,
-                    media=media_group,
-                    message_thread_id=topic_id,
+                # Отправляем медиа-группу с таймаутом
+                await asyncio.wait_for(
+                    self.bot.send_media_group(
+                        chat_id=self.admin_group_id,
+                        media=media_group,
+                        message_thread_id=topic_id,
+                    ),
+                    timeout=self.SEND_TIMEOUT
                 )
             
             logger.info(f"Результаты генерации отправлены в админ-панель ({len(result_photos)} фото)")
+        except asyncio.TimeoutError:
+            logger.error(f"Таймаут отправки результатов генерации в админ-панель (превышен лимит {self.SEND_TIMEOUT}с)")
         except Exception as e:
             logger.error(f"Ошибка отправки результатов генерации: {e}")
 
