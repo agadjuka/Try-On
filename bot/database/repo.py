@@ -3,7 +3,7 @@
 import warnings
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from google.cloud.firestore_v1 import AsyncClient
 from google.auth.exceptions import DefaultCredentialsError
@@ -260,6 +260,31 @@ class FirestoreRepo:
                 return TryOnResult(**data)
         
         return None
+
+    async def delete_all_user_final_results(self, user_id: str) -> List[str]:
+        """
+        Удалить все финальные результаты пользователя из Firestore.
+
+        Args:
+            user_id: ID пользователя
+
+        Returns:
+            Список URI удаленных результатов (для последующего удаления из облака)
+        """
+        client = self._get_client()
+        results_ref = client.collection("users").document(user_id).collection("final_results")
+        
+        gcs_uris = []
+        async for doc in results_ref.stream():
+            data = doc.to_dict()
+            if data:
+                gcs_uri = data.get("gcs_uri")
+                if gcs_uri:
+                    gcs_uris.append(gcs_uri)
+                await doc.reference.delete()
+        
+        logger.info(f"Удалено {len(gcs_uris)} финальных результатов из Firestore для пользователя {user_id}")
+        return gcs_uris
 
     async def close(self) -> None:
         """Закрыть соединение с Firestore."""

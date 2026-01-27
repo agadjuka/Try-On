@@ -47,6 +47,18 @@ async def handle_my_models_callback(
     state_data = await state.get_data()
     old_album_ids = state_data.get("models_album_message_ids", [])
     old_menu_id = state_data.get("models_menu_message_id")
+    result_message_id = state_data.get("try_on_result_message_id")
+    result_album_message_ids = state_data.get("try_on_result_album_message_ids", [])
+    
+    # Удаляем сообщения с результатами, если они есть
+    if result_message_id:
+        try:
+            await bot.delete_message(chat_id=callback.from_user.id, message_id=result_message_id)
+        except Exception as e:
+            logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
+    
+    if result_album_message_ids:
+        await delete_messages(bot, callback.from_user.id, result_album_message_ids)
     
     try:
         models = await repo.get_user_models(user_id)
@@ -59,6 +71,7 @@ async def handle_my_models_callback(
                 chat_id=callback.from_user.id,
                 text=get_text("upload_model_instr", lang),
                 reply_markup=get_back_keyboard(lang),
+                parse_mode="HTML",
             )
             
             await state.update_data(
@@ -100,6 +113,8 @@ async def handle_my_models_callback(
         await state.update_data(
             models_album_message_ids=album_message_ids,
             models_menu_message_id=menu_message.message_id,
+            try_on_result_message_id=None,
+            try_on_result_album_message_ids=[],
         )
         
         # ПОТОМ удаляем старые по сохранённым ID
@@ -112,6 +127,10 @@ async def handle_my_models_callback(
             await callback.message.delete()
         except Exception:
             pass
+        
+        # Запускаем очистку результатов в фоне (после открытия нового меню)
+        if result_message_id or result_album_message_ids:
+            asyncio.create_task(cleanup_user_results(user_id, repo, storage_service))
         
     except Exception as e:
         logger.error(f"Ошибка при получении моделей: {e}")

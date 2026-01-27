@@ -1,5 +1,6 @@
 """Обработчики загрузки моделей."""
 
+import asyncio
 from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
@@ -7,6 +8,7 @@ from loguru import logger
 
 from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
+from bot.services.result_cleanup import cleanup_user_results
 from bot.states.user_states import ModelStates
 from bot.keyboards.user_kb import get_main_menu_keyboard, get_back_keyboard
 from bot.locales.texts import get_text
@@ -19,28 +21,58 @@ from bot.admin.factory import get_admin_service
 async def handle_add_model_callback(
     callback: CallbackQuery,
     state: FSMContext,
+    bot: Bot,
+    repo: FirestoreRepo,
+    storage_service: CloudStorageService,
     lang: str = "ru",
 ) -> None:
     """
-    Обработчик кнопки "Добавить модель" из главного меню.
+    Обработчик кнопки "Добавить модель" из главного меню или меню результатов.
 
     Args:
         callback: Callback запрос
         state: Контекст FSM
+        bot: Экземпляр бота
+        repo: Репозиторий для работы с БД
+        storage_service: Сервис для работы с GCS
         lang: Язык интерфейса
     """
     # Мгновенно отвечаем на callback - убирает "часики" на кнопке
     await callback.answer()
     
+    user_id = str(callback.from_user.id)
+    
+    # Проверяем, есть ли сохраненные результаты в FSM
+    state_data = await state.get_data()
+    result_message_id = state_data.get("try_on_result_message_id")
+    result_album_message_ids = state_data.get("try_on_result_album_message_ids", [])
+    
+    # Удаляем сообщения с результатами, если они есть
+    if result_message_id:
+        try:
+            await bot.delete_message(chat_id=callback.from_user.id, message_id=result_message_id)
+        except Exception as e:
+            logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
+    
+    if result_album_message_ids:
+        await delete_messages(bot, callback.from_user.id, result_album_message_ids)
+    
     await state.set_state(ModelStates.waiting_for_model_photo)
     await callback.message.edit_text(
         get_text("upload_model_instr", lang),
         reply_markup=get_back_keyboard(lang),
+        parse_mode="HTML",
     )
     await state.update_data(
         models_menu_message_id=callback.message.message_id,
         models_album_message_ids=[],
+        try_on_result_message_id=None,
+        try_on_result_album_message_ids=[],
     )
+    
+    # Запускаем очистку результатов в фоне (после открытия нового меню)
+    if result_message_id or result_album_message_ids:
+        asyncio.create_task(cleanup_user_results(user_id, repo, storage_service))
 
 
 async def handle_add_new_model_from_list(
@@ -73,6 +105,7 @@ async def handle_add_new_model_from_list(
         chat_id=callback.from_user.id,
         text=get_text("upload_model_instr", lang),
         reply_markup=get_back_keyboard(lang),
+        parse_mode="HTML",
     )
     
     await state.update_data(

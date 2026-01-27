@@ -1,5 +1,6 @@
 """Обработчики для примерки одежды."""
 
+import asyncio
 from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
@@ -7,6 +8,7 @@ from loguru import logger
 
 from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
+from bot.services.result_cleanup import cleanup_user_results
 from bot.keyboards.user_kb import get_back_keyboard
 from bot.handlers.try_on_utils import send_models_album, delete_try_on_selection_messages
 from bot.utils.message_utils import delete_messages
@@ -56,6 +58,7 @@ async def handle_try_on_callback(
                 chat_id=callback.from_user.id,
                 text=get_text("try_on_send_photo", lang),
                 reply_markup=get_back_keyboard(lang),
+                parse_mode="HTML",
             )
             
             # Сохраняем ID сообщения с инструкцией для последующего удаления
@@ -159,6 +162,7 @@ async def handle_new_try_on_callback(
                 chat_id=callback.from_user.id,
                 text=get_text("try_on_send_photo", lang),
                 reply_markup=get_back_keyboard(lang),
+                parse_mode="HTML",
             )
             
             # Сохраняем ID сообщения с инструкцией для последующего удаления
@@ -182,17 +186,34 @@ async def handle_new_try_on_callback(
             if old_selection_id:
                 old_ids_to_delete.append(old_selection_id)
             await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
+            
+            if result_album_message_ids:
+                await delete_messages(bot, callback.from_user.id, result_album_message_ids)
+            
             try:
                 await callback.message.delete()
             except Exception:
                 pass
             
+            # Запускаем очистку результатов в фоне (после открытия нового меню)
+            asyncio.create_task(cleanup_user_results(user_id, repo, storage_service))
+            
             return
 
+        # Удаляем сообщения с результатами
+        if result_message_id:
+            try:
+                await bot.delete_message(chat_id=callback.from_user.id, message_id=result_message_id)
+            except Exception as e:
+                logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
+        
+        if result_album_message_ids:
+            await delete_messages(bot, callback.from_user.id, result_album_message_ids)
+        
         # Восстанавливаем ID фотографий результата в FSM
         await state.update_data(
             try_on_result_message_id=None,
-            try_on_result_album_message_ids=result_album_message_ids,
+            try_on_result_album_message_ids=[],
         )
         
         # Отправляем альбом с моделями (внутри уже оптимизировано)
@@ -207,6 +228,9 @@ async def handle_new_try_on_callback(
 
         if not success:
             logger.error("Ошибка при отправке альбома моделей")
+        
+        # Запускаем очистку результатов в фоне (после открытия нового меню)
+        asyncio.create_task(cleanup_user_results(user_id, repo, storage_service))
 
     except Exception as e:
         logger.error(f"Ошибка в handle_new_try_on_callback: {e}")

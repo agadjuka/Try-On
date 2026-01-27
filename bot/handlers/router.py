@@ -58,7 +58,9 @@ def setup_handlers(
     
     # Callback: Добавить модель (из главного меню)
     async def add_model_handler(callback, state):
-        await model_upload.handle_add_model_callback(callback, state, lang)
+        await model_upload.handle_add_model_callback(
+            callback, state, bot, repo, storage_service, lang
+        )
     
     router.callback_query.register(
         add_model_handler,
