@@ -157,7 +157,7 @@ def setup_handlers(
     async def garment_photo_handler(message, state, **kwargs):
         album = kwargs.get("album")
         await try_on_processing.handle_garment_photo(
-            message, state, bot, try_on_service, album, lang
+            message, state, bot, try_on_service, storage_service, repo, album, lang
         )
     
     router.message.register(

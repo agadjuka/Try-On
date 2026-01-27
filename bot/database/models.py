@@ -37,3 +37,20 @@ class PersonImage(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat(),
         }
+
+
+class TryOnResult(BaseModel):
+    """Модель финального результата примерки."""
+
+    id: str = Field(..., description="Уникальный ID в Firestore")
+    user_id: str = Field(..., description="ID пользователя-владельца")
+    gcs_uri: str = Field(..., description="URI изображения результата в GCS (gs://...)")
+    model_gcs_uri: Optional[str] = Field(None, description="URI модели, использованной для примерки")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="Дата создания")
+
+    class Config:
+        """Конфигурация модели."""
+
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+        }

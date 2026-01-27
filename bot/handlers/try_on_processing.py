@@ -9,6 +9,9 @@ from aiogram.types import InputMediaPhoto, Message, BufferedInputFile
 from loguru import logger
 
 from bot.services.try_on import VertexTryOnService
+from bot.services.storage import CloudStorageService
+from bot.services.result_storage import ResultStorageService
+from bot.database.repo import FirestoreRepo
 from bot.keyboards.user_kb import get_try_on_result_keyboard, get_main_menu_keyboard
 from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
@@ -118,10 +121,13 @@ async def send_try_on_results(
     photo_count: int,
     failed_count: int,
     bot: Bot,
+    storage_service: CloudStorageService,
+    repo: FirestoreRepo,
+    model_gcs_uri: Optional[str] = None,
     lang: str = "ru",
 ) -> None:
     """
-    Отправить результаты примерки пользователю.
+    Отправить результаты примерки пользователю и сохранить в облако и БД.
 
     Args:
         message: Сообщение от пользователя
@@ -130,8 +136,37 @@ async def send_try_on_results(
         photo_count: Общее количество фото
         failed_count: Количество неудачных обработок
         bot: Экземпляр бота
+        storage_service: Сервис для работы с облачным хранилищем
+        repo: Репозиторий для работы с БД
+        model_gcs_uri: URI модели, использованной для примерки (опционально)
         lang: Язык интерфейса
     """
+    user_id = str(message.from_user.id)
+    
+    # Создаем сервис для сохранения результатов
+    result_storage = ResultStorageService(
+        storage_service=storage_service,
+        repo=repo,
+    )
+    
+    # Запускаем сохранение результатов в облако и БД параллельно с отправкой в Telegram
+    async def save_results_task():
+        """Задача для сохранения результатов в облако и БД."""
+        try:
+            result_ids = await result_storage.save_results_batch(
+                user_id=user_id,
+                results=successful_results,
+                model_gcs_uri=model_gcs_uri,
+            )
+            # Сохраняем ID результатов в FSM для будущих кнопок
+            await state.update_data(saved_result_ids=result_ids)
+            logger.info(f"Сохранено {len(result_ids)} результатов для пользователя {user_id}")
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении результатов в облако/БД: {e}")
+    
+    # Запускаем сохранение в фоне (не ждем завершения)
+    save_task = asyncio.create_task(save_results_task())
+    
     # Отправляем результаты генерации в админ-панель (если настроено)
     admin_service = get_admin_service(bot)
     if admin_service and successful_results:
@@ -202,6 +237,12 @@ async def send_try_on_results(
         await message.answer(
             f"⚠️ Не удалось обработать {failed_count} фото из {photo_count}.",
         )
+    
+    # Ждем завершения сохранения (не блокируем отправку в Telegram)
+    try:
+        await save_task
+    except Exception as e:
+        logger.error(f"Ошибка в задаче сохранения результатов: {e}")
 
 
 async def handle_garment_photo(
@@ -209,6 +250,8 @@ async def handle_garment_photo(
     state: FSMContext,
     bot: Bot,
     try_on_service: VertexTryOnService,
+    storage_service: CloudStorageService,
+    repo: FirestoreRepo,
     album: Optional[List[Message]] = None,
     lang: str = "ru",
 ) -> None:
@@ -365,6 +408,9 @@ async def handle_garment_photo(
             photo_count=photo_count,
             failed_count=failed_count,
             bot=bot,
+            storage_service=storage_service,
+            repo=repo,
+            model_gcs_uri=model_gcs_uri,
             lang=lang,
         )
 

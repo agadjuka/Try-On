@@ -1,6 +1,7 @@
 """Репозиторий для работы с Firestore."""
 
 import warnings
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -9,7 +10,7 @@ from google.auth.exceptions import DefaultCredentialsError
 from loguru import logger
 
 from bot.core.config import Settings
-from bot.database.models import PersonImage, UserModel
+from bot.database.models import PersonImage, UserModel, TryOnResult
 
 # Подавляем предупреждение о синхронном Retry с асинхронными вызовами
 # AsyncClient не поддерживает retry в конструкторе, используется дефолтный retry
@@ -167,6 +168,98 @@ class FirestoreRepo:
         await doc_ref.delete()
         
         logger.info(f"Модель {model_id} удалена для пользователя {user_id}")
+
+    async def add_final_result(
+        self,
+        user_id: str,
+        gcs_uri: str,
+        model_gcs_uri: Optional[str] = None,
+        result_id: Optional[str] = None,
+    ) -> str:
+        """
+        Добавить финальный результат примерки в подколлекцию users/{user_id}/final_results.
+
+        Args:
+            user_id: ID пользователя
+            gcs_uri: URI изображения результата в GCS (gs://...)
+            model_gcs_uri: URI модели, использованной для примерки (опционально)
+            result_id: Кастомный ID результата (если не указан, генерируется автоматически)
+
+        Returns:
+            ID результата в Firestore
+        """
+        client = self._get_client()
+
+        if result_id is None:
+            # Генерируем уникальный ID с использованием UUID для избежания коллизий при параллельном сохранении
+            unique_suffix = str(uuid.uuid4())[:8]
+            timestamp = int(datetime.utcnow().timestamp() * 1000)
+            result_id = f"result_{timestamp}_{unique_suffix}"
+
+        result_data = TryOnResult(
+            id=result_id,
+            user_id=user_id,
+            gcs_uri=gcs_uri,
+            model_gcs_uri=model_gcs_uri,
+            created_at=datetime.utcnow(),
+        )
+
+        # Сохраняем в подколлекцию users/{user_id}/final_results
+        doc_ref = client.collection("users").document(user_id).collection("final_results").document(result_id)
+        await doc_ref.set(result_data.model_dump())
+
+        logger.info(f"Финальный результат {result_id} добавлен для пользователя {user_id}")
+        return result_id
+
+    async def get_user_final_results(self, user_id: str) -> list[TryOnResult]:
+        """
+        Получить все финальные результаты пользователя.
+
+        Args:
+            user_id: ID пользователя
+
+        Returns:
+            Список финальных результатов пользователя
+        """
+        client = self._get_client()
+        results_ref = client.collection("users").document(user_id).collection("final_results")
+        
+        results = []
+        async for doc in results_ref.stream():
+            data = doc.to_dict()
+            if data:
+                # ID документа из Firestore должен быть явно установлен
+                data["id"] = doc.id
+                results.append(TryOnResult(**data))
+        
+        # Сортируем по дате создания (новые первыми)
+        results.sort(key=lambda x: x.created_at, reverse=True)
+        
+        logger.info(f"Найдено {len(results)} финальных результатов для пользователя {user_id}")
+        return results
+
+    async def get_final_result(self, user_id: str, result_id: str) -> Optional[TryOnResult]:
+        """
+        Получить конкретный финальный результат пользователя.
+
+        Args:
+            user_id: ID пользователя
+            result_id: ID результата
+
+        Returns:
+            Результат или None, если не найден
+        """
+        client = self._get_client()
+        doc_ref = client.collection("users").document(user_id).collection("final_results").document(result_id)
+        doc = await doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            if data:
+                data["id"] = doc.id
+                return TryOnResult(**data)
+        
+        return None
 
     async def close(self) -> None:
         """Закрыть соединение с Firestore."""
