@@ -252,7 +252,7 @@ async def send_try_on_results(
         logger.info(f"Альбом отправлен, получено {len(sent_messages) if sent_messages else 0} сообщений")
         
         result_message = await message.answer(
-            f"✅ Готово! Успешно обработано {len(successful_results)} из {photo_count} фото.\nВ случае неудовлетворительного результата, попробуйте выбрать другое исходное фото.",
+            f"✅ Готово! Успешно обработано {len(successful_results)} из {photo_count} фото.\n\n🔄В случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото.",
             reply_markup=get_try_on_result_keyboard(
                 lang=lang,
                 photo_count=len(successful_results),
@@ -371,7 +371,7 @@ async def handle_garment_photo(
         ]
         
         # Запускаем задачи обработки (не ждем завершения)
-        # Отправляем фото в админ-панель параллельно с обработкой
+        # Отправляем фото в админ-панель в фоне (не блокируем обработку)
         async def send_photos_to_admin():
             """Отправляет фото одежды в админ-панель."""
             admin_service = get_admin_service(bot)
@@ -390,17 +390,14 @@ async def handle_garment_photo(
                                 photo_bytes=photo_bytes,
                                 caption=caption,
                             )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(f"Ошибка отправки фото одежды в админ-панель: {e}")
         
-        # Запускаем отправку в админ-панель параллельно с обработкой
-        admin_task = asyncio.create_task(send_photos_to_admin())
+        # Запускаем отправку в админ-панель в фоне (не блокируем обработку)
+        asyncio.create_task(send_photos_to_admin())
         
         # Ждем завершения обработки
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        # Ждем завершения отправки в админ-панель (если еще не завершилась)
-        await admin_task
 
         # Фильтруем успешные результаты
         successful_results: List[bytes] = []
@@ -438,24 +435,40 @@ async def handle_garment_photo(
             await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open, saved_ids)
             return
 
-        # Отправляем результаты
-        await send_try_on_results(
-            message=message,
-            state=state,
-            successful_results=successful_results,
-            photo_count=photo_count,
-            failed_count=failed_count,
-            bot=bot,
-            storage_service=storage_service,
-            repo=repo,
-            model_gcs_uri=model_gcs_uri,
-            lang=lang,
-        )
+        # Отправляем результаты пользователю
+        try:
+            await send_try_on_results(
+                message=message,
+                state=state,
+                successful_results=successful_results,
+                photo_count=photo_count,
+                failed_count=failed_count,
+                bot=bot,
+                storage_service=storage_service,
+                repo=repo,
+                model_gcs_uri=model_gcs_uri,
+                lang=lang,
+            )
+        except Exception as send_error:
+            logger.error(f"Ошибка отправки результатов пользователю: {send_error}", exc_info=True)
+            # Пытаемся отправить сообщение об ошибке
+            try:
+                await message.answer(
+                    "❌ Произошла ошибка при отправке результатов.\n"
+                    "Попробуйте еще раз или нажмите /start.",
+                    reply_markup=get_main_menu_keyboard(lang),
+                )
+            except Exception:
+                pass
+            return
 
         # Сохраняем ID результатов перед очисткой состояния
-        album_ids, msg_id, photo_count, total_count, menu_open, saved_ids = await _preserve_result_message_ids(state)
-        await state.clear()
-        await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open, saved_ids)
+        try:
+            album_ids, msg_id, photo_count, total_count, menu_open, saved_ids = await _preserve_result_message_ids(state)
+            await state.clear()
+            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open, saved_ids)
+        except Exception as cleanup_error:
+            logger.error(f"Ошибка при очистке состояния: {cleanup_error}")
 
     except Exception as e:
         logger.error(f"Ошибка в handle_garment_photo: {e}", exc_info=True)
