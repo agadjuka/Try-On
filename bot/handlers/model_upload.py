@@ -149,8 +149,61 @@ async def handle_model_photo(
     if not message.photo:
         await message.answer(get_text("send_photo_please", lang))
         return
-
+    
     try:
+        user_id = str(message.from_user.id)
+        
+        # Проверяем лимит сохраненных фото (максимум 7)
+        existing_models = await repo.get_user_models(user_id)
+        if len(existing_models) >= 7:
+            # Временное уведомление о превышении лимита
+            warn_message = await message.answer(get_text("models_limit_reached", lang))
+            
+            # Переходим в раздел "Ваши фото" СРАЗУ
+            from bot.handlers.model_list import handle_my_models_callback  # локальный импорт, чтобы избежать циклов
+            
+            class _FakeCallback:
+                """Простой объект, имитирующий CallbackQuery для handle_my_models_callback."""
+                def __init__(self, from_user):
+                    self.from_user = from_user
+                    self.data = "my_models"
+                    
+                    class _FakeMessage:
+                        async def delete(self_inner):
+                            # Не удаляем предупреждение досрочно
+                            return
+                    
+                    self.message = _FakeMessage()
+                
+                async def answer(self, *args, **kwargs):
+                    # Ничего не делаем, чтобы удовлетворить вызов callback.answer()
+                    return
+            
+            fake_callback = _FakeCallback(message.from_user)
+            
+            await handle_my_models_callback(
+                callback=fake_callback,
+                state=state,
+                bot=bot,
+                repo=repo,
+                storage_service=storage_service,
+                lang=lang,
+            )
+            
+            # Удаляем предупреждение через 5 секунд
+            async def _delete_warn():
+                await asyncio.sleep(5)
+                try:
+                    await bot.delete_message(
+                        chat_id=message.chat.id,
+                        message_id=warn_message.message_id,
+                    )
+                except Exception:
+                    pass
+            
+            asyncio.create_task(_delete_warn())
+            return
+        
         largest_photo = await get_largest_photo(message.photo)
         if not largest_photo:
             await message.answer(get_text("photo_get_error", lang))
@@ -161,7 +214,6 @@ async def handle_model_photo(
         
         photo_bytes = await download_photo_to_bytes(bot, largest_photo)
         
-        user_id = str(message.from_user.id)
         model_id, gcs_uri = await process_model_photo(
             bot=bot,
             photo_bytes=photo_bytes,

@@ -94,7 +94,8 @@ async def process_model_photo(
         Кортеж (model_id, gcs_uri)
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    destination_path = f"bot_uploads/models/{user_id}_{timestamp}.png"
+    # Путь в облаке: bot_uploads/models/{user_id}/{timestamp}.png
+    destination_path = f"bot_uploads/models/{user_id}/{timestamp}.png"
     
     logger.info(f"Сохранение фото модели в Cloud Storage: {destination_path}")
     gcs_uri = await storage_service.upload_image(

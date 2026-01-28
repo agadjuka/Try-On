@@ -137,6 +137,10 @@ TEXTS = {
         "ru": "❌ Не удалось загрузить фото моделей.",
         "en": "❌ Failed to load model photos.",
     },
+    "models_limit_reached": {
+        "ru": "Сейчас доступна загрузка не более 7 ваших фото.\n\nПожалуйста, удалите старые фото для того чтобы загрузить новые.",
+        "en": "You can upload no more than 7 of your photos at the moment.\n\nPlease delete old photos in the \"Your photos\" section.",
+    },
     "photo_selected": {
         "ru": "Фото выбрано",
         "en": "Photo selected",
