@@ -186,23 +186,7 @@ async def send_try_on_results(
     # Запускаем сохранение в фоне (не ждем завершения)
     save_task = asyncio.create_task(save_results_task())
     
-    # Отправляем результаты генерации в админ-панель в фоне (не блокируем отправку пользователю)
-    async def send_to_admin_task():
-        """Задача для отправки результатов в админ-панель."""
-        admin_service = get_admin_service(bot)
-        if admin_service and successful_results:
-            try:
-                await admin_service.send_generation_results(
-                    user=message.from_user,
-                    result_photos=successful_results,
-                    caption="Проведена генерация",
-                )
-            except Exception as e:
-                logger.error(f"Ошибка отправки результатов в админ-панель: {e}")
-    
-    # Запускаем отправку в админ-панель в фоне (не ждем завершения)
-    admin_task = asyncio.create_task(send_to_admin_task())
-    
+    # СНАЧАЛА отправляем пользователю - это приоритет!
     if len(successful_results) == 1:
         # Одно фото - отправляем фото отдельно, кнопки отдельно
         logger.info("Отправка одного результата примерки")
@@ -275,6 +259,23 @@ async def send_try_on_results(
         await message.answer(
             f"⚠️ Не удалось обработать {failed_count} фото из {photo_count}.",
         )
+    
+    # ТОЛЬКО ПОСЛЕ успешной отправки пользователю запускаем отправку в админ-панель в фоне
+    async def send_to_admin_task():
+        """Задача для отправки результатов в админ-панель."""
+        admin_service = get_admin_service(bot)
+        if admin_service and successful_results:
+            try:
+                await admin_service.send_generation_results(
+                    user=message.from_user,
+                    result_photos=successful_results,
+                    caption="Проведена генерация",
+                )
+            except Exception as e:
+                logger.error(f"Ошибка отправки результатов в админ-панель: {e}")
+    
+    # Запускаем отправку в админ-панель в фоне (не ждем завершения)
+    asyncio.create_task(send_to_admin_task())
     
     # Ждем завершения сохранения (не блокируем отправку в Telegram)
     try:

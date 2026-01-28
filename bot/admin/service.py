@@ -79,6 +79,12 @@ class AdminPanelService:
             except Exception:
                 pass
 
+            # Отправляем первое сообщение с кликабельным ID клиента
+            try:
+                await self._send_initial_topic_message(user, topic_id)
+            except Exception as e:
+                logger.warning(f"Не удалось отправить начальное сообщение в топик: {e}")
+
             return topic_id
 
         except Exception as e:
@@ -237,6 +243,41 @@ class AdminPanelService:
             logger.error(f"Таймаут отправки результатов генерации в админ-панель (превышен лимит {self.SEND_TIMEOUT}с)")
         except Exception as e:
             logger.error(f"Ошибка отправки результатов генерации: {e}")
+
+    async def _send_initial_topic_message(self, user: User, topic_id: int) -> None:
+        """
+        Отправляет первое сообщение в топик с кликабельным ID клиента.
+
+        Args:
+            user: Объект пользователя Telegram
+            topic_id: ID топика
+        """
+        user_id = user.id
+        
+        # Формируем кликабельный ID клиента
+        if user.username:
+            client_link = f'<a href="tg://user?id={user_id}">@{user.username}</a>'
+        else:
+            client_link = f'<a href="tg://user?id={user_id}">ID: {user_id}</a>'
+        
+        message_text = f"Клиент: {client_link}"
+        
+        try:
+            await asyncio.wait_for(
+                self.bot.send_message(
+                    chat_id=self.admin_group_id,
+                    text=message_text,
+                    message_thread_id=topic_id,
+                    parse_mode="HTML",
+                ),
+                timeout=self.SEND_TIMEOUT
+            )
+            logger.info(f"Начальное сообщение отправлено в топик {topic_id} для пользователя {user_id}")
+        except asyncio.TimeoutError:
+            logger.error(f"Таймаут отправки начального сообщения в топик (превышен лимит {self.SEND_TIMEOUT}с)")
+        except Exception as e:
+            logger.error(f"Ошибка отправки начального сообщения в топик: {e}")
+            raise
 
     def _generate_topic_name(self, user: User) -> str:
         """
