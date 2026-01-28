@@ -53,15 +53,14 @@ async def handle_my_models_callback(
     result_message_id = state_data.get("try_on_result_message_id")
     result_album_message_ids = state_data.get("try_on_result_album_message_ids", [])
     
-    # Удаляем сообщения с результатами, если они есть
+    # Удаляем только сообщение с кнопками (фотографии остаются в чате)
     if result_message_id:
         try:
             await bot.delete_message(chat_id=callback.from_user.id, message_id=result_message_id)
         except Exception as e:
             logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
     
-    if result_album_message_ids:
-        await delete_messages(bot, callback.from_user.id, result_album_message_ids)
+    # Фотографии результатов НЕ удаляем из чата - они остаются для пользователя
     
     try:
         models = await repo.get_user_models(user_id)

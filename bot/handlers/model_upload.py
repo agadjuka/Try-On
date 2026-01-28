@@ -47,30 +47,37 @@ async def handle_add_model_callback(
     result_message_id = state_data.get("try_on_result_message_id")
     result_album_message_ids = state_data.get("try_on_result_album_message_ids", [])
     
-    # Удаляем сообщения с результатами, если они есть
+    # СНАЧАЛА отправляем новое сообщение
+    await state.set_state(ModelStates.waiting_for_model_photo)
+    instruction_message = await bot.send_message(
+        chat_id=callback.from_user.id,
+        text=get_text("upload_model_instr", lang),
+        reply_markup=get_back_keyboard(lang),
+        parse_mode="HTML",
+    )
+    
+    await state.update_data(
+        models_menu_message_id=instruction_message.message_id,
+        models_album_message_ids=[],
+        try_on_result_message_id=None,
+        try_on_result_album_message_ids=[],
+    )
+    
+    # ПОТОМ удаляем только сообщение с кнопками (фотографии остаются в чате)
     if result_message_id:
         try:
             await bot.delete_message(chat_id=callback.from_user.id, message_id=result_message_id)
         except Exception as e:
             logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
     
-    if result_album_message_ids:
-        await delete_messages(bot, callback.from_user.id, result_album_message_ids)
+    # Фотографии результатов НЕ удаляем из чата - они остаются для пользователя
+    # Удаляем только само сообщение с кнопкой
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
     
-    await state.set_state(ModelStates.waiting_for_model_photo)
-    await callback.message.edit_text(
-        get_text("upload_model_instr", lang),
-        reply_markup=get_back_keyboard(lang),
-        parse_mode="HTML",
-    )
-    await state.update_data(
-        models_menu_message_id=callback.message.message_id,
-        models_album_message_ids=[],
-        try_on_result_message_id=None,
-        try_on_result_album_message_ids=[],
-    )
-    
-    # Запускаем очистку результатов в фоне (после открытия нового меню)
+    # Запускаем очистку результатов из облака в фоне (файлы из GCS и Firestore)
     if result_message_id or result_album_message_ids:
         asyncio.create_task(cleanup_user_results(user_id, repo, storage_service))
 

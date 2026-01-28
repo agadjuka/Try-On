@@ -187,28 +187,26 @@ async def handle_new_try_on_callback(
                 old_ids_to_delete.append(old_selection_id)
             await delete_messages(bot, callback.from_user.id, old_ids_to_delete)
             
-            if result_album_message_ids:
-                await delete_messages(bot, callback.from_user.id, result_album_message_ids)
+            # Фотографии результатов НЕ удаляем из чата - они остаются для пользователя
             
             try:
                 await callback.message.delete()
             except Exception:
                 pass
             
-            # Запускаем очистку результатов в фоне (после открытия нового меню)
+            # Запускаем очистку результатов из облака в фоне (файлы из GCS и Firestore)
             asyncio.create_task(cleanup_user_results(user_id, repo, storage_service))
             
             return
 
-        # Удаляем сообщения с результатами
+        # Удаляем только сообщение с кнопками (фотографии остаются в чате)
         if result_message_id:
             try:
                 await bot.delete_message(chat_id=callback.from_user.id, message_id=result_message_id)
             except Exception as e:
                 logger.warning(f"Не удалось удалить сообщение с кнопками: {e}")
         
-        if result_album_message_ids:
-            await delete_messages(bot, callback.from_user.id, result_album_message_ids)
+        # Фотографии результатов НЕ удаляем из чата - они остаются для пользователя
         
         # Восстанавливаем ID фотографий результата в FSM
         await state.update_data(
