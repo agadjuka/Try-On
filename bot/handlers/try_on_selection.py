@@ -14,6 +14,7 @@ from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 from bot.handlers.try_on_utils import delete_try_on_selection_messages
 from bot.utils.model_utils import process_model_photo
 from bot.admin.factory import get_admin_service
+from bot.handlers.models_common import check_models_limit_and_redirect
 
 
 async def handle_model_selection_for_try_on(
@@ -114,6 +115,19 @@ async def handle_model_photo_for_try_on(
         
         user_id = str(message.from_user.id)
         
+        # Общая проверка лимита (с дополнительным закрытием экрана выбора при примерке)
+        limit_reached = await check_models_limit_and_redirect(
+            message=message,
+            state=state,
+            bot=bot,
+            repo=repo,
+            storage_service=storage_service,
+            lang=lang,
+            cleanup_try_on_selection=True,
+        )
+        if limit_reached:
+            return
+
         largest_photo = await get_largest_photo(message.photo)
         if not largest_photo:
             await message.answer(get_text("photo_get_error", lang))
