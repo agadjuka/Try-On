@@ -87,7 +87,7 @@ class VertexTryOnService:
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = False,
-        person_generation: str = "allow_adult",
+        person_generation: str = "allow_all",
         safety_setting: str = "block_medium_and_above",
         output_mime_type: str = "image/png",
         compression_quality: int = 0,
@@ -104,7 +104,7 @@ class VertexTryOnService:
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
             add_watermark: Добавлять водяной знак (по умолчанию: True)
-            person_generation: Разрешение генерации людей (по умолчанию: allow_adult)
+            person_generation: Разрешение генерации людей (по умолчанию: allow_all)
             safety_setting: Уровень фильтрации безопасности (по умолчанию: block_medium_and_above)
             output_mime_type: Формат вывода (по умолчанию: image/png)
             compression_quality: Качество сжатия для JPEG (по умолчанию: 75)
