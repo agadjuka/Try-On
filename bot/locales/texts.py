@@ -70,8 +70,8 @@ TEXTS = {
         "en": "📸 Send photos of clothing (up to 5).\n\nYou can send one photo or several photos in one message.",
     },
     "try_on_ready": {
-        "ru": "✅ Примерка готова!\n\n🔄В случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото.",
-        "en": "✅ Try-on ready!\n\n🔄If the result is unsatisfactory, try selecting another original (your) photo.",
+        "ru": "✅ Примерка готова!\n\n🔄 В случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото.",
+        "en": "✅ Try-on ready!\n\n🔄 If the result is unsatisfactory, try selecting another original (your) photo.",
     },
     "models_load_error": {
         "ru": "Произошла ошибка при загрузке моделей.",

@@ -175,7 +175,11 @@ async def handle_download_photo(
             
             # Отправляем на апскейл
             logger.info(f"Отправка изображения на апскейл (фото {photo_index + 1})")
-            upscaled_bytes = await upscale_service.upscale_image(image_bytes)
+            upscaled_bytes = await upscale_service.upscale_image(
+                image_bytes,
+                user=callback.from_user,
+                bot=bot,
+            )
             
             # Удаляем сообщение ожидания
             try:
@@ -202,6 +206,19 @@ async def handle_download_photo(
         except Exception as e:
             logger.error(f"Ошибка при апскейле изображения: {e}", exc_info=True)
             
+            # Отправляем ошибку в админ-панель
+            try:
+                from bot.admin.error_reporter import get_error_reporter
+                error_reporter = get_error_reporter(bot)
+                if error_reporter:
+                    error_reporter.send_error_async(
+                        user=callback.from_user,
+                        error=e,
+                        context="Download/Upscale",
+                    )
+            except Exception as report_error:
+                logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+            
             # Удаляем сообщение ожидания
             try:
                 await bot.delete_message(
@@ -215,6 +232,20 @@ async def handle_download_photo(
             
     except Exception as e:
         logger.error(f"Ошибка в handle_download_photo: {e}", exc_info=True)
+        
+        # Отправляем ошибку в админ-панель
+        try:
+            from bot.admin.error_reporter import get_error_reporter
+            error_reporter = get_error_reporter(bot)
+            if error_reporter:
+                error_reporter.send_error_async(
+                    user=callback.from_user,
+                    error=e,
+                    context="Download Handler",
+                )
+        except Exception as report_error:
+            logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+        
         try:
             await callback.answer(get_text("error_occurred", lang), show_alert=True)
         except Exception:

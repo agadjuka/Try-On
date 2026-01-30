@@ -2,12 +2,15 @@
 
 import base64
 import asyncio
+import json
 from typing import Optional
 
 import aiohttp
 from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
+from aiogram import Bot
+from aiogram.types import User
 
 from bot.core.config import Settings
 
@@ -55,6 +58,8 @@ class UpscaleService:
         self,
         image_bytes: bytes,
         upscale_factor: str = "x2",
+        user: Optional[User] = None,
+        bot: Optional[Bot] = None,
     ) -> bytes:
         """
         Апскейл изображения через Imagen API.
@@ -62,6 +67,8 @@ class UpscaleService:
         Args:
             image_bytes: Байты изображения для апскейла
             upscale_factor: Фактор увеличения ("x2", "x4", "x8")
+            user: Пользователь (для отправки ошибок в админ-панель, опционально)
+            bot: Экземпляр бота (для отправки ошибок в админ-панель, опционально)
 
         Returns:
             Байты апскейленного изображения
@@ -114,12 +121,55 @@ class UpscaleService:
             # Отправляем запрос асинхронно
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers=headers, json=payload) as response:
-                    response.raise_for_status()
-                    result = await response.json()
+                    raw_response_text = None
+                    try:
+                        raw_response_text = await response.text()
+                        response.raise_for_status()
+                        result = await response.json()
+                    except aiohttp.ClientResponseError as http_error:
+                        # Сохраняем сырой ответ для отправки в админ-панель
+                        raw_response = raw_response_text or str(http_error)
+                        logger.error(f"Ошибка HTTP ответа: {raw_response}")
+                        
+                        # Отправляем ошибку в админ-панель
+                        if user and bot:
+                            try:
+                                from bot.admin.error_reporter import get_error_reporter
+                                error_reporter = get_error_reporter(bot)
+                                if error_reporter:
+                                    error_reporter.send_error_async(
+                                        user=user,
+                                        error=http_error,
+                                        context="Upscale",
+                                        raw_response=raw_response,
+                                    )
+                            except Exception as report_error:
+                                logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+                        
+                        raise Exception(f"Ошибка HTTP запроса к Imagen API: {str(http_error)}") from http_error
 
             # Проверяем результат
             if "predictions" not in result or not result["predictions"]:
-                raise Exception("Не получен результат от API")
+                error_msg = "Не получен результат от API"
+                raw_response = json.dumps(result, indent=2, ensure_ascii=False)
+                logger.error(f"{error_msg}. Ответ: {raw_response}")
+                
+                # Отправляем ошибку в админ-панель
+                if user and bot:
+                    try:
+                        from bot.admin.error_reporter import get_error_reporter
+                        error_reporter = get_error_reporter(bot)
+                        if error_reporter:
+                            error_reporter.send_error_async(
+                                user=user,
+                                error=Exception(error_msg),
+                                context="Upscale",
+                                raw_response=raw_response,
+                            )
+                    except Exception as report_error:
+                        logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+                
+                raise Exception(error_msg)
 
             # Декодируем результат
             output_base64 = result["predictions"][0]["bytesBase64Encoded"]
@@ -129,6 +179,34 @@ class UpscaleService:
             return output_bytes
 
         except aiohttp.ClientError as e:
+            # Отправляем ошибку в админ-панель
+            if user and bot:
+                try:
+                    from bot.admin.error_reporter import get_error_reporter
+                    error_reporter = get_error_reporter(bot)
+                    if error_reporter:
+                        error_reporter.send_error_async(
+                            user=user,
+                            error=e,
+                            context="Upscale",
+                        )
+                except Exception as report_error:
+                    logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+            
             raise Exception(f"Ошибка HTTP запроса к Imagen API: {str(e)}") from e
         except Exception as e:
+            # Отправляем ошибку в админ-панель
+            if user and bot:
+                try:
+                    from bot.admin.error_reporter import get_error_reporter
+                    error_reporter = get_error_reporter(bot)
+                    if error_reporter:
+                        error_reporter.send_error_async(
+                            user=user,
+                            error=e,
+                            context="Upscale",
+                        )
+                except Exception as report_error:
+                    logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+            
             raise Exception(f"Ошибка при апскейле изображения: {str(e)}") from e

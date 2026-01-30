@@ -9,6 +9,8 @@ import requests
 from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
+from aiogram import Bot
+from aiogram.types import User
 
 from bot.core.config import Settings
 
@@ -166,6 +168,8 @@ class VertexTryOnService:
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = False,
+        user: Optional[User] = None,
+        bot: Optional[Bot] = None,
     ) -> bytes:
         """
         Генерировать изображение примерки асинхронно.
@@ -178,6 +182,8 @@ class VertexTryOnService:
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
             add_watermark: Добавлять водяной знак (по умолчанию: True)
+            user: Пользователь (для отправки ошибок в админ-панель, опционально)
+            bot: Экземпляр бота (для отправки ошибок в админ-панель, опционально)
 
         Returns:
             Байты результата примерки
@@ -227,13 +233,47 @@ class VertexTryOnService:
 
             if "predictions" not in result:
                 error_msg = "Ответ API не содержит 'predictions'"
-                logger.error(f"{error_msg}. Ответ: {json.dumps(result, indent=2)}")
+                raw_response = json.dumps(result, indent=2, ensure_ascii=False)
+                logger.error(f"{error_msg}. Ответ: {raw_response}")
+                
+                # Отправляем ошибку в админ-панель
+                if user and bot:
+                    try:
+                        from bot.admin.error_reporter import get_error_reporter
+                        error_reporter = get_error_reporter(bot)
+                        if error_reporter:
+                            error_reporter.send_error_async(
+                                user=user,
+                                error=ValueError(error_msg),
+                                context="Try-On Generation",
+                                raw_response=raw_response,
+                            )
+                    except Exception as report_error:
+                        logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+                
                 raise ValueError(error_msg)
 
             predictions = result["predictions"]
             if not predictions:
                 error_msg = "Ответ API содержит пустой список predictions"
-                logger.error(f"{error_msg}. Ответ: {json.dumps(result, indent=2)}")
+                raw_response = json.dumps(result, indent=2, ensure_ascii=False)
+                logger.error(f"{error_msg}. Ответ: {raw_response}")
+                
+                # Отправляем ошибку в админ-панель
+                if user and bot:
+                    try:
+                        from bot.admin.error_reporter import get_error_reporter
+                        error_reporter = get_error_reporter(bot)
+                        if error_reporter:
+                            error_reporter.send_error_async(
+                                user=user,
+                                error=ValueError(error_msg),
+                                context="Try-On Generation",
+                                raw_response=raw_response,
+                            )
+                    except Exception as report_error:
+                        logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+                
                 raise ValueError(error_msg)
 
             logger.info(f"Получено {len(predictions)} результатов")
@@ -243,7 +283,24 @@ class VertexTryOnService:
 
             if "bytesBase64Encoded" not in first_prediction:
                 error_msg = "Ответ не содержит 'bytesBase64Encoded'"
-                logger.error(f"{error_msg}. Ответ: {json.dumps(first_prediction, indent=2)}")
+                raw_response = json.dumps(first_prediction, indent=2, ensure_ascii=False)
+                logger.error(f"{error_msg}. Ответ: {raw_response}")
+                
+                # Отправляем ошибку в админ-панель
+                if user and bot:
+                    try:
+                        from bot.admin.error_reporter import get_error_reporter
+                        error_reporter = get_error_reporter(bot)
+                        if error_reporter:
+                            error_reporter.send_error_async(
+                                user=user,
+                                error=ValueError(error_msg),
+                                context="Try-On Generation",
+                                raw_response=raw_response,
+                            )
+                    except Exception as report_error:
+                        logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+                
                 raise ValueError(error_msg)
 
             # Декодируем base64 в байты
@@ -255,15 +312,35 @@ class VertexTryOnService:
 
         except requests.exceptions.RequestException as e:
             error_detail = "Неизвестная ошибка"
+            raw_response = None
+            
             if hasattr(e, 'response') and e.response is not None:
                 try:
                     error_detail = e.response.json()
-                    logger.error(f"Детали ошибки: {json.dumps(error_detail, indent=2)}")
+                    raw_response = json.dumps(error_detail, indent=2, ensure_ascii=False)
+                    logger.error(f"Детали ошибки: {raw_response}")
                 except:
                     error_detail = e.response.text
-                    logger.error(f"Текст ответа: {error_detail}")
+                    raw_response = error_detail
+                    logger.error(f"Текст ответа: {raw_response}")
 
             logger.error(f"Ошибка при запросе к API: {e}")
+            
+            # Отправляем ошибку в админ-панель, если есть user и bot
+            if user and bot:
+                try:
+                    from bot.admin.error_reporter import get_error_reporter
+                    error_reporter = get_error_reporter(bot)
+                    if error_reporter:
+                        error_reporter.send_error_async(
+                            user=user,
+                            error=e,
+                            context="Try-On Generation",
+                            raw_response=raw_response,
+                        )
+                except Exception as report_error:
+                    logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+            
             raise RuntimeError(
                 f"Ошибка API: {str(e)}. "
                 f"Детали: {error_detail}"
@@ -271,4 +348,19 @@ class VertexTryOnService:
 
         except Exception as e:
             logger.error(f"Неожиданная ошибка при генерации: {e}")
+            
+            # Отправляем ошибку в админ-панель, если есть user и bot
+            if user and bot:
+                try:
+                    from bot.admin.error_reporter import get_error_reporter
+                    error_reporter = get_error_reporter(bot)
+                    if error_reporter:
+                        error_reporter.send_error_async(
+                            user=user,
+                            error=e,
+                            context="Try-On Generation",
+                        )
+                except Exception as report_error:
+                    logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+            
             raise RuntimeError(f"Неожиданная ошибка при генерации: {str(e)}") from e

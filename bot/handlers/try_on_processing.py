@@ -119,6 +119,8 @@ async def process_single_garment(
         result_bytes = await try_on_service.generate_try_on(
             person_gcs_uri=model_gcs_uri,
             garment_bytes=photo_bytes,
+            user=garment_msg.from_user,
+            bot=bot,
         )
         logger.info(
             f"Примерка {index + 1}/{photo_count} успешно сгенерирована ({len(result_bytes)} байт)"
@@ -130,6 +132,20 @@ async def process_single_garment(
         logger.error(
             f"Ошибка при обработке фото одежды {index + 1}: {e}"
         )
+        
+        # Отправляем ошибку в админ-панель
+        try:
+            from bot.admin.error_reporter import get_error_reporter
+            error_reporter = get_error_reporter(bot)
+            if error_reporter:
+                error_reporter.send_error_async(
+                    user=garment_msg.from_user,
+                    error=e,
+                    context=f"Try-On Processing (фото {index + 1}/{photo_count})",
+                )
+        except Exception as report_error:
+            logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+        
         return None
 
 
@@ -470,6 +486,19 @@ async def handle_garment_photo(
 
     except Exception as e:
         logger.error(f"Ошибка в handle_garment_photo: {e}", exc_info=True)
+        
+        # Отправляем ошибку в админ-панель
+        try:
+            from bot.admin.error_reporter import get_error_reporter
+            error_reporter = get_error_reporter(bot)
+            if error_reporter:
+                error_reporter.send_error_async(
+                    user=message.from_user,
+                    error=e,
+                    context="Try-On Handler",
+                )
+        except Exception as report_error:
+            logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
         
         # Сохраняем ID результатов перед очисткой
         try:
