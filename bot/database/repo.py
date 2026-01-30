@@ -90,6 +90,41 @@ class FirestoreRepo:
         logger.info(f"Пользователь {doc_id} добавлен/обновлен в Firestore")
         return doc_id
 
+    async def get_user_language(self, user_id: str) -> Optional[str]:
+        """
+        Получить язык пользователя.
+
+        Args:
+            user_id: ID пользователя в Firestore
+
+        Returns:
+            Язык пользователя ('ru' или 'en') или None, если не установлен
+        """
+        client = self._get_client()
+        doc_ref = client.collection("users").document(user_id)
+        doc = await doc_ref.get()
+        
+        if doc.exists:
+            data = doc.to_dict()
+            if data:
+                return data.get("language")
+        
+        return None
+
+    async def set_user_language(self, user_id: str, language: str) -> None:
+        """
+        Установить язык пользователя.
+
+        Args:
+            user_id: ID пользователя в Firestore
+            language: Язык ('ru' или 'en')
+        """
+        client = self._get_client()
+        doc_ref = client.collection("users").document(user_id)
+        await doc_ref.update({"language": language})
+        
+        logger.info(f"Язык пользователя {user_id} установлен: {language}")
+
     async def add_model(
         self,
         user_id: str,

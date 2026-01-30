@@ -12,6 +12,7 @@ class UserModel(BaseModel):
     id: str = Field(..., description="Уникальный ID в Firestore")
     telegram_id: int = Field(..., description="ID пользователя в Telegram")
     username: Optional[str] = Field(None, description="Username в Telegram")
+    language: Optional[str] = Field(None, description="Язык интерфейса ('ru' или 'en')")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Дата создания")
 
     class Config:

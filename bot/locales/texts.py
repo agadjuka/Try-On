@@ -217,6 +217,14 @@ TEXTS = {
         "ru": "Результат не найден",
         "en": "Result not found",
     },
+    "language_selection": {
+        "ru": "🇬🇧 Please select language\n\n🇷🇺 Пожалуйста, выберите язык",
+        "en": "🇬🇧 Please select language\n\n🇷🇺 Пожалуйста, выберите язык",
+    },
+    "language_selected": {
+        "ru": "✅ Язык выбран",
+        "en": "✅ Language selected",
+    },
 }
 
 

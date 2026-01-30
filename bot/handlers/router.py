@@ -18,8 +18,10 @@ from bot.handlers import (
     try_on_selection,
     try_on_processing,
     download_menu,
+    language,
 )
 from bot.middlewares.album import AlbumMiddleware
+from bot.services.language import get_user_language
 
 
 def setup_handlers(
@@ -41,8 +43,6 @@ def setup_handlers(
         try_on_service: Сервис для генерации примерки
         upscale_service: Сервис для апскейла изображений
     """
-    lang = "ru"  # TODO: получать из настроек пользователя
-    
     # Регистрируем middleware для альбомов
     album_middleware = AlbumMiddleware(delay=1.5)
     router.message.middleware(album_middleware)
@@ -56,8 +56,18 @@ def setup_handlers(
         Command("start"),
     )
     
+    # Callback: Выбор языка
+    async def language_selection_handler(callback, state):
+        await language.handle_language_selection(callback, bot, repo)
+    
+    router.callback_query.register(
+        language_selection_handler,
+        lambda c: c.data and c.data.startswith("select_language_"),
+    )
+    
     # Callback: Добавить модель (из главного меню)
     async def add_model_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await model_upload.handle_add_model_callback(
             callback, state, bot, repo, storage_service, lang
         )
@@ -69,6 +79,7 @@ def setup_handlers(
     
     # Callback: Добавить новую модель (из списка моделей)
     async def add_new_model_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await model_upload.handle_add_new_model_from_list(callback, state, bot, lang)
     
     router.callback_query.register(
@@ -78,6 +89,7 @@ def setup_handlers(
     
     # Callback: Мои модели
     async def my_models_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await model_list.handle_my_models_callback(callback, state, bot, repo, storage_service, lang)
     
     router.callback_query.register(
@@ -87,6 +99,7 @@ def setup_handlers(
     
     # Callback: Назад в меню
     async def back_to_menu_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await navigation.handle_back_to_menu(callback, state, bot, lang)
     
     router.callback_query.register(
@@ -96,6 +109,7 @@ def setup_handlers(
     
     # Callback: Удалить модель
     async def model_delete_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await model_list.handle_model_delete(callback, state, repo, bot, storage_service, lang)
     
     router.callback_query.register(
@@ -105,6 +119,7 @@ def setup_handlers(
     
     # Callback: Навигация по галерее моделей
     async def model_navigation_handler(callback):
+        lang = await get_user_language(repo, callback.from_user.id)
         await model_gallery.handle_model_navigation(callback, bot, repo, storage_service, lang)
     
     router.callback_query.register(
@@ -114,6 +129,7 @@ def setup_handlers(
     
     # Фото модели в состоянии waiting_for_model_photo
     async def model_photo_handler(message, state):
+        lang = await get_user_language(repo, message.from_user.id)
         await model_upload.handle_model_photo(message, state, bot, repo, storage_service, lang)
     
     router.message.register(
@@ -124,6 +140,7 @@ def setup_handlers(
     
     # Callback: Примерка
     async def try_on_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await try_on.handle_try_on_callback(callback, state, bot, repo, storage_service, lang)
     
     router.callback_query.register(
@@ -133,6 +150,7 @@ def setup_handlers(
     
     # Callback: Новая примерка (из результата)
     async def new_try_on_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await try_on.handle_new_try_on_callback(callback, state, bot, repo, storage_service, lang)
     
     router.callback_query.register(
@@ -142,6 +160,7 @@ def setup_handlers(
     
     # Callback: Выбор модели для примерки
     async def try_on_select_model_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await try_on_selection.handle_model_selection_for_try_on(callback, state, bot, repo, lang)
     
     router.callback_query.register(
@@ -151,6 +170,7 @@ def setup_handlers(
     
     # Фото модели в состоянии waiting_for_model_photo (для примерки)
     async def try_on_model_photo_handler(message, state):
+        lang = await get_user_language(repo, message.from_user.id)
         await try_on_selection.handle_model_photo_for_try_on(message, state, bot, repo, storage_service, lang)
     
     router.message.register(
@@ -162,6 +182,7 @@ def setup_handlers(
     # Фото одежды в состоянии waiting_for_garment_photo
     async def garment_photo_handler(message, state, **kwargs):
         album = kwargs.get("album")
+        lang = await get_user_language(repo, message.from_user.id)
         await try_on_processing.handle_garment_photo(
             message, state, bot, try_on_service, storage_service, repo, album, lang
         )
@@ -174,6 +195,7 @@ def setup_handlers(
     
     # Callback: Переключение меню скачивания
     async def toggle_download_menu_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await download_menu.handle_toggle_download_menu(callback, state, bot, lang)
     
     router.callback_query.register(
@@ -183,6 +205,7 @@ def setup_handlers(
     
     # Callback: Скачивание отдельного фото
     async def download_photo_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
         await download_menu.handle_download_photo(
             callback, state, bot, storage_service, repo, upscale_service, lang
         )

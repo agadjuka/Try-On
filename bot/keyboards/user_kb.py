@@ -313,3 +313,25 @@ def get_try_on_result_keyboard(
     ])
     
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_language_selection_keyboard() -> InlineKeyboardMarkup:
+    """
+    Получить клавиатуру для выбора языка.
+
+    Returns:
+        Inline клавиатура с кнопками выбора языка
+    """
+    builder = InlineKeyboardBuilder()
+    
+    builder.button(
+        text="🇬🇧 English",
+        callback_data="select_language_en"
+    )
+    builder.button(
+        text="🇷🇺 Русский",
+        callback_data="select_language_ru"
+    )
+    
+    builder.adjust(1)  # По одной кнопке в ряд
+    return builder.as_markup()
