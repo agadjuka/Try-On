@@ -377,23 +377,27 @@ async def handle_garment_photo(
         # Запускаем задачи обработки (не ждем завершения)
         # Отправляем фото в админ-панель в фоне (не блокируем обработку)
         async def send_photos_to_admin():
-            """Отправляет фото одежды в админ-панель."""
+            """Отправляет фото одежды в админ-панель альбомом."""
             admin_service = get_admin_service(bot)
             if admin_service:
                 try:
-                    for idx, garment_msg in enumerate(garment_messages):
+                    # Собираем все фото в список
+                    photo_bytes_list = []
+                    for garment_msg in garment_messages:
                         largest_photo = await get_largest_photo(garment_msg.photo)
                         if largest_photo:
                             photo_bytes = await download_photo_to_bytes(bot, largest_photo)
-                            if idx == 0:
-                                caption = get_text("admin_generation_started", lang).format(count=photo_count)
-                            else:
-                                caption = get_text("admin_garment_added", lang)
-                            await admin_service.send_garment_photo(
-                                user=message.from_user,
-                                photo_bytes=photo_bytes,
-                                caption=caption,
-                            )
+                            if photo_bytes:
+                                photo_bytes_list.append(photo_bytes)
+                    
+                    # Отправляем все фото альбомом одним сообщением
+                    if photo_bytes_list:
+                        caption = get_text("admin_generation_started", lang).format(count=photo_count)
+                        await admin_service.send_garment_photos(
+                            user=message.from_user,
+                            photo_bytes_list=photo_bytes_list,
+                            caption=caption,
+                        )
                 except Exception as e:
                     logger.error(f"Ошибка отправки фото одежды в админ-панель: {e}")
         

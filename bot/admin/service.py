@@ -174,6 +174,73 @@ class AdminPanelService:
         except Exception as e:
             logger.error(f"Ошибка отправки фото одежды: {e}")
 
+    async def send_garment_photos(
+        self,
+        user: User,
+        photo_bytes_list: List[bytes],
+        caption: str = "Добавлены новые фото одежды",
+    ) -> None:
+        """
+        Отправляет несколько фото одежды в админ-панель альбомом.
+
+        Args:
+            user: Объект пользователя Telegram
+            photo_bytes_list: Список байтов изображений
+            caption: Подпись к фото (будет добавлена только к первому фото)
+        """
+        if not photo_bytes_list:
+            return
+
+        try:
+            topic_id = await asyncio.wait_for(
+                self.get_or_create_topic(user),
+                timeout=self.SEND_TIMEOUT
+            )
+            
+            if len(photo_bytes_list) == 1:
+                photo_file = BufferedInputFile(
+                    file=photo_bytes_list[0],
+                    filename="garment_photo.png",
+                )
+                
+                await asyncio.wait_for(
+                    self.bot.send_photo(
+                        chat_id=self.admin_group_id,
+                        photo=photo_file,
+                        caption=caption,
+                        message_thread_id=topic_id,
+                    ),
+                    timeout=self.SEND_TIMEOUT
+                )
+            else:
+                media_group = []
+                for idx, photo_bytes in enumerate(photo_bytes_list):
+                    photo_file = BufferedInputFile(
+                        file=photo_bytes,
+                        filename=f"garment_photo_{idx + 1}.png",
+                    )
+                    media_group.append(
+                        InputMediaPhoto(
+                            media=photo_file,
+                            caption=caption if idx == 0 else None,
+                        )
+                    )
+                
+                await asyncio.wait_for(
+                    self.bot.send_media_group(
+                        chat_id=self.admin_group_id,
+                        media=media_group,
+                        message_thread_id=topic_id,
+                    ),
+                    timeout=self.SEND_TIMEOUT
+                )
+            
+            logger.info(f"Фото одежды отправлены в админ-панель ({len(photo_bytes_list)} фото)")
+        except asyncio.TimeoutError:
+            logger.error(f"Таймаут отправки фото одежды в админ-панель (превышен лимит {self.SEND_TIMEOUT}с)")
+        except Exception as e:
+            logger.error(f"Ошибка отправки фото одежды: {e}")
+
     async def send_generation_results(
         self,
         user: User,
