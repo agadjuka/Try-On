@@ -132,20 +132,8 @@ async def process_single_garment(
         logger.error(
             f"Ошибка при обработке фото одежды {index + 1}: {e}"
         )
-        
-        # Отправляем ошибку в админ-панель
-        try:
-            from bot.admin.error_reporter import get_error_reporter
-            error_reporter = get_error_reporter(bot)
-            if error_reporter:
-                error_reporter.send_error_async(
-                    user=garment_msg.from_user,
-                    error=e,
-                    context=f"Try-On Processing (фото {index + 1}/{photo_count})",
-                )
-        except Exception as report_error:
-            logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
-        
+        # Ошибка уже отправлена в админ-панель из сервиса try_on.py (если это ошибка API)
+        # или будет отправлена из handle_garment_photo (если это критическая ошибка)
         return None
 
 
