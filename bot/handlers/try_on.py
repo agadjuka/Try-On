@@ -12,6 +12,7 @@ from bot.services.result_cleanup import cleanup_user_results
 from bot.keyboards.user_kb import get_back_keyboard
 from bot.handlers.try_on_utils import send_models_album, delete_try_on_selection_messages
 from bot.utils.message_utils import delete_messages
+from bot.locales.texts import get_text
 
 
 async def handle_try_on_callback(
@@ -50,7 +51,6 @@ async def handle_try_on_callback(
         
         if not models:
             # Если нет моделей - просим прислать фото
-            from bot.locales.texts import get_text
             from bot.states.user_states import TryOnStates
             
             # СНАЧАЛА показываем новое сообщение
@@ -111,7 +111,7 @@ async def handle_try_on_callback(
         # Отправляем сообщение об ошибке
         await bot.send_message(
             chat_id=callback.from_user.id,
-            text="❌ Произошла ошибка. Попробуйте позже.",
+            text=get_text("try_on_error_general", lang),
             reply_markup=get_back_keyboard(lang),
         )
 
@@ -154,7 +154,6 @@ async def handle_new_try_on_callback(
         
         if not models:
             # Если нет моделей - просим прислать фото
-            from bot.locales.texts import get_text
             from bot.states.user_states import TryOnStates
             
             # СНАЧАЛА показываем новое сообщение

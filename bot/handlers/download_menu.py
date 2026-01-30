@@ -28,10 +28,7 @@ def _get_result_message_text(photo_count: int, total_count: int, lang: str = "ru
     if photo_count == 1:
         return get_text("try_on_ready", lang)
     else:
-        return (
-            f"✅ Готово! Успешно обработано {photo_count} из {total_count} фото.\n"
-            "🔄В случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото."
-        )
+        return get_text("try_on_results_multiple", lang).format(success=photo_count, total=total_count)
 
 
 async def handle_toggle_download_menu(
@@ -87,7 +84,7 @@ async def handle_toggle_download_menu(
     except Exception as e:
         logger.error(f"Ошибка в handle_toggle_download_menu: {e}", exc_info=True)
         try:
-            await callback.answer("Произошла ошибка", show_alert=True)
+            await callback.answer(get_text("download_error", lang), show_alert=True)
         except Exception:
             pass
 
@@ -138,12 +135,12 @@ async def handle_download_photo(
         
         if not saved_result_ids:
             logger.warning("Не найдены сохраненные ID результатов")
-            await callback.answer("Результаты не найдены", show_alert=True)
+            await callback.answer(get_text("results_not_found", lang), show_alert=True)
             return
         
         if photo_index < 0 or photo_index >= len(saved_result_ids):
             logger.error(f"Неверный индекс фото: {photo_index}, доступно: {len(saved_result_ids)}")
-            await callback.answer("Фото не найдено", show_alert=True)
+            await callback.answer(get_text("photo_not_found", lang), show_alert=True)
             return
         
         # Получаем ID результата
@@ -155,7 +152,7 @@ async def handle_download_photo(
             result = await repo.get_final_result(user_id, result_id)
             if not result:
                 logger.error(f"Результат {result_id} не найден в БД")
-                await callback.answer("Результат не найден", show_alert=True)
+                await callback.answer(get_text("result_not_found", lang), show_alert=True)
                 return
             
             gcs_uri = result.gcs_uri

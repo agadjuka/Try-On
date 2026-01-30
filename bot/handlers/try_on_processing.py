@@ -236,7 +236,7 @@ async def send_try_on_results(
         logger.info(f"Альбом отправлен, получено {len(sent_messages) if sent_messages else 0} сообщений")
         
         result_message = await message.answer(
-            f"✅ Готово! Успешно обработано {len(successful_results)} из {photo_count} фото.\n\n🔄В случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото.",
+            get_text("try_on_results_multiple", lang).format(success=len(successful_results), total=photo_count),
             reply_markup=get_try_on_result_keyboard(
                 lang=lang,
                 photo_count=len(successful_results),
@@ -257,7 +257,7 @@ async def send_try_on_results(
 
     if failed_count > 0:
         await message.answer(
-            f"⚠️ Не удалось обработать {failed_count} фото из {photo_count}.",
+            get_text("try_on_partial_failure", lang).format(failed=failed_count, total=photo_count),
         )
     
     # ТОЛЬКО ПОСЛЕ успешной отправки пользователю запускаем отправку в админ-панель в фоне
@@ -269,7 +269,7 @@ async def send_try_on_results(
                 await admin_service.send_generation_results(
                     user=message.from_user,
                     result_photos=successful_results,
-                    caption="Проведена генерация",
+                    caption=get_text("admin_generation_done", lang),
                 )
             except Exception as e:
                 logger.error(f"Ошибка отправки результатов в админ-панель: {e}")
@@ -314,7 +314,7 @@ async def handle_garment_photo(
 
         if not model_gcs_uri:
             await message.answer(
-                "⚠️ Фото не выбрано. Начните заново через меню 'Примерка'.",
+                get_text("model_not_selected", lang),
                 reply_markup=get_main_menu_keyboard(lang),
             )
             await state.clear()
@@ -331,7 +331,7 @@ async def handle_garment_photo(
                 garment_messages = [message]
 
         if not garment_messages:
-            await message.answer("Пожалуйста, отправьте фото одежды.")
+            await message.answer(get_text("send_garment_photo_please", lang))
             return
 
         # Ограничиваем до 5 фото
@@ -351,8 +351,7 @@ async def handle_garment_photo(
 
         # Уведомляем пользователя и сохраняем ID сообщения для последующего удаления
         processing_message = await message.answer(
-            f"📸 Получено {photo_count} фото. Начинаю примерку...\n"
-            "⏳ Это займет 15-20 секунд."
+            get_text("try_on_started", lang).format(count=photo_count)
         )
         processing_message_id = processing_message.message_id
 
@@ -383,9 +382,9 @@ async def handle_garment_photo(
                         if largest_photo:
                             photo_bytes = await download_photo_to_bytes(bot, largest_photo)
                             if idx == 0:
-                                caption = f"Начата генерация для {photo_count} элемента(ов) одежды"
+                                caption = get_text("admin_generation_started", lang).format(count=photo_count)
                             else:
-                                caption = "Добавлено новое фото одежды"
+                                caption = get_text("admin_garment_added", lang)
                             await admin_service.send_garment_photo(
                                 user=message.from_user,
                                 photo_bytes=photo_bytes,
@@ -427,8 +426,7 @@ async def handle_garment_photo(
             album_ids, msg_id, photo_count, total_count, menu_open, saved_ids = await _preserve_result_message_ids(state)
             
             await message.answer(
-                "❌ Не удалось сгенерировать примерку для ни одного фото.\n"
-                "Попробуйте еще раз или выберите другие фото.",
+                get_text("try_on_all_failed", lang),
                 reply_markup=get_main_menu_keyboard(lang),
             )
             
@@ -455,8 +453,7 @@ async def handle_garment_photo(
             # Пытаемся отправить сообщение об ошибке
             try:
                 await message.answer(
-                    "❌ Произошла ошибка при отправке результатов.\n"
-                    "Попробуйте еще раз или нажмите /start.",
+                    get_text("try_on_send_error", lang),
                     reply_markup=get_main_menu_keyboard(lang),
                 )
             except Exception:
@@ -482,8 +479,7 @@ async def handle_garment_photo(
         
         try:
             await message.answer(
-                "❌ Произошла ошибка при генерации примерки.\n"
-                "Попробуйте еще раз или нажмите /start.",
+                get_text("try_on_generation_error", lang),
                 reply_markup=get_main_menu_keyboard(lang),
             )
         except Exception as send_error:

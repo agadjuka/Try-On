@@ -44,7 +44,7 @@ async def show_model_in_gallery(
         
         media = InputMediaPhoto(
             media=photo_file,
-            caption=f"Фото {current_index + 1} из {len(models)}",
+            caption=get_text("photo_counter", lang).format(current=current_index + 1, total=len(models)),
         )
         
         keyboard = get_gallery_keyboard(

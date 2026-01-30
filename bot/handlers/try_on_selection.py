@@ -153,7 +153,7 @@ async def handle_model_photo_for_try_on(
                 await admin_service.send_model_photo(
                     user=message.from_user,
                     photo_bytes=photo_bytes,
-                    caption="Добавлено новое фото модели",
+                    caption=get_text("admin_model_added", lang),
                 )
             except Exception:
                 pass

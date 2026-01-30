@@ -165,6 +165,94 @@ TEXTS = {
         "ru": "❌ Ошибка при увеличении качества изображения.",
         "en": "❌ Error increasing image quality.",
     },
+    "start_error": {
+        "ru": "Произошла ошибка. Попробуй позже.",
+        "en": "An error occurred. Please try again later.",
+    },
+    "nav_prev": {
+        "ru": "◀️",
+        "en": "◀️",
+    },
+    "nav_next": {
+        "ru": "▶️",
+        "en": "▶️",
+    },
+    "add_new_photo": {
+        "ru": "➕ Добавить новое фото",
+        "en": "➕ Add New Photo",
+    },
+    "delete_photo_number": {
+        "ru": "🗑 Удалить фото {number}",
+        "en": "🗑 Delete Photo {number}",
+    },
+    "admin_model_added": {
+        "ru": "Добавлено новое фото модели",
+        "en": "New model photo added",
+    },
+    "photo_counter": {
+        "ru": "Фото {current} из {total}",
+        "en": "Photo {current} of {total}",
+    },
+    "try_on_error_general": {
+        "ru": "❌ Произошла ошибка. Попробуйте позже.",
+        "en": "❌ An error occurred. Please try again later.",
+    },
+    "model_not_selected": {
+        "ru": "⚠️ Фото не выбрано. Начните заново через меню 'Примерка'.",
+        "en": "⚠️ Photo not selected. Start over through the 'Try On' menu.",
+    },
+    "admin_generation_done": {
+        "ru": "Проведена генерация",
+        "en": "Generation completed",
+    },
+    "try_on_results_multiple": {
+        "ru": "✅ Готово! Успешно обработано {success} из {total} фото.\n\n🔄В случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото.",
+        "en": "✅ Done! Successfully processed {success} of {total} photos.\n\n🔄If the result is unsatisfactory, try selecting another original (your) photo.",
+    },
+    "try_on_partial_failure": {
+        "ru": "⚠️ Не удалось обработать {failed} фото из {total}.",
+        "en": "⚠️ Failed to process {failed} of {total} photos.",
+    },
+    "send_garment_photo_please": {
+        "ru": "Пожалуйста, отправьте фото одежды.",
+        "en": "Please send a photo of clothing.",
+    },
+    "try_on_started": {
+        "ru": "📸 Получено {count} фото. Начинаю примерку...\n⏳ Это займет 15-20 секунд.",
+        "en": "📸 Received {count} photos. Starting try-on...\n⏳ This will take 15-20 seconds.",
+    },
+    "admin_generation_started": {
+        "ru": "Начата генерация для {count} элемента(ов) одежды",
+        "en": "Generation started for {count} clothing item(s)",
+    },
+    "admin_garment_added": {
+        "ru": "Добавлено новое фото одежды",
+        "en": "New clothing photo added",
+    },
+    "try_on_all_failed": {
+        "ru": "❌ Не удалось сгенерировать примерку для ни одного фото.\nПопробуйте еще раз или выберите другие фото.",
+        "en": "❌ Failed to generate try-on for any photo.\nPlease try again or select other photos.",
+    },
+    "try_on_send_error": {
+        "ru": "❌ Произошла ошибка при отправке результатов.\nПопробуйте еще раз или нажмите /start.",
+        "en": "❌ An error occurred while sending results.\nPlease try again or press /start.",
+    },
+    "try_on_generation_error": {
+        "ru": "❌ Произошла ошибка при генерации примерки.\nПопробуйте еще раз или нажмите /start.",
+        "en": "❌ An error occurred while generating try-on.\nPlease try again or press /start.",
+    },
+    "download_error": {
+        "ru": "Произошла ошибка",
+        "en": "An error occurred",
+    },
+    "results_not_found": {
+        "ru": "Результаты не найдены",
+        "en": "Results not found",
+    },
+    "result_not_found": {
+        "ru": "Результат не найден",
+        "en": "Result not found",
+    },
 }
 
 

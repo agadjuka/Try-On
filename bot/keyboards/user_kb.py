@@ -59,9 +59,9 @@ def get_gallery_keyboard(
     nav_row = []
     if total_count > 1:
         if current_index > 0:
-            nav_row.append(("◀️", f"model_prev_{current_index}"))
+            nav_row.append((get_text("nav_prev", lang), f"model_prev_{current_index}"))
         if current_index < total_count - 1:
-            nav_row.append(("▶️", f"model_next_{current_index}"))
+            nav_row.append((get_text("nav_next", lang), f"model_next_{current_index}"))
     
     for text, callback_data in nav_row:
         builder.button(text=text, callback_data=callback_data)
@@ -101,7 +101,7 @@ def get_model_selection_keyboard(
     
     for idx, model in enumerate(models):
         builder.button(
-            text=f"Фото {idx + 1}",
+            text=get_text("photo_number", lang).format(number=idx + 1),
             callback_data=f"try_on_select_model_{model.id}",
         )
     
@@ -150,14 +150,14 @@ def get_models_list_keyboard(
     
     # Кнопка "Добавить новое фото"
     builder.button(
-        text="➕ Добавить новое фото",
+        text=get_text("add_new_photo", lang),
         callback_data="add_new_model_from_list",
     )
     
     # Кнопки удаления для каждого фото
     for idx, model in enumerate(models):
         builder.button(
-            text=f"🗑 Удалить фото {idx + 1}",
+            text=get_text("delete_photo_number", lang).format(number=idx + 1),
             callback_data=f"model_delete_{model.id}",
         )
     

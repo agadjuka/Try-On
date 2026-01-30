@@ -52,5 +52,5 @@ async def start_command(
     except Exception as e:
         logger.error(f"Ошибка в /start для пользователя {user.id}: {e}")
         await message.answer(
-            "Произошла ошибка. Попробуй позже.",
+            get_text("start_error", lang),
         )
