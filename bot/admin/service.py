@@ -9,6 +9,9 @@ from aiogram.types import User, BufferedInputFile, InputMediaPhoto
 
 from bot.admin.topic_storage import BaseTopicStorage
 
+# ID пользователя, для которого работает переключение пересылки
+SPECIFIC_USER_ID = 261617302
+
 
 class AdminPanelService:
     """Сервис для управления админ-панелью через Forum Topics."""
@@ -21,6 +24,7 @@ class AdminPanelService:
         bot: Bot,
         storage: BaseTopicStorage,
         admin_group_id: int,
+        forwarding_enabled: bool = True,
     ) -> None:
         """
         Инициализирует сервис админ-панели.
@@ -29,10 +33,29 @@ class AdminPanelService:
             bot: Экземпляр Telegram бота
             storage: Хранилище для связей user_id и topic_id
             admin_group_id: ID группы Telegram для админ-панели
+            forwarding_enabled: Включена ли пересылка для конкретного пользователя
         """
         self.bot = bot
         self.storage = storage
         self.admin_group_id = admin_group_id
+        self.forwarding_enabled = forwarding_enabled
+
+    def _should_forward(self, user: User) -> bool:
+        """
+        Проверяет, нужно ли пересылать сообщения в админ-панель.
+        
+        Для пользователя 261617302 - зависит от настройки forwarding_enabled.
+        Для всех остальных - всегда True.
+        
+        Args:
+            user: Объект пользователя Telegram
+            
+        Returns:
+            True если нужно пересылать, False если нет
+        """
+        if user.id == SPECIFIC_USER_ID:
+            return self.forwarding_enabled
+        return True
 
     async def get_or_create_topic(self, user: User) -> int:
         """
@@ -47,6 +70,9 @@ class AdminPanelService:
         Raises:
             RuntimeError: Если не удалось создать топик и он не существует в хранилище
         """
+        if not self._should_forward(user):
+            raise RuntimeError("Пересылка отключена для этого пользователя")
+            
         user_id = user.id
 
         # Проверяем, есть ли топик в хранилище
@@ -106,6 +132,9 @@ class AdminPanelService:
             photo_bytes: Байты изображения
             caption: Подпись к фото
         """
+        if not self._should_forward(user):
+            return
+            
         try:
             topic_id = await asyncio.wait_for(
                 self.get_or_create_topic(user),
@@ -147,6 +176,9 @@ class AdminPanelService:
             photo_bytes: Байты изображения
             caption: Подпись к фото
         """
+        if not self._should_forward(user):
+            return
+            
         try:
             topic_id = await asyncio.wait_for(
                 self.get_or_create_topic(user),
@@ -189,6 +221,9 @@ class AdminPanelService:
             caption: Подпись к фото (будет добавлена только к первому фото)
         """
         if not photo_bytes_list:
+            return
+            
+        if not self._should_forward(user):
             return
 
         try:
@@ -256,6 +291,9 @@ class AdminPanelService:
             caption: Подпись к фото (будет добавлена только к первому фото)
         """
         if not result_photos:
+            return
+            
+        if not self._should_forward(user):
             return
 
         try:

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     
     # Название базы данных Firestore
     firestore_database_id: str = "(default)"
+    
+    # Настройки админ-панели для конкретного пользователя (261617302)
+    admin_panel_forwarding_enabled: bool = True  # on/off пересылка в админ-панель для пользователя 261617302
 
     model_config = SettingsConfigDict(
         env_file=".env",

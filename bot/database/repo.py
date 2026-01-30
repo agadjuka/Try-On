@@ -353,7 +353,11 @@ class FirestoreRepo:
 
     async def close(self) -> None:
         """Закрыть соединение с Firestore."""
-        if self._client is not None:
-            await self._client.close()
-            self._client = None
-            logger.info("Соединение с Firestore закрыто")
+        client = self._client
+        if client is not None:
+            self._client = None  # Сбрасываем сразу, чтобы избежать повторных вызовов
+            try:
+                await client.close()
+                logger.info("Соединение с Firestore закрыто")
+            except Exception as e:
+                logger.warning(f"Ошибка при закрытии соединения с Firestore: {e}")

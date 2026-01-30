@@ -99,6 +99,9 @@ class ErrorReporter:
         if not self.admin_service:
             logger.warning("AdminPanelService недоступен, ошибка не отправлена")
             return
+            
+        if not self.admin_service._should_forward(user):
+            return
 
         try:
             # Форматируем сообщение
