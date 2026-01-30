@@ -65,6 +65,15 @@ def setup_handlers(
         lambda c: c.data and c.data.startswith("select_language_"),
     )
     
+    # Callback: Смена языка
+    async def switch_language_handler(callback, state):
+        await language.handle_switch_language(callback, bot, repo)
+    
+    router.callback_query.register(
+        switch_language_handler,
+        F.data == "switch_language",
+    )
+    
     # Callback: Добавить модель (из главного меню)
     async def add_model_handler(callback, state):
         lang = await get_user_language(repo, callback.from_user.id)

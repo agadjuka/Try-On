@@ -225,6 +225,14 @@ TEXTS = {
         "ru": "✅ Язык выбран",
         "en": "✅ Language selected",
     },
+    "switch_language": {
+        "ru": "🇬🇧 Сменить язык на ENG",
+        "en": "🇷🇺 Switch language to RUS",
+    },
+    "language_changed": {
+        "ru": "✅ Язык изменен",
+        "en": "✅ Language changed",
+    },
 }
 
 

@@ -91,7 +91,10 @@ class FirestoreRepo:
             if isinstance(existing_created_at, datetime):
                 created_at_value = existing_created_at
             elif isinstance(existing_created_at, str):
-                created_at_value = datetime.fromisoformat(existing_created_at.replace('Z', '+00:00'))
+                try:
+                    created_at_value = datetime.fromisoformat(existing_created_at.replace('Z', '+00:00'))
+                except (ValueError, AttributeError):
+                    created_at_value = datetime.utcnow()
             else:
                 created_at_value = datetime.utcnow()
         else:

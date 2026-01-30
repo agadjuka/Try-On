@@ -30,6 +30,10 @@ def get_main_menu_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
         text=get_text("menu_my_models", lang),
         callback_data="my_models"
     )
+    builder.button(
+        text=get_text("switch_language", lang),
+        callback_data="switch_language"
+    )
     
     builder.adjust(1)  # По одной кнопке в ряд
     return builder.as_markup()

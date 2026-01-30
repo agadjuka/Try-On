@@ -37,11 +37,8 @@ async def handle_language_selection(
         return
     
     try:
-        # Получаем user_id
-        user_id = str(user.id)
-        
-        # Сохраняем язык
-        await set_user_language(repo, user.id, language, user_id)
+        # Сохраняем язык (user_id всегда равен str(user.id), не передаем его)
+        await set_user_language(repo, user.id, language)
         
         # Отвечаем на callback
         await callback.answer(get_text("language_selected", language))
@@ -65,4 +62,48 @@ async def handle_language_selection(
         
     except Exception as e:
         logger.error(f"Ошибка при выборе языка для пользователя {user.id}: {e}")
+        # Используем выбранный язык для ошибки (language уже определена выше)
         await callback.answer(get_text("error_occurred", language))
+
+
+async def handle_switch_language(
+    callback: CallbackQuery,
+    bot: Bot,
+    repo: FirestoreRepo,
+) -> None:
+    """
+    Обработчик смены языка.
+
+    Args:
+        callback: Callback запрос
+        bot: Экземпляр бота
+        repo: Репозиторий для работы с БД
+    """
+    user = callback.from_user
+    
+    try:
+        # Получаем текущий язык (user_id всегда равен str(user.id), не передаем его)
+        current_language = await get_user_language(repo, user.id)
+        
+        # Инвертируем язык
+        new_language = "en" if current_language == "ru" else "ru"
+        
+        # Сохраняем новый язык (user_id всегда равен str(user.id), не передаем его)
+        await set_user_language(repo, user.id, new_language)
+        
+        # Отвечаем на callback
+        await callback.answer(get_text("language_changed", new_language))
+        
+        # Редактируем сообщение с тем же текстом, но на новом языке
+        await callback.message.edit_text(
+            get_text("welcome", new_language),
+            reply_markup=get_main_menu_keyboard(new_language),
+            parse_mode="HTML",
+        )
+        
+        logger.info(f"Пользователь {user.id} сменил язык с {current_language} на {new_language}")
+        
+    except Exception as e:
+        logger.error(f"Ошибка при смене языка для пользователя {user.id}: {e}")
+        # Используем русский по умолчанию для ошибок
+        await callback.answer(get_text("error_occurred", "ru"))

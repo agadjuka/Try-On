@@ -34,7 +34,7 @@ async def start_command(
         )
         logger.info(f"Пользователь {user_id} обработан в /start")
         
-        # Проверяем, есть ли язык у пользователя
+        # Проверяем, есть ли язык у пользователя в БД (прямая проверка, не через кеш)
         language = await repo.get_user_language(user_id)
         
         if language is None:
