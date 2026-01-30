@@ -3,7 +3,7 @@
 TEXTS = {
     "welcome": {
         "ru": "👋 <b>Добро пожаловать в VYON</b>\n\nЗдесь вы можете примерить любую одежду на своё фото всего за пару кликов ✨\n\n<b>1️⃣ Примерка</b>\nНажмите <b>«ПРИМЕРКА»</b>, загрузите ваше фото (или выберите из сохранённых). Фото сохранится — потом его можно будет использовать для других примерок.\n\n<b>2️⃣ Фото одежды</b>\nОтправьте до 5 фотографий элементов одежды, которую хотите примерить. С каждым элементом одежды будет сгенерировано отдельное изображение в новом образе.",
-        "en": "👋 Hello! I'm a virtual try-on bot.\n\nChoose an action:",
+        "en": "👋 <b>Welcome to VYON</b>\n\nHere you can try on any clothing on your photo in just a few clicks ✨\n\n<b>1️⃣ Try-On</b>\nPress <b>«TRY ON»</b>, upload your photo (or choose from saved ones). The photo will be saved — you can use it later for other try-ons.\n\n<b>2️⃣ Clothing Photos</b>\nSend up to 5 photos of clothing items you want to try on. A separate image will be generated for each clothing item in a new look.",
     },
     "menu_add_model": {
         "ru": "➕ Добавить ваше фото",
@@ -23,7 +23,7 @@ TEXTS = {
     },
     "upload_model_instr": {
         "ru": "📸 Отправьте ваше фото.\n\n<b>Для лучшего результата:</b>\n• Загружайте четкое фото крупным планом.\n• Желательно быть в одежде, похожей по длине на новую (например, длинный рукав на длинный).\n• Избегайте слишком объемных вещей (скрывающих фигуру) и открытого тела (купальников).\n\n<i>На стадии разработки бота, для контроля качества, разработчики имеют доступ к загружаемым вами фото</i>",
-        "en": "📸 Send your photo.\n\nFor best results, send a clear, well-lit portrait photo.",
+        "en": "📸 Send your photo.\n\n<b>For best results:</b>\n• Upload a clear close-up photo.\n• It's advisable to wear clothing similar in length to the new one (e.g., long sleeve to long sleeve).\n• Avoid overly bulky items (that hide your figure) and exposed body (swimwear).\n\n<i>During bot development, for quality control, developers have access to photos you upload</i>",
     },
     "model_saved": {
         "ru": "✅ Фото успешно сохранено!",
@@ -41,10 +41,6 @@ TEXTS = {
         "ru": "🗑 Фото удалено.",
         "en": "🗑 Photo deleted.",
     },
-    "delete_error": {
-        "ru": "❌ Ошибка при удалении фото.",
-        "en": "❌ Error deleting photo.",
-    },
     "back": {
         "ru": "🔙 Назад",
         "en": "🔙 Back",
@@ -53,25 +49,9 @@ TEXTS = {
         "ru": "🗑 Удалить",
         "en": "🗑 Delete",
     },
-    "try_on_instr": {
-        "ru": "📸 Отправьте фото одежды для примерки.",
-        "en": "📸 Send a photo of clothing for try-on.",
-    },
     "processing": {
         "ru": "⏳ Сохраняю...",
         "en": "⏳ Saving...",
-    },
-    "try_on_success": {
-        "ru": "✅ Примерка готова!\nВ случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото.",
-        "en": "✅ Try-on ready!",
-    },
-    "try_on_error": {
-        "ru": "❌ Ошибка при генерации примерки.",
-        "en": "❌ Error generating try-on.",
-    },
-    "unknown_message": {
-        "ru": "Не понимаю. Используйте кнопки меню.",
-        "en": "I don't understand. Use menu buttons.",
     },
     "try_on_select_model_or_photo": {
         "ru": "👤 Выберите Ваше фото для примерки из сохранённых или пришлите ваше фото",
@@ -79,7 +59,7 @@ TEXTS = {
     },
     "try_on_send_photo": {
         "ru": "📸 Пришлите ваше фото для примерки\n\n<b>Для лучшего результата:</b>\n• Загружайте четкое фото крупным планом.\n• Желательно быть в одежде, похожей по длине на новую (например, длинный рукав на длинный).\n• Избегайте слишком объемных вещей (скрывающих фигуру) и открытого тела (купальников).\n\n<i>На стадии разработки бота, для контроля качества, разработчики имеют доступ к загружаемым вами фото</i>",
-        "en": "📸 Send your photo for try-on",
+        "en": "📸 Send your photo for try-on\n\n<b>For best results:</b>\n• Upload a clear close-up photo.\n• It's advisable to wear clothing similar in length to the new one (e.g., long sleeve to long sleeve).\n• Avoid overly bulky items (that hide your figure) and exposed body (swimwear).\n\n<i>During bot development, for quality control, developers have access to photos you upload</i>",
     },
     "my_photos_title": {
         "ru": "⬆️ Ваши фото",
@@ -91,7 +71,7 @@ TEXTS = {
     },
     "try_on_ready": {
         "ru": "✅ Примерка готова!\n\n🔄В случае неудовлетворительного результата, попробуйте выбрать другое исходное (Ваше) фото.",
-        "en": "✅ Try-on ready!",
+        "en": "✅ Try-on ready!\n\n🔄If the result is unsatisfactory, try selecting another original (your) photo.",
     },
     "models_load_error": {
         "ru": "Произошла ошибка при загрузке моделей.",
@@ -108,22 +88,6 @@ TEXTS = {
     "photo_get_error": {
         "ru": "Не удалось получить фото.",
         "en": "Failed to get photo.",
-    },
-    "no_photos": {
-        "ru": "Нет фото",
-        "en": "No photos",
-    },
-    "unknown_command": {
-        "ru": "Неизвестная команда",
-        "en": "Unknown command",
-    },
-    "list_end": {
-        "ru": "Достигнут конец списка",
-        "en": "End of list reached",
-    },
-    "navigation_error": {
-        "ru": "Ошибка при навигации",
-        "en": "Navigation error",
     },
     "invalid_data_format": {
         "ru": "Неверный формат данных",
