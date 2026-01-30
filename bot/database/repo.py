@@ -76,16 +76,43 @@ class FirestoreRepo:
         """
         client = self._get_client()
         doc_id = user_id or str(telegram_id)
-
-        user_data = UserModel(
-            id=doc_id,
-            telegram_id=telegram_id,
-            username=username,
-            created_at=datetime.utcnow(),
-        )
-
         doc_ref = client.collection("users").document(doc_id)
-        await doc_ref.set(user_data.model_dump(), merge=True)
+        
+        # Получаем существующий документ, чтобы сохранить язык и created_at
+        doc = await doc_ref.get()
+        existing_data = doc.to_dict() if doc.exists else None
+        
+        # Сохраняем существующий язык и created_at, если они есть
+        existing_language = existing_data.get("language") if existing_data else None
+        existing_created_at = existing_data.get("created_at") if existing_data else None
+        
+        # Обрабатываем created_at: может быть datetime или строка
+        if existing_created_at:
+            if isinstance(existing_created_at, datetime):
+                created_at_value = existing_created_at
+            elif isinstance(existing_created_at, str):
+                created_at_value = datetime.fromisoformat(existing_created_at.replace('Z', '+00:00'))
+            else:
+                created_at_value = datetime.utcnow()
+        else:
+            created_at_value = datetime.utcnow()
+
+        # Формируем данные для обновления
+        update_data = {
+            "id": doc_id,
+            "telegram_id": telegram_id,
+            "created_at": created_at_value,
+        }
+        
+        # Добавляем username только если он указан
+        if username is not None:
+            update_data["username"] = username
+        
+        # Сохраняем существующий язык, если он есть (не перезаписываем)
+        if existing_language is not None:
+            update_data["language"] = existing_language
+
+        await doc_ref.set(update_data, merge=True)
 
         logger.info(f"Пользователь {doc_id} добавлен/обновлен в Firestore")
         return doc_id
