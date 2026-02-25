@@ -132,3 +132,6 @@ dmypy.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Вложенный репозиторий (отдельный проект)
+ShopifyAPP/vyon-try-on/

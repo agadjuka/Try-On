@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks, FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from loguru import logger
 
+from bot.api.router import router as api_router
 from bot.core.config import get_settings
 from bot.core.logger import setup_logger
 from bot.webhook import process_update, init_webhook_services
@@ -17,6 +18,9 @@ app = FastAPI(
     description="Webhook endpoint для Telegram бота виртуальной примерки",
     version="1.0.0",
 )
+
+# REST API для внешних клиентов (сайт)
+app.include_router(api_router)
 
 
 @app.on_event("startup")

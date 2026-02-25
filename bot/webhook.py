@@ -10,6 +10,7 @@ from loguru import logger
 from bot.core.config import get_settings
 from bot.database.repo import FirestoreRepo
 from bot.handlers.router import setup_handlers
+from bot.services.container import ServiceContainer
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
 from bot.services.upscale import UpscaleService
@@ -72,6 +73,13 @@ async def init_webhook_services() -> None:
         upscale_service=_webhook_upscale_service,
     )
     
+    # Наполняем ServiceContainer — он используется REST API модулем
+    container = ServiceContainer.get()
+    container.settings = settings
+    container.try_on_service = _webhook_try_on_service
+    container.storage_service = _webhook_storage_service
+    container.repo = _webhook_repo
+
     _initialized = True
     logger.info("✅ Все сервисы успешно инициализированы")
 

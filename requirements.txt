@@ -18,6 +18,7 @@ requests>=2.31.0
 # --- Webhook Server ---
 fastapi>=0.115.0
 uvicorn[standard]>=0.34.0
+python-multipart>=0.0.9
 
 # --- Utilities ---
 loguru>=0.7.0
