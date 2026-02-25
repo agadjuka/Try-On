@@ -117,27 +117,20 @@
 
   function fadeText(el, text) {
     if (!el) return;
-    // старый текст уезжает вниз
+    // старый текст плавно уезжает вниз
     el.classList.remove('vy-text-in');
     el.classList.add('vy-text-out');
 
+    // ждём, пока он доедет вниз, и только потом меняем на новый
     setTimeout(function () {
-      // ставим новый текст "над" блоком без анимации
       el.textContent = text;
       el.classList.remove('vy-text-out');
-
-      el.style.transition = 'none';
-      el.style.transform  = 'translateY(-18px)';
-      el.style.opacity    = '0';
-
-      // форсируем перерисовку
-      void el.offsetHeight;
-
-      // включаем плавный спуск сверху вниз
-      el.style.transition = '';
-      el.style.transform  = 'translateY(0)';
-      el.style.opacity    = '1';
-    }, 260);
+      // новый текст появляется сверху (через класс), затем плавно опускается в центр
+      el.classList.add('vy-text-in');
+      requestAnimationFrame(function () {
+        el.classList.remove('vy-text-in');
+      });
+    }, 460);
   }
 
   /* ──────────────────────────────────────
