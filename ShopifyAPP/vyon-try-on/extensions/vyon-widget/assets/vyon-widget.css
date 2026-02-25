@@ -140,7 +140,7 @@
 .vy-btn-ghost:hover { color: var(--vy-black); }
 
 /* ╔══════════════════════════════════════╗
-   ║  PROCESSING — ORBITAL ANIMATION     ║
+   ║  PROCESSING — LOADER & TEXT         ║
    ╚══════════════════════════════════════╝ */
 .vy-proc-area {
   display: flex; flex-direction: column; align-items: center;
@@ -149,95 +149,36 @@
   position: relative; overflow: hidden;
 }
 
-/* Stage that holds all orbital layers */
-.vy-orbit-stage {
-  width: 130px; height: 130px; position: relative;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Base ring styles */
-.vy-ring {
-  position: absolute; border-radius: 50%;
-  border-style: solid; border-color: transparent;
-}
-
-/* Outer ring — slow, fading gradient appearance */
-.vy-ring--outer {
-  width: 124px; height: 124px; border-width: 1.5px;
-  border-top-color:    rgba(0,0,0,.85);
-  border-right-color:  rgba(0,0,0,.25);
-  border-bottom-color: rgba(0,0,0,.06);
-  animation: vyOrbitCW 3.6s linear infinite;
-}
-
-/* Middle ring — counter-rotate, dual caps */
-.vy-ring--mid {
-  width: 90px; height: 90px; border-width: 2px;
-  border-top-color:  rgba(0,0,0,.65);
-  border-left-color: rgba(0,0,0,.18);
-  animation: vyOrbitCCW 2.4s linear infinite;
-}
-
-/* Inner ring — fastest, sharp */
-.vy-ring--inner {
-  width: 60px; height: 60px; border-width: 1.5px;
-  border-top-color:    rgba(0,0,0,.9);
-  border-right-color:  rgba(0,0,0,.35);
-  border-bottom-color: rgba(0,0,0,.08);
-  animation: vyOrbitCW 1.5s linear infinite;
-}
-
-@keyframes vyOrbitCW  { to { transform: rotate( 360deg); } }
-@keyframes vyOrbitCCW { to { transform: rotate(-360deg); } }
-
-/* Orbiting dots — tied to outer and mid rings */
-.vy-dot-orbit {
-  position: absolute; border-radius: 50%;
-  top: 50%; left: 50%;
-}
-.vy-dot-orbit::before,
-.vy-dot-orbit::after {
-  content: ''; position: absolute;
-  width: 5px; height: 5px; border-radius: 50%; background: var(--vy-black);
-}
-
-.vy-dot-orbit--outer {
-  width: 124px; height: 124px;
-  margin: -62px 0 0 -62px;
-  animation: vyOrbitCW 3.6s linear infinite;
-}
-.vy-dot-orbit--outer::before { top: -2.5px;  left: calc(50% - 2.5px); }
-.vy-dot-orbit--outer::after  { bottom: -2.5px; left: calc(50% - 2.5px); opacity: .2; }
-
-.vy-dot-orbit--mid {
-  width: 90px; height: 90px;
-  margin: -45px 0 0 -45px;
-  animation: vyOrbitCCW 2.4s linear infinite;
-}
-.vy-dot-orbit--mid::before { top: -2.5px;  right: calc(50% - 2.5px); opacity: .7; }
-.vy-dot-orbit--mid::after  { bottom: -2.5px; right: calc(50% - 2.5px); opacity: .2; }
-
-/* Pulsing core */
-.vy-orbit-core {
-  width: 42px; height: 42px; background: var(--vy-white);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,.12), 0 0 0 6px rgba(0,0,0,.04);
-  z-index: 2; animation: vyCorePulse 2.2s ease-in-out infinite;
-}
-@keyframes vyCorePulse {
-  0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,.12), 0 0 0  6px rgba(0,0,0,.04); transform: scale(1); }
-  50%       { box-shadow: 0 6px 28px rgba(0,0,0,.18), 0 0 0 10px rgba(0,0,0,.06); transform: scale(1.06); }
+/* Lottie wrapper */
+.vy-lottie-wrap {
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
 }
 
 /* Status text (fades on cycle) */
 .vy-proc-title {
   font-size: 15px; font-weight: 500; color: var(--vy-black);
-  margin: 18px 0 4px; text-align: center; letter-spacing: -.01em;
-  transition: opacity .2s ease;
+  margin: 10px 0 4px; text-align: center; letter-spacing: -.01em;
+  transform: translateY(0); opacity: 1;
+  transition: transform .45s cubic-bezier(.16,1,.3,1), opacity .45s ease;
 }
 .vy-proc-hint {
   font-size: 11px; color: var(--vy-g400); text-align: center; margin: 0;
-  transition: opacity .2s ease;
+  transform: translateY(0); opacity: 1;
+  transition: transform .45s cubic-bezier(.16,1,.3,1), opacity .45s ease;
+}
+
+.vy-text-out {
+  transform: translateY(18px);
+  opacity: 0;
+}
+.vy-text-in {
+  transform: translateY(-18px);
+  opacity: 0;
 }
 
 /* Shimmer progress bar */

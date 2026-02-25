@@ -23,6 +23,7 @@
   var pollId      = null;
   var msgCycleId  = null;
   var msgIdx      = 0;
+  var lottieInitialized = false;
 
   /* ── DOM helper ── */
   var $ = function (id) { return document.getElementById(id); };
@@ -35,8 +36,12 @@
       var el = $('vy-s-' + s);
       if (el) el.classList.toggle('vy-active', s === name);
     });
-    if (name === 'processing') { startMsgCycle(); }
-    else                       { stopMsgCycle();  }
+    if (name === 'processing') {
+      initLottie();
+      startMsgCycle();
+    } else {
+      stopMsgCycle();
+    }
   }
 
   function openPanel() {
@@ -95,7 +100,7 @@
     msgCycleId = setInterval(function () {
       msgIdx = (msgIdx + 1) % PROC_MESSAGES.length;
       renderMsg();
-    }, 3200);
+    }, 5200);
   }
 
   function stopMsgCycle() {
@@ -112,8 +117,46 @@
 
   function fadeText(el, text) {
     if (!el) return;
-    el.style.opacity = '0';
-    setTimeout(function () { el.textContent = text; el.style.opacity = '1'; }, 200);
+    // старый текст уезжает вниз
+    el.classList.remove('vy-text-in');
+    el.classList.add('vy-text-out');
+
+    setTimeout(function () {
+      // ставим новый текст "над" блоком без анимации
+      el.textContent = text;
+      el.classList.remove('vy-text-out');
+
+      el.style.transition = 'none';
+      el.style.transform  = 'translateY(-18px)';
+      el.style.opacity    = '0';
+
+      // форсируем перерисовку
+      void el.offsetHeight;
+
+      // включаем плавный спуск сверху вниз
+      el.style.transition = '';
+      el.style.transform  = 'translateY(0)';
+      el.style.opacity    = '1';
+    }, 260);
+  }
+
+  /* ──────────────────────────────────────
+     Lottie init
+  ────────────────────────────────────── */
+  function initLottie() {
+    if (lottieInitialized || !window.lottie) return;
+    var container = $('vyon-processing-lottie');
+    if (!container) return;
+    var src = container.getAttribute('data-lottie-src');
+    if (!src) return;
+    window.lottie.loadAnimation({
+      container: container,
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: src
+    });
+    lottieInitialized = true;
   }
 
   /* ──────────────────────────────────────
