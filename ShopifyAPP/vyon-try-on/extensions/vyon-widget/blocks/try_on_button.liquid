@@ -1,0 +1,124 @@
+<div id="vyon-try-on-container" style="margin-top: 15px; margin-bottom: 15px;">
+  <button id="vyon-open-modal-btn" style="width: 100%; padding: 12px; background-color: #000; color: #fff; border-radius: 4px; cursor: pointer; font-weight: bold;">
+    ✨ Виртуальная примерка
+  </button>
+</div>
+
+<!-- Модальное окно (скрыто по умолчанию) -->
+<div id="vyon-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999999; align-items: center; justify-content: center;">
+  <div style="background: white; padding: 25px; width: 90%; max-width: 400px; border-radius: 12px; position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    
+    <h3 style="margin-top: 0; margin-bottom: 15px;">Примерить эту вещь</h3>
+    
+    <!-- Данные товара -->
+    <p style="font-size: 14px; margin-bottom: 10px;">{{ product.title }}</p>
+    {% assign product_image_url = product.featured_image | img_url: 'master' %}
+    
+    <!-- Скрытое поле для URL картинки товара -->
+    <input type="hidden" id="vyon-product-url" value="https:{{ product_image_url }}">
+
+    <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 15px;">
+      <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Загрузите ваше фото в полный рост</p>
+      <input type="file" id="vyon-user-photo" accept="image/png, image/jpeg" style="width: 100%;" />
+    </div>
+
+    <button id="vyon-submit-btn" style="width: 100%; padding: 12px; background-color: #008060; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+      Начать примерку
+    </button>
+    <button id="vyon-close-modal-btn" style="width: 100%; padding: 10px; background-color: transparent; color: #666; border: none; cursor: pointer; margin-top: 5px;">
+      Отмена
+    </button>
+
+    <!-- Место для лоадера и результата -->
+    <div id="vyon-result-container" style="margin-top: 15px; text-align: center;"></div>
+
+  </div>
+</div>
+
+<script>
+  const modal = document.getElementById('vyon-modal');
+  const modalBtn = document.getElementById('vyon-open-modal-btn');
+  const closeBtn = document.getElementById('vyon-close-modal-btn');
+
+  if(modalBtn) {
+    modalBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      modal.style.display = 'flex';
+    });
+  }
+
+  if(closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+  }
+
+  // Функция для конвертации файла в текст (Base64)
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+
+  document.getElementById('vyon-submit-btn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('vyon-user-photo');
+    if (!fileInput.files[0]) {
+      alert('Пожалуйста, загрузите фото!');
+      return;
+    }
+    
+    const garmentUrl = document.getElementById('vyon-product-url').value;
+    const userFile = fileInput.files[0];
+    const resultContainer = document.getElementById('vyon-result-container');
+    
+    resultContainer.innerHTML = '<p>🔄 Конвертация и отправка фото...</p>';
+
+    try {
+      // 1. Превращаем фото в текст
+      const base64Image = await fileToBase64(userFile);
+
+      // 2. Отправляем безопасный JSON-запрос на Shopify App Proxy
+      const response = await fetch('/apps/vyon-api', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model_base64: base64Image,
+          garment_url_1: garmentUrl
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка сервера: ' + response.status);
+      }
+
+      // 3. Получаем ответ
+      const data = await response.json();
+      console.log('Ответ от сервера:', data);
+
+      if (data.task_id) {
+        resultContainer.innerHTML = `
+          <p style="color: green; margin-bottom: 5px;">✅ Задача успешно создана!</p>
+          <p style="font-size: 12px; color: #666;">ID: ${data.task_id}</p>
+          <p>⏳ Нейросеть генерирует фото...</p>
+        `;
+      } else {
+        resultContainer.innerHTML = '<p style="color: red;">❌ Ошибка: нет task_id в ответе</p>';
+      }
+
+    } catch (error) {
+      console.error('Ошибка отправки:', error);
+      resultContainer.innerHTML = `<p style="color: red;">❌ Ошибка: ${error.message}</p>`;
+    }
+  });
+</script>
+
+{% schema %}
+{
+  "name": "VYON Try-On Button",
+  "target": "section",
+  "templates": ["product"]
+}
+{% endschema %}

@@ -26,3 +26,8 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [ "https://example.com/api/auth" ]
+
+[app_proxy]
+url = "https://allen-beneath-patents-respondents.trycloudflare.com"
+subpath = "vyon-api"
+prefix = "apps"
