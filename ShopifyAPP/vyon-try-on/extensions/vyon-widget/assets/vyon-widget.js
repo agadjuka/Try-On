@@ -41,12 +41,16 @@
 
   function openPanel() {
     var p = $('vyon-panel');
+    var trigger = $('vyon-trigger-btn');
+    if (trigger) trigger.style.display = 'none';
     if (p) { p.classList.add('vy-visible'); showState('upload'); }
   }
 
   function closePanel() {
     var p = $('vyon-panel');
+    var trigger = $('vyon-trigger-btn');
     if (p) p.classList.remove('vy-visible');
+    if (trigger) trigger.style.display = 'flex';
     stopPoll();
   }
 
@@ -56,9 +60,6 @@
     if (fi) fi.value = '';
     var fp = $('vyon-file-preview');
     if (fp) fp.classList.remove('vy-visible');
-
-    var submitBtn = $('vyon-submit-btn');
-    if (submitBtn) submitBtn.style.display = 'none';
 
     showState('upload');
   }
@@ -81,8 +82,8 @@
 
     fp.classList.add('vy-visible');
 
-    var submitBtn = $('vyon-submit-btn');
-    if (submitBtn) submitBtn.style.display = 'flex';
+    // Сразу отправляем фото на обработку
+    startTryOn();
   }
 
   /* ──────────────────────────────────────
@@ -206,9 +207,8 @@
       btn.addEventListener('click', closePanel);
     });
 
-    var fileInput  = $('vyon-file-input');
-    var uploadZone = $('vyon-upload-zone');
-    var pillBtn    = document.querySelector('.vy-pill-btn');
+    var fileInput = $('vyon-file-input');
+    var pillBtn   = document.querySelector('.vy-pill-btn');
 
     if (fileInput) {
       fileInput.addEventListener('change', function (e) {
@@ -217,12 +217,7 @@
       });
     }
 
-    // Надёжный клик по всей зоне и по кнопке Select File
-    if (uploadZone && fileInput) {
-      uploadZone.addEventListener('click', function () {
-        fileInput.click();
-      });
-    }
+    // Надёжный клик по кнопке Select File
     if (pillBtn && fileInput) {
       pillBtn.addEventListener('click', function (e) {
         e.stopPropagation();
@@ -237,9 +232,6 @@
         resetToUpload();
       });
     }
-
-    var submitBtn = $('vyon-submit-btn');
-    if (submitBtn) submitBtn.addEventListener('click', startTryOn);
 
     var retryBtn = $('vy-retry-btn');
     if (retryBtn) retryBtn.addEventListener('click', resetToUpload);
