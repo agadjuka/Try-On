@@ -48,14 +48,37 @@
     var p = $('vyon-panel');
     var trigger = $('vyon-trigger-btn');
     if (trigger) trigger.style.display = 'none';
-    if (p) { p.classList.add('vy-visible'); showState('upload'); }
+    if (p) {
+      p.classList.remove('vy-closing');
+      p.classList.add('vy-visible');
+      showState('upload');
+    }
   }
 
   function closePanel() {
     var p = $('vyon-panel');
     var trigger = $('vyon-trigger-btn');
-    if (p) p.classList.remove('vy-visible');
-    if (trigger) trigger.style.display = 'flex';
+    if (!p) {
+      if (trigger) trigger.style.display = 'flex';
+      stopPoll();
+      return;
+    }
+
+    if (p.classList.contains('vy-closing')) {
+      return;
+    }
+
+    p.classList.add('vy-closing');
+
+    var onAnimEnd = function (e) {
+      if (e.animationName !== 'vySlideUp') return;
+      p.removeEventListener('animationend', onAnimEnd);
+      p.classList.remove('vy-visible', 'vy-closing');
+      if (trigger) trigger.style.display = 'flex';
+    };
+
+    p.addEventListener('animationend', onAnimEnd);
+
     stopPoll();
   }
 
@@ -63,32 +86,7 @@
     currentFile = null;
     var fi = $('vyon-file-input');
     if (fi) fi.value = '';
-    var fp = $('vyon-file-preview');
-    if (fp) fp.classList.remove('vy-visible');
-
     showState('upload');
-  }
-
-  /* ──────────────────────────────────────
-     File handling
-  ────────────────────────────────────── */
-  function setFilePreview(file) {
-    currentFile = file;
-    var nameEl  = $('vy-prev-name');
-    var imgEl   = $('vy-prev-img');
-    var fp      = $('vyon-file-preview');
-    if (!fp || !nameEl) return;
-
-    nameEl.textContent = file.name.toUpperCase();
-
-    var reader = new FileReader();
-    reader.onload = function (e) { if (imgEl) imgEl.src = e.target.result; };
-    reader.readAsDataURL(file);
-
-    fp.classList.add('vy-visible');
-
-    // Сразу отправляем фото на обработку
-    startTryOn();
   }
 
   /* ──────────────────────────────────────
@@ -249,7 +247,9 @@
     if (fileInput) {
       fileInput.addEventListener('change', function (e) {
         var f = e.target.files && e.target.files[0];
-        if (f) setFilePreview(f);
+        if (!f) return;
+        currentFile = f;
+        startTryOn();
       });
     }
 
@@ -258,14 +258,6 @@
       pillBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         fileInput.click();
-      });
-    }
-
-    var delBtn = $('vy-remove-btn');
-    if (delBtn) {
-      delBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        resetToUpload();
       });
     }
 
