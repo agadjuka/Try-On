@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Virtual Try-On - Monochrome Processing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#000000",
+                        "background-light": "#FFFFFF",
+                        "background-dark": "#0A0A0A",
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "12px",
+                    },
+                    animation: {
+                        'shimmer': 'shimmer 2.5s infinite linear',
+                        'spin-slow': 'spin 3s linear infinite',
+                    },
+                    keyframes: {
+                        shimmer: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
+                        }
+                    }
+                },
+            },
+        };
+    </script>
+<style type="text/tailwindcss">
+        body { font-family: 'Inter', sans-serif; }
+        .circular-progress {
+            background: radial-gradient(closest-side, white 88%, transparent 89% 100%),
+                        conic-gradient(#000000 75%, #F3F4F6 0);
+        }
+        .dark .circular-progress {
+            background: radial-gradient(closest-side, #111827 88%, transparent 89% 100%),
+                        conic-gradient(#FFFFFF 75%, #374151 0);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-gray-100 dark:bg-black min-h-screen flex items-center justify-center p-4">
+<div class="fixed inset-0 bg-black/40 backdrop-blur-sm z-0"></div>
+<div class="relative z-10 w-full max-w-sm bg-white dark:bg-gray-900 rounded-[32px] shadow-2xl overflow-hidden">
+<div class="px-8 pt-10 pb-4">
+<div class="flex justify-between items-start mb-1">
+<h2 class="text-2xl font-semibold text-black dark:text-white tracking-tight">
+                    Примерить эту вещь
+                </h2>
+<button class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+<span class="material-symbols-outlined text-gray-400">close</span>
+</button>
+</div>
+<p class="text-gray-400 dark:text-gray-500 text-sm font-medium tracking-wide uppercase">
+                Blue dress
+            </p>
+</div>
+<div class="px-8 pb-10 space-y-10">
+<div class="relative flex flex-col items-center justify-center py-16 bg-gray-50 dark:bg-gray-800/30 rounded-3xl border border-gray-100 dark:border-gray-800">
+<div class="relative w-36 h-36 flex items-center justify-center">
+<div class="circular-progress absolute inset-0 rounded-full animate-spin-slow"></div>
+<div class="z-10 bg-white dark:bg-gray-800 p-5 rounded-full shadow-lg border border-gray-50 dark:border-gray-700">
+<span class="material-symbols-outlined text-4xl text-black dark:text-white">colors_spark</span>
+</div>
+</div>
+<div class="mt-10 text-center">
+<h3 class="text-lg font-semibold text-black dark:text-white">
+                        Processing your style...
+                    </h3>
+<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        Our AI is tailoring the look for you
+                    </p>
+</div>
+<div class="absolute bottom-0 left-0 right-0 h-1 overflow-hidden rounded-b-3xl">
+<div class="h-full bg-gray-200 dark:bg-gray-700 w-full relative">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-black/10 dark:via-white/20 to-transparent animate-shimmer"></div>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<button class="w-full py-4.5 py-4 bg-black dark:bg-white text-white dark:text-black font-semibold rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-black/10 active:scale-[0.98] transition-transform">
+<svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+</svg>
+                    Начать примерку
+                </button>
+<button class="w-full py-2 text-gray-400 dark:text-gray-500 font-medium hover:text-black dark:hover:text-white transition-colors text-sm">
+                    Отмена
+                </button>
+</div>
+</div>
+<div class="px-8 py-5 bg-gray-50 dark:bg-black/40 border-t border-gray-100 dark:border-gray-800 flex items-center justify-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-black dark:text-white">shield_with_heart</span>
+<span class="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-widest font-bold">
+                Privacy Guaranteed
+            </span>
+</div>
+</div>
+<div class="fixed -z-10 inset-0 pointer-events-none opacity-10">
+<div class="max-w-4xl mx-auto p-8">
+<div class="h-10 w-48 bg-gray-400 mb-4 rounded"></div>
+<div class="h-16 w-96 bg-gray-400 mb-8 rounded"></div>
+<div class="h-10 w-32 bg-gray-400 mb-8 rounded"></div>
+<div class="space-y-4">
+<div class="h-14 w-full bg-gray-400 rounded"></div>
+<div class="h-14 w-full bg-gray-400 rounded"></div>
+</div>
+</div>
+</div>
+
+</body></html>
