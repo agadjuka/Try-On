@@ -1,61 +1,93 @@
 import { json } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
 
+const EXTERNAL_API_URL =
+  "https://vyon-878549529762.asia-southeast1.run.app/api/v1/try-on";
+const EXTERNAL_API_KEY =
+  "c625f9ac9286cb4a856c439dd4619b5b78a191173d748dbf5f32215228fdaff1";
+
+// POST /apps/vyon-api/api/proxy
 export async function action({ request }) {
-  // 1. Аутентификация запроса от виджета
-  let proxy;
   try {
-    proxy = await authenticate.public.appProxy(request);
-  } catch (error) {
-    return json({ error: "Unauthorized" }, { status: 401 });
-  }
+    await authenticate.public.appProxy(request);
 
-  if (!proxy) {
-    return json({ error: "Unauthorized" }, { status: 401 });
-  }
+    const formData = await request.formData();
 
-  // 2. Получаем JSON с виджета (вместо файлов)
-  const body = await request.json();
-  const { model_base64, garment_url_1 } = body;
+    const externalFormData = new FormData();
+    externalFormData.append("model", formData.get("model"));
+    externalFormData.append("garment_url_1", formData.get("garment_url_1"));
 
-  if (!model_base64 || !garment_url_1) {
-    return json({ error: "Отсутствует фото или ссылка на товар" }, { status: 400 });
-  }
-
-  // 3. Превращаем Base64-текст обратно в бинарный файл
-  const base64Data = model_base64.split(',')[1];
-  const mimeType = model_base64.split(';')[0].split(':')[1];
-  const buffer = Buffer.from(base64Data, 'base64');
-  const blob = new Blob([buffer], { type: mimeType });
-
-  // 4. Собираем правильный multipart/form-data для твоего ИИ-сервера
-  const forwardFormData = new FormData();
-  forwardFormData.append("model", blob, "user_photo.jpg");
-  forwardFormData.append("garment_url_1", garment_url_1);
-
-  const EXTERNAL_API_URL = "https://vyon-878549529762.asia-southeast1.run.app/api/v1/try-on";
-  const EXTERNAL_API_KEY = "c625f9ac9286cb4a856c439dd4619b5b78a191173d748dbf5f32215228fdaff1";
-
-  try {
-    // 5. Отправляем на твой Cloud Run
-    const response = await fetch(EXTERNAL_API_URL, {
+    const externalResponse = await fetch(EXTERNAL_API_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${EXTERNAL_API_KEY}`,
       },
-      body: forwardFormData,
+      body: externalFormData,
     });
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => null);
-      return json({ error: "Ошибка ИИ-сервера", details: text }, { status: 502 });
+    const text = await externalResponse.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
     }
 
-    const data = await response.json();
-    // Возвращаем task_id на фронтенд
-    return json(data);
-    
+    return json(data, { status: externalResponse.status });
   } catch (error) {
-    return json({ error: "Не удалось связаться с сервером ИИ" }, { status: 500 });
+    return json(
+      {
+        error: "Ошибка при создании задачи",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
+  }
+}
+
+// GET /apps/vyon-api/api/proxy?task_id=...
+export async function loader({ request }) {
+  try {
+    await authenticate.public.appProxy(request);
+
+    const url = new URL(request.url);
+    const taskId = url.searchParams.get("task_id");
+
+    if (!taskId) {
+      return json(
+        { error: "Параметр task_id обязателен" },
+        { status: 400 },
+      );
+    }
+
+    const externalResponse = await fetch(
+      `${EXTERNAL_API_URL}/${encodeURIComponent(taskId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${EXTERNAL_API_KEY}`,
+        },
+      },
+    );
+
+    const text = await externalResponse.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
+    }
+
+    return json(data, { status: externalResponse.status });
+  } catch (error) {
+    return json(
+      {
+        error: "Ошибка при получении статуса задачи",
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }

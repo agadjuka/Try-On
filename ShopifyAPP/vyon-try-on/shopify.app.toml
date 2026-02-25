@@ -28,6 +28,6 @@ scopes = "write_products"
 redirect_urls = [ "https://example.com/api/auth" ]
 
 [app_proxy]
-url = "https://allen-beneath-patents-respondents.trycloudflare.com"
+url = "https://make-pupils-described-reminder.trycloudflare.com" 
 subpath = "vyon-api"
 prefix = "apps"

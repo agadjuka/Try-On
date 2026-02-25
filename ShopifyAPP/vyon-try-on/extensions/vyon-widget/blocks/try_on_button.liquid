@@ -40,79 +40,228 @@
   const modalBtn = document.getElementById('vyon-open-modal-btn');
   const closeBtn = document.getElementById('vyon-close-modal-btn');
 
-  if(modalBtn) {
+  if (modalBtn) {
     modalBtn.addEventListener('click', (e) => {
       e.preventDefault();
       modal.style.display = 'flex';
     });
   }
 
-  if(closeBtn) {
+  if (closeBtn) {
     closeBtn.addEventListener('click', () => {
       modal.style.display = 'none';
     });
   }
 
-  // Функция для конвертации файла в текст (Base64)
-  const fileToBase64 = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-  });
+  const submitBtn = document.getElementById('vyon-submit-btn');
 
-  document.getElementById('vyon-submit-btn').addEventListener('click', async () => {
-    const fileInput = document.getElementById('vyon-user-photo');
-    if (!fileInput.files[0]) {
-      alert('Пожалуйста, загрузите фото!');
-      return;
-    }
-    
-    const garmentUrl = document.getElementById('vyon-product-url').value;
-    const userFile = fileInput.files[0];
-    const resultContainer = document.getElementById('vyon-result-container');
-    
-    resultContainer.innerHTML = '<p>🔄 Конвертация и отправка фото...</p>';
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      console.log('[VYON][FRONTEND] Клик по кнопке "Начать примерку"');
+      const fileInput = document.getElementById('vyon-user-photo');
+      const resultContainer = document.getElementById('vyon-result-container');
 
-    try {
-      // 1. Превращаем фото в текст
-      const base64Image = await fileToBase64(userFile);
+      if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        alert('Пожалуйста, загрузите фото!');
+        return;
+      }
 
-      // 2. Отправляем безопасный JSON-запрос на Shopify App Proxy
-      const response = await fetch('/apps/vyon-api', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model_base64: base64Image,
-          garment_url_1: garmentUrl
-        })
+      const garmentUrlInput = document.getElementById('vyon-product-url');
+      const garmentUrl = garmentUrlInput ? garmentUrlInput.value : '';
+
+      if (!garmentUrl) {
+        resultContainer.innerHTML =
+          '<p style="color: red;">❌ Не удалось определить URL товара</p>';
+        return;
+      }
+
+      const userFile = fileInput.files[0];
+
+      console.log('[VYON][FRONTEND] Файл найден', {
+        name: userFile && userFile.name,
+        size: userFile && userFile.size,
+        type: userFile && userFile.type,
       });
 
-      if (!response.ok) {
-        throw new Error('Ошибка сервера: ' + response.status);
-      }
+      let pollIntervalId = null;
+      let pollAttempts = 0;
+      const maxPollAttempts = 30; // ~2 минуты при интервале 4 секунды
+      const pollDelayMs = 4000;
 
-      // 3. Получаем ответ
-      const data = await response.json();
-      console.log('Ответ от сервера:', data);
+      const resetButtonState = () => {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+      };
 
-      if (data.task_id) {
+      const setLoadingButtonState = () => {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.7';
+      };
+
+      resultContainer.innerHTML =
+        '<p>🔄 Отправка фото и создание задачи...</p>';
+      setLoadingButtonState();
+
+      try {
+        // Создаём FormData и отправляем файл напрямую
+        console.log('[VYON][FRONTEND] Создаю FormData для отправки...');
+        const formData = new FormData();
+        formData.append('model', userFile);
+        formData.append('garment_url_1', garmentUrl);
+
+        console.log(
+          '[VYON][FRONTEND] Отправляю POST на /apps/vyon-api/api/proxy...',
+        );
+        const createTaskResponse = await fetch('/apps/vyon-api/api/proxy', {
+          method: 'POST',
+          body: formData,
+        });
+
+        console.log(
+          '[VYON][FRONTEND] Ответ на создание задачи:',
+          createTaskResponse.status,
+          createTaskResponse.statusText,
+        );
+
+        if (!createTaskResponse.ok) {
+          try {
+            const errorText = await createTaskResponse.text();
+            console.log(
+              '[VYON][FRONTEND] Тело ошибочного ответа:',
+              errorText,
+            );
+          } catch (e) {
+            console.log(
+              '[VYON][FRONTEND] Не удалось прочитать тело ошибочного ответа',
+              e,
+            );
+          }
+          throw new Error(
+            'Ошибка создания задачи: ' + createTaskResponse.status,
+          );
+        }
+
+        const createTaskData = await createTaskResponse.json();
+        console.log('[VYON][FRONTEND] JSON ответа создания задачи:', createTaskData);
+        const taskId = createTaskData.task_id;
+
+        if (!taskId) {
+          resultContainer.innerHTML =
+            '<p style="color: red;">❌ Ошибка: нет task_id в ответе сервера</p>';
+          resetButtonState();
+          return;
+        }
+
         resultContainer.innerHTML = `
           <p style="color: green; margin-bottom: 5px;">✅ Задача успешно создана!</p>
-          <p style="font-size: 12px; color: #666;">ID: ${data.task_id}</p>
-          <p>⏳ Нейросеть генерирует фото...</p>
+          <p style="font-size: 12px; color: #666;">ID: ${taskId}</p>
+          <p>⏳ Нейросеть генерирует фото, это может занять до пары минут...</p>
         `;
-      } else {
-        resultContainer.innerHTML = '<p style="color: red;">❌ Ошибка: нет task_id в ответе</p>';
-      }
 
-    } catch (error) {
-      console.error('Ошибка отправки:', error);
-      resultContainer.innerHTML = `<p style="color: red;">❌ Ошибка: ${error.message}</p>`;
-    }
-  });
+        console.log(
+          '[VYON][FRONTEND] Начинаю поллинг статуса для task_id:',
+          taskId,
+        );
+
+        // Поллинг статуса задачи
+        pollIntervalId = setInterval(async () => {
+          pollAttempts += 1;
+          console.log(
+            '[VYON][FRONTEND] Поллинг попытка',
+            pollAttempts,
+            'из',
+            maxPollAttempts,
+          );
+
+          if (pollAttempts > maxPollAttempts) {
+            clearInterval(pollIntervalId);
+            pollIntervalId = null;
+            resultContainer.innerHTML = `
+              <p style="color: red;">⏰ Время ожидания истекло. Попробуйте ещё раз позже.</p>
+            `;
+            resetButtonState();
+            return;
+          }
+
+          try {
+            const statusResponse = await fetch(
+              '/apps/vyon-api/api/proxy?task_id=' +
+                encodeURIComponent(taskId),
+            );
+
+            console.log(
+              '[VYON][FRONTEND] Ответ статуса:',
+              statusResponse.status,
+              statusResponse.statusText,
+            );
+
+            if (!statusResponse.ok) {
+              throw new Error(
+                'Ошибка при получении статуса: ' + statusResponse.status,
+              );
+            }
+
+            const statusData = await statusResponse.json();
+            console.log('[VYON][FRONTEND] JSON статуса задачи:', statusData);
+            const status = statusData.status;
+
+            if (status === 'completed') {
+              clearInterval(pollIntervalId);
+              pollIntervalId = null;
+
+              const results = statusData.results || [];
+              const firstResult = results[0];
+
+              if (!firstResult) {
+                resultContainer.innerHTML =
+                  '<p style="color: red;">❌ Задача завершена, но результат пустой.</p>';
+                resetButtonState();
+                return;
+              }
+
+              resultContainer.innerHTML = `
+                <p style="margin-bottom: 10px;">✅ Примерка готова!</p>
+                <img src="${firstResult}" alt="Результат примерки" style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.15);" />
+              `;
+              resetButtonState();
+            } else if (status === 'failed') {
+              clearInterval(pollIntervalId);
+              pollIntervalId = null;
+              const errorMessage =
+                statusData.error || 'Задача завершилась с ошибкой.';
+              resultContainer.innerHTML = `
+                <p style="color: red;">❌ ${errorMessage}</p>
+              `;
+              resetButtonState();
+            } else {
+              // pending / processing / другие промежуточные статусы
+              resultContainer.innerHTML = `
+                <p>⏳ Статус: ${status || 'в обработке'}...</p>
+              `;
+            }
+          } catch (pollError) {
+            console.error('Ошибка поллинга:', pollError);
+            clearInterval(pollIntervalId);
+            pollIntervalId = null;
+            resultContainer.innerHTML = `
+              <p style="color: red;">❌ Ошибка при запросе статуса: ${
+                pollError && pollError.message
+                  ? pollError.message
+                  : 'неизвестная ошибка'
+              }</p>
+            `;
+            resetButtonState();
+          }
+        }, pollDelayMs);
+      } catch (error) {
+        console.error('Ошибка отправки:', error);
+        resultContainer.innerHTML = `<p style="color: red;">❌ Ошибка: ${
+          error && error.message ? error.message : 'неизвестная ошибка'
+        }</p>`;
+        resetButtonState();
+      }
+    });
+  }
 </script>
 
 {% schema %}
