@@ -8,7 +8,7 @@ from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
 from bot.services.upscale import UpscaleService
-from bot.states.user_states import ModelStates, TryOnStates
+from bot.states.user_states import ModelStates, TryOnStates, FeedbackStates
 from bot.handlers import (
     start,
     model_upload,
@@ -21,6 +21,7 @@ from bot.handlers import (
     download_menu,
     language,
     debug_photo_file_id,
+    feedback,
 )
 from bot.middlewares.album import AlbumMiddleware
 from bot.services.language import get_user_language
@@ -226,6 +227,36 @@ def setup_handlers(
         lambda c: c.data and (
             c.data.startswith("download_photo_") or c.data == "download_photo_single"
         ),
+    )
+
+    # Callback: Открыть меню отзыва
+    async def open_feedback_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
+        await feedback.open_feedback_menu(callback, state, bot, lang)
+
+    router.callback_query.register(
+        open_feedback_handler,
+        F.data == "open_feedback",
+    )
+
+    # Callback: Отменить отзыв
+    async def cancel_feedback_handler(callback, state):
+        lang = await get_user_language(repo, callback.from_user.id)
+        await feedback.cancel_feedback(callback, state, bot, lang)
+
+    router.callback_query.register(
+        cancel_feedback_handler,
+        F.data == "cancel_feedback",
+    )
+
+    # Сообщение: Получение текста/фото отзыва
+    async def feedback_message_handler(message, state):
+        lang = await get_user_language(repo, message.from_user.id)
+        await feedback.handle_feedback_message(message, state, bot, lang)
+
+    router.message.register(
+        feedback_message_handler,
+        FeedbackStates.waiting_for_feedback,
     )
 
     # ВРЕМЕННО: Лог file_id при отправке фото без активного состояния FSM

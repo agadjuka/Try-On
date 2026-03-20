@@ -31,6 +31,10 @@ def get_main_menu_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
         callback_data="my_models"
     )
     builder.button(
+        text=get_text("menu_feedback", lang),
+        callback_data="open_feedback",
+    )
+    builder.button(
         text=get_text("switch_language", lang),
         callback_data="switch_language"
     )
@@ -315,8 +319,24 @@ def get_try_on_result_keyboard(
             callback_data="my_models"
         )
     ])
+    keyboard.append([
+        InlineKeyboardButton(
+            text=get_text("menu_feedback", lang),
+            callback_data="open_feedback",
+        )
+    ])
     
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
+
+
+def get_feedback_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
+    """Клавиатура меню отзыва."""
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=get_text("feedback_cancel", lang),
+        callback_data="cancel_feedback",
+    )
+    return builder.as_markup()
 
 
 def get_language_selection_keyboard() -> InlineKeyboardMarkup:

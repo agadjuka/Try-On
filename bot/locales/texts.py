@@ -229,6 +229,30 @@ TEXTS = {
         "ru": "🇬🇧 Сменить язык на ENG",
         "en": "🇷🇺 Switch language to RUS",
     },
+    "menu_feedback": {
+        "ru": "✍️ Оставить отзыв",
+        "en": "✍️ Leave Feedback",
+    },
+    "feedback_prompt": {
+    "ru": "✍️ Напишите Ваш отзыв о работе бота. Можно отправить текст и/или фото.\n\nВаше сообщение будет передано разработчикам.\n\nТакже вы можете написать разработчикам напрямую: @ketly_ai\nНаш сайт: https://www.ketly.app/",
+    "en": "✍️ Share your feedback about the bot. You can send text and/or a photo.\n\nYour message will be forwarded to our developers.\n\nYou can also contact the developers directly: @ketly_ai\nOur website: https://www.ketly.app/"
+},
+    "feedback_cancel": {
+        "ru": "❌ Отмена",
+        "en": "❌ Cancel",
+    },
+    "feedback_sent": {
+        "ru": "✅ Спасибо! Отзыв отправлен разработчикам.",
+        "en": "✅ Thank you! Your feedback has been sent to the developers.",
+    },
+    "feedback_unsupported": {
+        "ru": "Пожалуйста, отправьте текст и/или фото.",
+        "en": "Please send text and/or a photo.",
+    },
+    "admin_feedback_label": {
+        "ru": "Отзыв",
+        "en": "Отзыв",
+    },
     "language_changed": {
         "ru": "✅ Язык изменен",
         "en": "✅ Language changed",

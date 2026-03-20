@@ -14,3 +14,9 @@ class TryOnStates(StatesGroup):
     
     waiting_for_model_photo = State()  # Ожидание фото модели (если пользователь присылает фото вместо выбора готовой модели)
     waiting_for_garment_photo = State()
+
+
+class FeedbackStates(StatesGroup):
+    """Состояния для отправки отзыва."""
+
+    waiting_for_feedback = State()
