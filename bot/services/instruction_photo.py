@@ -8,8 +8,8 @@ from loguru import logger
 
 # Временные file_id инструкций по языкам (можно быстро заменить/удалить).
 INSTRUCTION_PHOTO_FILE_IDS = {
-    "ru": "AgACAgIAAxkBAAInpmm82Z4mtFqIC0vxFuiF0s8khqRuAAKHFmsbN3ngSS8hfLJJpsikAQADAgADeQADOgQ",
-    "en": "AgACAgIAAxkBAAInj2m81D4mjjyW1iDzgiJ2yLLuWvkeAAJ4FmsbN3ngSa3_gyiatC3AAQADAgADeQADOgQ",
+    "ru": "AgACAgIAAxkBAAIcyWm84YYitt43ccLqujL3Z4rgfOZ3AAKHFmsbN3ngSQ_lPJqZzLvrAQADAgADeQADOgQ",
+    "en": "AgACAgIAAxkBAAIcwGm835mqdKhAjMnBnUuHELqLr-tzAAJ4FmsbN3ngSdkAAUDuBdny6gEAAwIAA3kAAzoE",
 }
 INSTRUCTION_PHOTO_MESSAGE_ID_KEY = "instruction_photo_message_id"
 
