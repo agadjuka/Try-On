@@ -2,6 +2,7 @@
 
 from aiogram import Router, F
 from aiogram.filters import Command
+from aiogram.filters.state import StateFilter
 
 from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
@@ -19,6 +20,7 @@ from bot.handlers import (
     try_on_processing,
     download_menu,
     language,
+    debug_photo_file_id,
 )
 from bot.middlewares.album import AlbumMiddleware
 from bot.services.language import get_user_language
@@ -224,4 +226,11 @@ def setup_handlers(
         lambda c: c.data and (
             c.data.startswith("download_photo_") or c.data == "download_photo_single"
         ),
+    )
+
+    # ВРЕМЕННО: Лог file_id при отправке фото без активного состояния FSM
+    router.message.register(
+        debug_photo_file_id.log_photo_file_id,
+        F.photo,
+        StateFilter(None),
     )

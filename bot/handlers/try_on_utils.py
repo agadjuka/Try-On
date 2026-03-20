@@ -11,6 +11,7 @@ from bot.services.storage import CloudStorageService
 from bot.keyboards.user_kb import get_back_keyboard, get_model_selection_keyboard
 from bot.locales.texts import get_text
 from bot.utils.message_utils import delete_messages
+from bot.services.instruction_photo import show_instruction_photo
 
 
 async def delete_try_on_selection_messages(
@@ -29,10 +30,13 @@ async def delete_try_on_selection_messages(
     state_data = await state.get_data()
     album_message_ids = state_data.get("album_message_ids", [])
     selection_message_id = state_data.get("selection_message_id")
+    instruction_photo_message_id = state_data.get("instruction_photo_message_id")
     
     message_ids_to_delete = list(album_message_ids)
     if selection_message_id:
         message_ids_to_delete.append(selection_message_id)
+    if instruction_photo_message_id:
+        message_ids_to_delete.append(instruction_photo_message_id)
     
     await delete_messages(bot, chat_id, message_ids_to_delete)
     
@@ -42,6 +46,7 @@ async def delete_try_on_selection_messages(
     await state.update_data(
         album_message_ids=[],
         selection_message_id=None,
+        instruction_photo_message_id=None,
         try_on_result_album_message_ids=existing_result_album_ids,  # Сохраняем фотографии результата
     )
 
@@ -89,6 +94,8 @@ async def send_models_album(
             return False
 
         # СНАЧАЛА отправляем новый контент
+        await show_instruction_photo(bot, state, callback.from_user.id)
+
         sent_messages = await bot.send_media_group(
             chat_id=callback.from_user.id,
             media=media_group,

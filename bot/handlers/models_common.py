@@ -9,6 +9,7 @@ from aiogram.types import Message
 from bot.database.repo import FirestoreRepo
 from bot.services.storage import CloudStorageService
 from bot.locales.texts import get_text
+from bot.services.instruction_photo import delete_instruction_photo
 
 
 async def check_models_limit_and_redirect(
@@ -43,6 +44,9 @@ async def check_models_limit_and_redirect(
     existing_models = await repo.get_user_models(user_id)
     if len(existing_models) < 7:
         return False
+
+    # Выходим из сценария загрузки фото: удаляем временное инструкционное фото.
+    await delete_instruction_photo(bot, state, message.from_user.id)
 
     # В режиме примерки сначала закрываем экран выбора фото (альбом + сообщение),
     # чтобы при переходе в "Мои фото" не осталось старых сообщений.
