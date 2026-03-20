@@ -384,6 +384,82 @@ class AdminPanelService:
             logger.error(f"Ошибка отправки начального сообщения в топик: {e}")
             raise
 
+    async def create_api_topic(self, name: str) -> Optional[int]:
+        """
+        Создаёт топик с произвольным именем (без начального сообщения).
+        Используется для запросов из внешнего API (без Telegram-пользователя).
+
+        Returns:
+            ID топика или None при ошибке
+        """
+        try:
+            forum_topic = await asyncio.wait_for(
+                self.bot.create_forum_topic(
+                    chat_id=self.admin_group_id,
+                    name=name,
+                ),
+                timeout=self.SEND_TIMEOUT,
+            )
+            topic_id = forum_topic.message_thread_id
+            logger.info(f"API-топик создан: {name} (id={topic_id})")
+            return topic_id
+        except asyncio.TimeoutError:
+            logger.error("Таймаут при создании API-топика")
+            return None
+        except Exception as e:
+            logger.error(f"Ошибка создания API-топика: {e}")
+            return None
+
+    async def send_photos_to_topic(
+        self,
+        topic_id: int,
+        photo_bytes_list: List[bytes],
+        caption: str = "",
+    ) -> None:
+        """
+        Отправляет фото в указанный топик (одиночное или альбомом).
+        Используется для запросов из внешнего API (без Telegram-пользователя).
+
+        Args:
+            topic_id: ID топика
+            photo_bytes_list: Список байтов изображений
+            caption: Подпись к первому фото
+        """
+        if not photo_bytes_list:
+            return
+        try:
+            if len(photo_bytes_list) == 1:
+                await asyncio.wait_for(
+                    self.bot.send_photo(
+                        chat_id=self.admin_group_id,
+                        photo=BufferedInputFile(photo_bytes_list[0], filename="photo.png"),
+                        caption=caption or None,
+                        message_thread_id=topic_id,
+                    ),
+                    timeout=self.SEND_TIMEOUT,
+                )
+            else:
+                media_group = [
+                    InputMediaPhoto(
+                        media=BufferedInputFile(b, filename=f"photo_{i + 1}.png"),
+                        caption=caption if i == 0 else None,
+                    )
+                    for i, b in enumerate(photo_bytes_list)
+                ]
+                await asyncio.wait_for(
+                    self.bot.send_media_group(
+                        chat_id=self.admin_group_id,
+                        media=media_group,
+                        message_thread_id=topic_id,
+                    ),
+                    timeout=self.SEND_TIMEOUT,
+                )
+            logger.info(f"Отправлено {len(photo_bytes_list)} фото в топик {topic_id}")
+        except asyncio.TimeoutError:
+            logger.error(f"Таймаут отправки фото в топик {topic_id}")
+        except Exception as e:
+            logger.error(f"Ошибка отправки фото в топик {topic_id}: {e}")
+
     def _generate_topic_name(self, user: User) -> str:
         """
         Генерирует название топика для пользователя.

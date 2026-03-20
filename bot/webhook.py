@@ -76,6 +76,7 @@ async def init_webhook_services() -> None:
     # Наполняем ServiceContainer — он используется REST API модулем
     container = ServiceContainer.get()
     container.settings = settings
+    container.bot = _webhook_bot
     container.try_on_service = _webhook_try_on_service
     container.storage_service = _webhook_storage_service
     container.repo = _webhook_repo

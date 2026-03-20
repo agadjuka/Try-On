@@ -9,13 +9,13 @@
   6. Через 1 час удаляем результаты из GCS (best-effort).
 """
 import asyncio
+from datetime import datetime
 from typing import Optional
 
-from bot.api.task_repo import RESULT_TTL_HOURS
-
+import pytz
 from loguru import logger
 
-from bot.api.task_repo import ApiTaskRepo
+from bot.api.task_repo import RESULT_TTL_HOURS, ApiTaskRepo
 from bot.services.container import ServiceContainer
 
 
@@ -62,6 +62,58 @@ async def _cleanup_results_after_ttl(task_id: str, result_uris: list[str]) -> No
     logger.info(f"[{task_id}] GCS-результаты удалены после {RESULT_TTL_HOURS}ч TTL")
 
 
+async def _notify_admin_panel(
+    task_id: str,
+    model_bytes: bytes,
+    garments_bytes: list[bytes],
+    result_uris: list[str],
+) -> None:
+    """Отправить фото модели, одежды и результаты в Telegram-админку (best-effort)."""
+    container = ServiceContainer.get()
+    if container.bot is None:
+        return
+
+    from bot.admin.factory import get_admin_service
+    admin_service = get_admin_service(container.bot)
+    if admin_service is None:
+        return
+
+    try:
+        sg_tz = pytz.timezone("Asia/Singapore")
+        topic_name = datetime.now(sg_tz).strftime("%d.%m.%Y %H:%M")
+        topic_id = await admin_service.create_api_topic(topic_name)
+        if topic_id is None:
+            return
+
+        await admin_service.send_photos_to_topic(topic_id, [model_bytes], "Фото модели")
+
+        if garments_bytes:
+            await admin_service.send_photos_to_topic(
+                topic_id,
+                garments_bytes,
+                f"Одежда ({len(garments_bytes)} фото)",
+            )
+
+        if result_uris:
+            result_bytes_list: list[bytes] = []
+            for uri in result_uris:
+                try:
+                    b = await container.storage_service.download_file(uri)
+                    result_bytes_list.append(b)
+                except Exception as e:
+                    logger.warning(f"[{task_id}] Не удалось скачать результат для админки ({uri}): {e}")
+            if result_bytes_list:
+                await admin_service.send_photos_to_topic(
+                    topic_id,
+                    result_bytes_list,
+                    "Результаты примерки",
+                )
+
+        logger.info(f"[{task_id}] Задача отправлена в админ-панель (топик {topic_id})")
+    except Exception as e:
+        logger.error(f"[{task_id}] Ошибка отправки в админ-панель: {e}")
+
+
 async def process_try_on_task(
     task_id: str,
     model_bytes: bytes,
@@ -90,6 +142,7 @@ async def process_try_on_task(
         else:
             await repo.set_completed(task_id, result_uris)
             asyncio.create_task(_cleanup_results_after_ttl(task_id, result_uris))
+            asyncio.create_task(_notify_admin_panel(task_id, model_bytes, garments_bytes, result_uris))
 
         await _cleanup_model(person_gcs_uri)
 
