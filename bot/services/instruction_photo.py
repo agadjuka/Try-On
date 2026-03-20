@@ -6,10 +6,11 @@ from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from loguru import logger
 
-# Временный file_id инструкции (можно быстро заменить/удалить).
-INSTRUCTION_PHOTO_FILE_ID = (
-    "AgACAgIAAxkBAAInj2m81D4mjjyW1iDzgiJ2yLLuWvkeAAJ4FmsbN3ngSa3_gyiatC3AAQADAgADeQADOgQ"
-)
+# Временные file_id инструкций по языкам (можно быстро заменить/удалить).
+INSTRUCTION_PHOTO_FILE_IDS = {
+    "ru": "AgACAgIAAxkBAAInpmm82Z4mtFqIC0vxFuiF0s8khqRuAAKHFmsbN3ngSS8hfLJJpsikAQADAgADeQADOgQ",
+    "en": "AgACAgIAAxkBAAInj2m81D4mjjyW1iDzgiJ2yLLuWvkeAAJ4FmsbN3ngSa3_gyiatC3AAQADAgADeQADOgQ",
+}
 INSTRUCTION_PHOTO_MESSAGE_ID_KEY = "instruction_photo_message_id"
 
 
@@ -17,15 +18,17 @@ async def show_instruction_photo(
     bot: Bot,
     state: FSMContext,
     chat_id: int,
+    lang: str = "ru",
 ) -> Optional[int]:
     """Отправить инструкционное фото и сохранить его message_id в FSM."""
     state_data = await state.get_data()
     old_message_id = state_data.get(INSTRUCTION_PHOTO_MESSAGE_ID_KEY)
+    file_id = INSTRUCTION_PHOTO_FILE_IDS.get(lang, INSTRUCTION_PHOTO_FILE_IDS["ru"])
 
     try:
         sent_message = await bot.send_photo(
             chat_id=chat_id,
-            photo=INSTRUCTION_PHOTO_FILE_ID,
+            photo=file_id,
         )
         new_message_id = sent_message.message_id
         await state.update_data(**{INSTRUCTION_PHOTO_MESSAGE_ID_KEY: new_message_id})

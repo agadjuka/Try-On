@@ -51,7 +51,7 @@ async def handle_add_model_callback(
     
     # СНАЧАЛА отправляем новое сообщение
     await state.set_state(ModelStates.waiting_for_model_photo)
-    await show_instruction_photo(bot, state, callback.from_user.id)
+    await show_instruction_photo(bot, state, callback.from_user.id, lang)
     instruction_message = await bot.send_message(
         chat_id=callback.from_user.id,
         text=get_text("upload_model_instr", lang),
@@ -109,7 +109,7 @@ async def handle_add_new_model_from_list(
     old_menu_id = state_data.get("models_menu_message_id")
     
     await state.set_state(ModelStates.waiting_for_model_photo)
-    await show_instruction_photo(bot, state, callback.from_user.id)
+    await show_instruction_photo(bot, state, callback.from_user.id, lang)
     
     # СНАЧАЛА показываем новое сообщение
     instruction_message = await bot.send_message(

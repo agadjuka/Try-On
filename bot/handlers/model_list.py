@@ -70,7 +70,7 @@ async def handle_my_models_callback(
         
         if not models:
             await state.set_state(ModelStates.waiting_for_model_photo)
-            await show_instruction_photo(bot, state, callback.from_user.id)
+            await show_instruction_photo(bot, state, callback.from_user.id, lang)
             
             # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(

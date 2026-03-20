@@ -94,7 +94,7 @@ async def send_models_album(
             return False
 
         # СНАЧАЛА отправляем новый контент
-        await show_instruction_photo(bot, state, callback.from_user.id)
+        await show_instruction_photo(bot, state, callback.from_user.id, lang)
 
         sent_messages = await bot.send_media_group(
             chat_id=callback.from_user.id,

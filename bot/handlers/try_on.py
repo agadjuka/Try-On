@@ -54,7 +54,7 @@ async def handle_try_on_callback(
             # Если нет моделей - просим прислать фото
             from bot.states.user_states import TryOnStates
             
-            await show_instruction_photo(bot, state, callback.from_user.id)
+            await show_instruction_photo(bot, state, callback.from_user.id, lang)
 
             # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
@@ -159,7 +159,7 @@ async def handle_new_try_on_callback(
             # Если нет моделей - просим прислать фото
             from bot.states.user_states import TryOnStates
             
-            await show_instruction_photo(bot, state, callback.from_user.id)
+            await show_instruction_photo(bot, state, callback.from_user.id, lang)
 
             # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
