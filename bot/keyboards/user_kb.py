@@ -339,6 +339,29 @@ def get_feedback_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def get_privacy_consent_keyboard(lang: str = "ru") -> InlineKeyboardMarkup:
+    """
+    Клавиатура: согласие с условиями и ссылка на политику конфиденциальности.
+
+    Args:
+        lang: Язык интерфейса ('ru' или 'en')
+
+    Returns:
+        Inline-клавиатура
+    """
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=get_text("privacy_consent_agree", lang),
+        callback_data="privacy_consent_accept",
+    )
+    builder.button(
+        text=get_text("privacy_policy_button", lang),
+        url=get_text("privacy_policy_url", lang),
+    )
+    builder.adjust(1)
+    return builder.as_markup()
+
+
 def get_language_selection_keyboard() -> InlineKeyboardMarkup:
     """
     Получить клавиатуру для выбора языка.

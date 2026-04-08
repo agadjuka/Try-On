@@ -115,6 +115,10 @@ class FirestoreRepo:
         if existing_language is not None:
             update_data["language"] = existing_language
 
+        existing_privacy = existing_data.get("privacy_consent_accepted") if existing_data else None
+        if existing_privacy is not None:
+            update_data["privacy_consent_accepted"] = existing_privacy
+
         await doc_ref.set(update_data, merge=True)
 
         logger.info(f"Пользователь {doc_id} добавлен/обновлен в Firestore")
@@ -154,6 +158,43 @@ class FirestoreRepo:
         await doc_ref.update({"language": language})
         
         logger.info(f"Язык пользователя {user_id} установлен: {language}")
+
+    async def get_privacy_consent_accepted(self, user_id: str) -> bool:
+        """
+        Проверить, принял ли пользователь условия обработки данных и политику.
+
+        Args:
+            user_id: ID пользователя в Firestore
+
+        Returns:
+            True, если согласие сохранено в документе
+        """
+        client = self._get_client()
+        doc_ref = client.collection("users").document(user_id)
+        doc = await doc_ref.get()
+        if not doc.exists:
+            return False
+        data = doc.to_dict()
+        if not data:
+            return False
+        return bool(data.get("privacy_consent_accepted"))
+
+    async def set_privacy_consent_accepted(self, user_id: str) -> None:
+        """
+        Сохранить согласие пользователя на обработку данных (Firebase).
+
+        Args:
+            user_id: ID пользователя в Firestore
+        """
+        client = self._get_client()
+        doc_ref = client.collection("users").document(user_id)
+        await doc_ref.update(
+            {
+                "privacy_consent_accepted": True,
+                "privacy_consent_at": datetime.utcnow(),
+            }
+        )
+        logger.info(f"Согласие на обработку данных сохранено для пользователя {user_id}")
 
     async def add_model(
         self,

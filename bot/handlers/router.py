@@ -20,10 +20,12 @@ from bot.handlers import (
     try_on_processing,
     download_menu,
     language,
+    privacy,
     debug_photo_file_id,
     feedback,
 )
 from bot.middlewares.album import AlbumMiddleware
+from bot.middlewares.privacy_consent import PrivacyConsentMiddleware
 from bot.services.language import get_user_language
 
 
@@ -46,6 +48,10 @@ def setup_handlers(
         try_on_service: Сервис для генерации примерки
         upscale_service: Сервис для апскейла изображений
     """
+    privacy_middleware = PrivacyConsentMiddleware(repo)
+    router.message.middleware(privacy_middleware)
+    router.callback_query.middleware(privacy_middleware)
+
     # Регистрируем middleware для альбомов
     album_middleware = AlbumMiddleware(delay=1.5)
     router.message.middleware(album_middleware)
@@ -67,7 +73,15 @@ def setup_handlers(
         language_selection_handler,
         lambda c: c.data and c.data.startswith("select_language_"),
     )
-    
+
+    async def privacy_consent_handler(callback, state):
+        await privacy.handle_privacy_consent_accept(callback, bot, repo)
+
+    router.callback_query.register(
+        privacy_consent_handler,
+        F.data == "privacy_consent_accept",
+    )
+
     # Callback: Смена языка
     async def switch_language_handler(callback, state):
         await language.handle_switch_language(callback, bot, repo)

@@ -257,6 +257,44 @@ TEXTS = {
         "ru": "✅ Язык изменен",
         "en": "✅ Language changed",
     },
+    "privacy_notice": {
+        "ru": (
+            "⚠️ <b>Обратите внимание</b>\n\n"
+            "Бот находится в стадии тестирования.\n"
+            "Разработчики могут иметь доступ к загружаемым фотографиям для улучшения сервиса.\n\n"
+            "<b>👙 Пожалуйста, не загружайте чувствительные или откровенные изображения.</b>\n\n"
+            "Продолжая, вы соглашаетесь с обработкой ваших данных и фотографий, "
+            "включая их хранение и обработку на зарубежных серверах."
+        ),
+        "en": (
+            "⚠️ <b>Please note</b>\n\n"
+            "The bot is currently in testing.\n"
+            "Developers may have access to uploaded photos to improve the service.\n\n"
+            "<b>👙 Please do not upload sensitive or explicit images.</b>\n\n"
+            "By continuing, you agree to the processing of your data and photos, "
+            "including storage and processing on foreign servers."
+        ),
+    },
+    "privacy_consent_agree": {
+        "ru": "✅ Я согласен(а)",
+        "en": "✅ I agree",
+    },
+    "privacy_policy_button": {
+        "ru": "Политика конфиденциальности",
+        "en": "Privacy policy",
+    },
+    "privacy_policy_url": {
+        "ru": "https://www.ketly.app/vyon-privacy-ru",
+        "en": "https://www.ketly.app/vyon-privacy",
+    },
+    "privacy_consent_saved": {
+        "ru": "✅ Спасибо!",
+        "en": "✅ Thank you!",
+    },
+    "privacy_consent_required": {
+        "ru": "Сначала примите условия ниже.",
+        "en": "Please accept the terms below.",
+    },
 }
 
 

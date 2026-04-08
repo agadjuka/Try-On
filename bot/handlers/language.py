@@ -6,7 +6,7 @@ from loguru import logger
 
 from bot.database.repo import FirestoreRepo
 from bot.services.language import set_user_language, get_user_language
-from bot.keyboards.user_kb import get_main_menu_keyboard
+from bot.keyboards.user_kb import get_main_menu_keyboard, get_privacy_consent_keyboard
 from bot.locales.texts import get_text
 from bot.admin.factory import get_admin_service
 
@@ -51,10 +51,10 @@ async def handle_language_selection(
             except Exception:
                 pass
         
-        # Отправляем приветствие и главное меню на выбранном языке
+        # Условия обработки данных — до приветствия
         await callback.message.edit_text(
-            get_text("welcome", language),
-            reply_markup=get_main_menu_keyboard(language),
+            get_text("privacy_notice", language),
+            reply_markup=get_privacy_consent_keyboard(language),
             parse_mode="HTML",
         )
         
@@ -93,8 +93,16 @@ async def handle_switch_language(
         
         # Отвечаем на callback
         await callback.answer(get_text("language_changed", new_language))
-        
-        # Редактируем сообщение с тем же текстом, но на новом языке
+
+        user_id = str(user.id)
+        if not await repo.get_privacy_consent_accepted(user_id):
+            await callback.message.edit_text(
+                get_text("privacy_notice", new_language),
+                reply_markup=get_privacy_consent_keyboard(new_language),
+                parse_mode="HTML",
+            )
+            return
+
         await callback.message.edit_text(
             get_text("welcome", new_language),
             reply_markup=get_main_menu_keyboard(new_language),

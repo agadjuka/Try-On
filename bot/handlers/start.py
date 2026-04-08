@@ -5,7 +5,11 @@ from aiogram.types import Message
 from loguru import logger
 
 from bot.database.repo import FirestoreRepo
-from bot.keyboards.user_kb import get_main_menu_keyboard, get_language_selection_keyboard
+from bot.keyboards.user_kb import (
+    get_main_menu_keyboard,
+    get_language_selection_keyboard,
+    get_privacy_consent_keyboard,
+)
 from bot.locales.texts import get_text
 from bot.services.language import get_user_language
 from bot.admin.factory import get_admin_service
@@ -44,8 +48,17 @@ async def start_command(
                 reply_markup=get_language_selection_keyboard(),
             )
             return
-        
-        # Язык выбран - показываем приветствие
+
+        if not await repo.get_privacy_consent_accepted(user_id):
+            lang = language if language in ("ru", "en") else "ru"
+            await message.answer(
+                get_text("privacy_notice", lang),
+                reply_markup=get_privacy_consent_keyboard(lang),
+                parse_mode="HTML",
+            )
+            return
+
+        # Язык выбран, согласие есть — показываем приветствие
         # Создаем топик в админ-панели при команде /start (если настроено)
         admin_service = get_admin_service(bot)
         if admin_service:

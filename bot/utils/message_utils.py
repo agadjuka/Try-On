@@ -1,10 +1,12 @@
 """Утилиты для работы с сообщениями."""
 
 import asyncio
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from loguru import logger
 
 
