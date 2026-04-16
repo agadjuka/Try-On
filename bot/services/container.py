@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class ServiceContainer:
     """Хранит ссылки на уже инициализированные сервисы.
 
-    Заполняется один раз при старте приложения (init_webhook_services),
-    после чего любой модуль может получить сервис без повторной инициализации.
+    Заполняется при старте REST API (`init_service_container_for_api`), после чего
+    любой модуль может получить сервис без повторной инициализации.
     """
 
     _instance: Optional[ServiceContainer] = None

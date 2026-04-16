@@ -68,10 +68,13 @@ async def main() -> None:
 
     try:
         logger.info("Проверка подключения к Telegram API...")
-        # Проверяем подключение перед запуском polling
         me = await bot.get_me()
         logger.success(f"Бот успешно подключен: @{me.username} ({me.first_name})")
-        
+
+        # После миграции с webhook снимаем webhook и очищаем очередь апдейтов
+        await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("Webhook отключён (режим long polling)")
+
         logger.info("Бот запущен в режиме polling и готов к работе")
         await dp.start_polling(bot)
     except TelegramUnauthorizedError:

@@ -16,8 +16,5 @@ ENV COMMIT_SHA=${COMMIT_SHA}
 ARG BOT_VERSION=0.0.0
 ENV BOT_VERSION=${BOT_VERSION}
 
-ENV APP_PORT=8080
-
-EXPOSE 8080
-
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${APP_PORT}"]
+# Прод: long polling (токен и GCP — из env / secrets)
+CMD ["python", "run_bot.py"]

@@ -95,8 +95,17 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# Environments (никогда не коммитить прод-значения)
 .env
+.env.*
+!.env.example
+.env.product
+secrets/
+# Ключи и учётки (локально / Oracle Cloud)
+*.pem
+Oracle cloud/*.key
+Oracle cloud/*.json
+
 .venv
 env/
 venv/

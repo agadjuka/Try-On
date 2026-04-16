@@ -3,17 +3,17 @@ name: Deploy to Oracle VM
 on:
   push:
     branches:
-      - main
+      - Oracle
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Copy files via SCP
-        uses: appleboy/scp-action@v0.1.4
+      - name: Copy project to server (SCP)
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
@@ -21,14 +21,21 @@ jobs:
           source: "."
           target: "/home/ubuntu/bot_project"
 
-      - name: Restart Docker Compose
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Rebuild and restart containers
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          script_stop: true
           script: |
+            set -e
             cd /home/ubuntu/bot_project
-            docker-compose down
-            docker-compose up -d --build
+            if docker compose version >/dev/null 2>&1; then
+              docker compose down
+              docker compose up -d --build
+            else
+              docker-compose down
+              docker-compose up -d --build
+            fi
             docker image prune -f
