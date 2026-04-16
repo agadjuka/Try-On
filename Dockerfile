@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./bot ./bot
 COPY ./main.py ./main.py
 COPY ./run_bot.py ./run_bot.py
+COPY ./scripts ./scripts
 
 ARG COMMIT_SHA=""
 ENV COMMIT_SHA=${COMMIT_SHA}
