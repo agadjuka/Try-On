@@ -12,6 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Путь на сервере: /home/<SERVER_USER>/bot_project (не хардкодить ubuntu)
       - name: Copy project to server (SCP)
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -19,7 +20,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "."
-          target: "/home/ubuntu/bot_project"
+          target: "/home/${{ secrets.SERVER_USER }}/bot_project"
 
       - name: Rebuild and restart containers
         uses: appleboy/ssh-action@v1.0.3
@@ -29,13 +30,31 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script_stop: true
           script: |
-            set -e
-            cd /home/ubuntu/bot_project
+            set -ex
+            DEPLOY_DIR="/home/${{ secrets.SERVER_USER }}/bot_project"
+            mkdir -p "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+            pwd
+            ls -la
+
+            test -f docker-compose.yml || { echo "ERROR: docker-compose.yml not found after deploy"; exit 1; }
+            test -f Dockerfile || { echo "ERROR: Dockerfile not found"; exit 1; }
+            test -f .env || { echo "ERROR: missing .env on server (create $DEPLOY_DIR/.env, not in git)"; exit 1; }
+            test -f secrets/gcp-sa.json || { echo "ERROR: missing secrets/gcp-sa.json (service account JSON on server)"; exit 1; }
+
+            if ! docker info >/dev/null 2>&1; then
+              echo "ERROR: current user cannot use Docker (add user to group docker: sudo usermod -aG docker $USER)"
+              exit 1
+            fi
+
             if docker compose version >/dev/null 2>&1; then
               docker compose down
               docker compose up -d --build
-            else
+            elif command -v docker-compose >/dev/null 2>&1; then
               docker-compose down
               docker-compose up -d --build
+            else
+              echo "ERROR: neither 'docker compose' nor 'docker-compose' found"
+              exit 1
             fi
             docker image prune -f
