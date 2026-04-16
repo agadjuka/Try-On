@@ -43,6 +43,11 @@ async def get_user_language(
     return language
 
 
+def prime_language_cache(telegram_id: int, language: str) -> None:
+    """Подставить язык в кеш без запроса к БД (после одного чтения в middleware)."""
+    _language_cache[telegram_id] = language
+
+
 async def set_user_language(
     repo: FirestoreRepo,
     telegram_id: int,

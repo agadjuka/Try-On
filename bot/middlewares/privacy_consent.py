@@ -10,6 +10,7 @@ from loguru import logger
 from bot.database.repo import FirestoreRepo
 from bot.keyboards.user_kb import get_privacy_consent_keyboard
 from bot.locales.texts import get_text
+from bot.services.language import prime_language_cache
 
 
 class PrivacyConsentMiddleware(BaseMiddleware):
@@ -47,14 +48,15 @@ class PrivacyConsentMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         user_id = str(telegram_id)
-        language = await self._repo.get_user_language(user_id)
+        language, privacy_ok = await self._repo.get_user_language_and_privacy(user_id)
         if language is None:
             return await handler(event, data)
 
-        if await self._repo.get_privacy_consent_accepted(user_id):
-            return await handler(event, data)
-
         lang = language if language in ("ru", "en") else "ru"
+        prime_language_cache(telegram_id, lang)
+
+        if privacy_ok:
+            return await handler(event, data)
         text = get_text("privacy_notice", lang)
         keyboard = get_privacy_consent_keyboard(lang)
 

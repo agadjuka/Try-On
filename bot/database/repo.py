@@ -179,6 +179,22 @@ class FirestoreRepo:
             return False
         return bool(data.get("privacy_consent_accepted"))
 
+    async def get_user_language_and_privacy(
+        self, user_id: str
+    ) -> tuple[Optional[str], bool]:
+        """Одним чтением users/{user_id}: язык и согласие (меньше RTT к Firestore)."""
+        client = self._get_client()
+        doc_ref = client.collection("users").document(user_id)
+        doc = await doc_ref.get()
+        if not doc.exists:
+            return None, False
+        data = doc.to_dict()
+        if not data:
+            return None, False
+        language = data.get("language")
+        privacy = bool(data.get("privacy_consent_accepted"))
+        return language, privacy
+
     async def set_privacy_consent_accepted(self, user_id: str) -> None:
         """
         Сохранить согласие пользователя на обработку данных (Firebase).
