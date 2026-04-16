@@ -9,8 +9,44 @@ services:
       - .env
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-sa.json
+      SQLITE_PATH: /code/data/vyon.db
     volumes:
       - ./secrets/gcp-sa.json:/run/secrets/gcp-sa.json:ro
-      # SQLite: файл на хосте ~/bot_project/data/vyon.db (удобно копировать по SCP)
       - ./data:/code/data
+    command: ["python", "run_bot.py"]
 
+  api:
+    container_name: vyon-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-sa.json
+      SQLITE_PATH: /code/data/vyon.db
+    volumes:
+      - ./secrets/gcp-sa.json:/run/secrets/gcp-sa.json:ro
+      - ./data:/code/data
+    expose:
+      - "8080"
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+
+  caddy:
+    image: caddy:latest
+    container_name: vyon-caddy
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

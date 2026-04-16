@@ -5,6 +5,7 @@
 """
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from bot.api.router import router as api_router
@@ -18,6 +19,15 @@ app = FastAPI(
     title="Virtual Try-On API",
     description="REST API виртуальной примерки (опционально; бот — long polling)",
     version="1.0.0",
+)
+
+# Разрешаем кросс-доменные запросы (например, с Vercel).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(api_router)
