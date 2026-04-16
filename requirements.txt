@@ -20,6 +20,9 @@ fastapi>=0.115.0
 uvicorn[standard]>=0.34.0
 python-multipart>=0.0.9
 
+# --- SQLite (database_backend=sqlite) ---
+aiosqlite>=0.20.0
+
 # --- Utilities ---
 loguru>=0.7.0
 pytz>=2024.1

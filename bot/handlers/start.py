@@ -4,7 +4,7 @@ from aiogram import Bot
 from aiogram.types import Message
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.keyboards.user_kb import (
     get_main_menu_keyboard,
     get_language_selection_keyboard,
@@ -18,7 +18,7 @@ from bot.admin.factory import get_admin_service
 async def start_command(
     message: Message,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
 ) -> None:
     """
     Обработчик команды /start.

@@ -3,7 +3,7 @@
 from aiogram import Router, F
 from aiogram.filters import Command
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
 from bot.services.upscale import UpscaleService
@@ -25,7 +25,7 @@ from bot.middlewares.album import AlbumMiddleware
 def setup_handlers(
     router: Router,
     bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     storage_service: CloudStorageService,
     try_on_service: VertexTryOnService,
     upscale_service: UpscaleService,

@@ -4,7 +4,7 @@ from aiogram import Bot
 from aiogram.types import Message, CallbackQuery, BufferedInputFile, InputMediaPhoto
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.services.storage import CloudStorageService
 from bot.keyboards.user_kb import get_gallery_keyboard, get_back_keyboard
 from bot.locales.texts import get_text
@@ -67,7 +67,7 @@ async def show_model_in_gallery(
 async def handle_model_navigation(
     callback: CallbackQuery,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     storage_service: CloudStorageService,
     lang: str = "ru",
 ) -> None:

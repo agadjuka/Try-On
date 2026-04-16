@@ -11,7 +11,7 @@ from loguru import logger
 from bot.services.try_on import VertexTryOnService
 from bot.services.storage import CloudStorageService
 from bot.services.result_storage import ResultStorageService
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.keyboards.user_kb import get_try_on_result_keyboard, get_main_menu_keyboard
 from bot.locales.texts import get_text
 from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
@@ -145,7 +145,7 @@ async def send_try_on_results(
     failed_count: int,
     bot: Bot,
     storage_service: CloudStorageService,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     model_gcs_uri: Optional[str] = None,
     lang: str = "ru",
 ) -> None:
@@ -294,7 +294,7 @@ async def handle_garment_photo(
     bot: Bot,
     try_on_service: VertexTryOnService,
     storage_service: CloudStorageService,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     album: Optional[List[Message]] = None,
     lang: str = "ru",
 ) -> None:

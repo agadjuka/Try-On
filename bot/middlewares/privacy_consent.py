@@ -7,7 +7,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.keyboards.user_kb import get_privacy_consent_keyboard
 from bot.locales.texts import get_text
 from bot.services.language import prime_language_cache
@@ -16,7 +16,7 @@ from bot.services.language import prime_language_cache
 class PrivacyConsentMiddleware(BaseMiddleware):
     """Показывает экран согласия, пока в Firestore не установлен privacy_consent_accepted."""
 
-    def __init__(self, repo: FirestoreRepo) -> None:
+    def __init__(self, repo: UserRepository) -> None:
         self._repo = repo
         super().__init__()
 

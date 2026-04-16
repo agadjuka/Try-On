@@ -4,7 +4,7 @@ from aiogram import Bot
 from aiogram.types import CallbackQuery
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.services.language import set_user_language, get_user_language
 from bot.keyboards.user_kb import get_main_menu_keyboard, get_privacy_consent_keyboard
 from bot.locales.texts import get_text
@@ -14,7 +14,7 @@ from bot.admin.factory import get_admin_service
 async def handle_language_selection(
     callback: CallbackQuery,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
 ) -> None:
     """
     Обработчик выбора языка.
@@ -69,7 +69,7 @@ async def handle_language_selection(
 async def handle_switch_language(
     callback: CallbackQuery,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
 ) -> None:
     """
     Обработчик смены языка.

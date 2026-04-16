@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from aiogram import Bot
     from bot.core.config import Settings
-    from bot.database.repo import FirestoreRepo
+    from bot.database.repo_factory import UserRepository
     from bot.services.storage import CloudStorageService
     from bot.services.try_on import VertexTryOnService
 
@@ -25,7 +25,7 @@ class ServiceContainer:
         self.bot: Optional[Bot] = None
         self.try_on_service: Optional[VertexTryOnService] = None
         self.storage_service: Optional[CloudStorageService] = None
-        self.repo: Optional[FirestoreRepo] = None
+        self.repo: Optional["UserRepository"] = None
 
     @classmethod
     def get(cls) -> ServiceContainer:

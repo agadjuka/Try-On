@@ -6,12 +6,12 @@ from typing import List
 from loguru import logger
 
 from bot.services.storage import CloudStorageService
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 
 
 async def cleanup_user_results(
     user_id: str,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     storage_service: CloudStorageService,
 ) -> None:
     """

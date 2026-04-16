@@ -9,7 +9,7 @@ from loguru import logger
 
 from bot.core.config import get_settings
 from bot.core.logger import setup_logger
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import create_user_repo
 from bot.handlers.router import setup_handlers
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
@@ -45,9 +45,17 @@ async def main() -> None:
         return
 
     logger.info(f"Конфигурация загружена. Project ID: {settings.google_cloud_project_id}")
+    logger.info(
+        f"БД: {settings.database_backend}"
+        + (
+            f" ({settings.sqlite_path})"
+            if settings.database_backend == "sqlite"
+            else ""
+        )
+    )
 
     # Инициализируем сервисы
-    repo = FirestoreRepo(settings)
+    repo = create_user_repo(settings)
     storage_service = CloudStorageService(settings)
     try_on_service = VertexTryOnService(settings)
     upscale_service = UpscaleService(settings)

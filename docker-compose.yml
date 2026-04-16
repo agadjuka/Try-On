@@ -11,7 +11,6 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-sa.json
     volumes:
       - ./secrets/gcp-sa.json:/run/secrets/gcp-sa.json:ro
-      - bot_data:/code/data
+      # SQLite: файл на хосте ~/bot_project/data/vyon.db (удобно копировать по SCP)
+      - ./data:/code/data
 
-volumes:
-  bot_data:

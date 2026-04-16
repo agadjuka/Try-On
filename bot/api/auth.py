@@ -2,8 +2,8 @@
 
 Схема:
   - Клиент передаёт: Authorization: Bearer <raw_key>
-  - Сервер хэширует raw_key через SHA-256 и ищет хэш в Firestore (коллекция api_keys).
-  - Результат проверки кэшируется в памяти на 5 минут, чтобы не долбить Firestore каждым запросом.
+  - Сервер хэширует raw_key через SHA-256 и ищет хэш в таблице api_keys (Firestore или SQLite).
+  - Результат проверки кэшируется в памяти на 5 минут, чтобы не долбить БД каждым запросом.
   - Сырой ключ никогда не хранится — только хэш.
 """
 import hashlib
@@ -14,7 +14,7 @@ from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from loguru import logger
 
-from bot.api.task_repo import ApiTaskRepo
+from bot.database.repo_factory import ApiTaskRepository, create_api_task_repo
 
 _bearer = HTTPBearer(auto_error=True)
 
@@ -23,10 +23,10 @@ _cache: dict[str, tuple[bool, float]] = {}
 _CACHE_TTL = 300.0  # секунды
 
 # Lazy singleton репозитория (создаётся при первом обращении)
-_repo_instance: Optional[ApiTaskRepo] = None
+_repo_instance: Optional[ApiTaskRepository] = None
 
 
-def get_api_task_repo() -> ApiTaskRepo:
+def get_api_task_repo() -> ApiTaskRepository:
     """FastAPI dependency: возвращает singleton ApiTaskRepo."""
     global _repo_instance
     if _repo_instance is None:
@@ -35,7 +35,7 @@ def get_api_task_repo() -> ApiTaskRepo:
         settings = ServiceContainer.get().settings
         if settings is None:
             raise RuntimeError("ServiceContainer не инициализирован — сервисы ещё не запущены")
-        _repo_instance = ApiTaskRepo(settings)
+        _repo_instance = create_api_task_repo(settings)
     return _repo_instance
 
 
@@ -45,7 +45,7 @@ def _hash(raw_key: str) -> str:
 
 async def verify_api_key(
     credentials: HTTPAuthorizationCredentials = Security(_bearer),
-    repo: ApiTaskRepo = Depends(get_api_task_repo),
+    repo: ApiTaskRepository = Depends(get_api_task_repo),
 ) -> str:
     """Dependency: проверить Bearer-токен. Возвращает key_hash при успехе."""
     raw_key = credentials.credentials

@@ -1,5 +1,7 @@
 """Конфигурация приложения через pydantic-settings."""
 
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,8 +12,12 @@ class Settings(BaseSettings):
     google_cloud_region: str
     gcs_bucket_name: str
     bot_token: str
+
+    # firestore | sqlite — метаданные пользователей, API-ключи, adminpanel
+    database_backend: Literal["firestore", "sqlite"] = "firestore"
+    sqlite_path: str = "./data/vyon.db"
     
-    # Название базы данных Firestore
+    # Название базы данных Firestore (только при database_backend=firestore)
     firestore_database_id: str = "(default)"
     
     # Настройки админ-панели для конкретного пользователя (261617302)

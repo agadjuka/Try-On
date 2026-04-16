@@ -5,7 +5,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.keyboards.user_kb import get_main_menu_keyboard
 from bot.locales.texts import get_text
 
@@ -13,7 +13,7 @@ from bot.locales.texts import get_text
 async def handle_privacy_consent_accept(
     callback: CallbackQuery,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
 ) -> None:
     """
     Сохранить согласие пользователя и показать приветствие с главным меню.

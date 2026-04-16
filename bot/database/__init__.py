@@ -1,1 +1,1 @@
-"""Модуль для работы с базой данных Firestore."""
+"""Модуль БД: Firestore или SQLite (см. DATABASE_BACKEND, repo_factory)."""

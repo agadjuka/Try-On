@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.services.storage import CloudStorageService
 from bot.services.result_cleanup import cleanup_user_results
 from bot.states.user_states import ModelStates
@@ -24,7 +24,7 @@ async def handle_add_model_callback(
     callback: CallbackQuery,
     state: FSMContext,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     storage_service: CloudStorageService,
     lang: str = "ru",
 ) -> None:
@@ -135,7 +135,7 @@ async def handle_model_photo(
     message: Message,
     state: FSMContext,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     storage_service: CloudStorageService,
     lang: str = "ru",
 ) -> None:

@@ -4,7 +4,7 @@ from aiogram import Bot
 from loguru import logger
 
 from bot.core.config import get_settings
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import create_user_repo
 from bot.services.container import ServiceContainer
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
@@ -18,7 +18,7 @@ async def init_service_container_for_api() -> None:
     settings = get_settings()
     logger.info("Инициализация сервисов для REST API...")
 
-    repo = FirestoreRepo(settings)
+    repo = create_user_repo(settings)
     storage_service = CloudStorageService(settings)
     try_on_service = VertexTryOnService(settings)
     bot = Bot(token=settings.bot_token)

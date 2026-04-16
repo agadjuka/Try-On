@@ -8,7 +8,7 @@ from datetime import datetime
 from loguru import logger
 
 from bot.services.storage import CloudStorageService
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 
 
 class ResultStorageService:
@@ -17,7 +17,7 @@ class ResultStorageService:
     def __init__(
         self,
         storage_service: CloudStorageService,
-        repo: FirestoreRepo,
+        repo: UserRepository,
     ):
         """
         Инициализировать сервис.

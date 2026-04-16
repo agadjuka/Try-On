@@ -8,7 +8,7 @@ from loguru import logger
 
 from bot.services.upscale import UpscaleService
 from bot.services.storage import CloudStorageService
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.keyboards.user_kb import get_try_on_result_keyboard
 from bot.locales.texts import get_text
 
@@ -94,7 +94,7 @@ async def handle_download_photo(
     state: FSMContext,
     bot: Bot,
     storage_service: CloudStorageService,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     upscale_service: UpscaleService,
     lang: str = "ru",
 ) -> None:

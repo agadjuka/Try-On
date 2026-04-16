@@ -3,14 +3,14 @@
 from typing import Optional
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 
 # Кеш языка пользователей: {telegram_id: language}
 _language_cache: dict[int, str] = {}
 
 
 async def get_user_language(
-    repo: FirestoreRepo,
+    repo: UserRepository,
     telegram_id: int,
     user_id: Optional[str] = None,
 ) -> str:
@@ -49,7 +49,7 @@ def prime_language_cache(telegram_id: int, language: str) -> None:
 
 
 async def set_user_language(
-    repo: FirestoreRepo,
+    repo: UserRepository,
     telegram_id: int,
     language: str,
     user_id: Optional[str] = None,

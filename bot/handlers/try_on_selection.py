@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 from loguru import logger
 
-from bot.database.repo import FirestoreRepo
+from bot.database.repo_factory import UserRepository
 from bot.states.user_states import TryOnStates
 from bot.keyboards.user_kb import get_back_keyboard
 from bot.services.storage import CloudStorageService
@@ -22,7 +22,7 @@ async def handle_model_selection_for_try_on(
     callback: CallbackQuery,
     state: FSMContext,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     lang: str = "ru",
 ) -> None:
     """
@@ -89,7 +89,7 @@ async def handle_model_photo_for_try_on(
     message: Message,
     state: FSMContext,
     bot: Bot,
-    repo: FirestoreRepo,
+    repo: UserRepository,
     storage_service: CloudStorageService,
     lang: str = "ru",
 ) -> None:

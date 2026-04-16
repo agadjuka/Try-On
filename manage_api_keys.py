@@ -6,7 +6,7 @@
   python manage_api_keys.py list            — показать все ключи
 
 Ключ генерируется как 64-символьная hex-строка (secrets.token_hex(32)).
-В Firestore хранится только SHA-256 хэш — сырой ключ нигде не сохраняется,
+В базе (Firestore или SQLite) хранится только SHA-256 хэш — сырой ключ нигде не сохраняется,
 поэтому его нужно скопировать сразу после создания.
 """
 import asyncio
@@ -15,8 +15,8 @@ import secrets
 import sys
 from datetime import datetime
 
-from bot.api.task_repo import ApiTaskRepo
 from bot.core.config import get_settings
+from bot.database.repo_factory import create_api_task_repo
 
 
 def _hash(raw_key: str) -> str:
@@ -25,7 +25,7 @@ def _hash(raw_key: str) -> str:
 
 async def cmd_create(name: str) -> None:
     settings = get_settings()
-    repo = ApiTaskRepo(settings)
+    repo = create_api_task_repo(settings)
 
     raw_key = secrets.token_hex(32)
     key_id = await repo.create_key(name, _hash(raw_key))
@@ -45,7 +45,7 @@ async def cmd_create(name: str) -> None:
 
 async def cmd_revoke(name: str) -> None:
     settings = get_settings()
-    repo = ApiTaskRepo(settings)
+    repo = create_api_task_repo(settings)
 
     found = await repo.revoke_key(name)
     if found:
@@ -56,7 +56,7 @@ async def cmd_revoke(name: str) -> None:
 
 async def cmd_list() -> None:
     settings = get_settings()
-    repo = ApiTaskRepo(settings)
+    repo = create_api_task_repo(settings)
 
     keys = await repo.list_keys()
     if not keys:
