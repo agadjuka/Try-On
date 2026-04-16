@@ -1,0 +1,22 @@
+services:
+  bot:
+    container_name: vyon-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - .env
+    environment:
+      APP_PORT: ${APP_PORT:-8080}
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-sa.json
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      # Service account JSON должен находиться на сервере в ./secrets/gcp-sa.json
+      - ./secrets/gcp-sa.json:/run/secrets/gcp-sa.json:ro
+      # Резерв под возможные локальные артефакты/кэш
+      - bot_data:/code/data
+
+volumes:
+  bot_data:
