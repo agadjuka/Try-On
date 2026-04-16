@@ -15,22 +15,25 @@ from typing import Optional
 import pytz
 from loguru import logger
 
-from bot.api.task_repo import RESULT_TTL_HOURS, ApiTaskRepo
+from bot.api.task_repo import RESULT_TTL_HOURS
+from bot.database.repo_factory import ApiTaskRepository
 from bot.services.container import ServiceContainer
 
 
 async def _process_single_garment(
     task_id: str,
     index: int,
-    person_gcs_uri: str,
+    person_uri: str,
+    person_image_bytes: bytes,
     garment_bytes: bytes,
 ) -> Optional[str]:
     """Обработать одно фото одежды. Возвращает GCS URI результата или None."""
     container = ServiceContainer.get()
     try:
         result_bytes = await container.try_on_service.generate_try_on(
-            person_gcs_uri=person_gcs_uri,
             garment_bytes=garment_bytes,
+            person_image_uri=person_uri if person_uri.startswith("gs://") else None,
+            person_image_bytes=person_image_bytes if not person_uri.startswith("gs://") else None,
         )
         path = f"api_results/{task_id}/{index}.png"
         gcs_uri = await container.storage_service.upload_image(result_bytes, path)
@@ -118,19 +121,19 @@ async def process_try_on_task(
     task_id: str,
     model_bytes: bytes,
     garments_bytes: list[bytes],
-    repo: ApiTaskRepo,
+    repo: ApiTaskRepository,
 ) -> None:
     """Полный цикл обработки задачи примерки (запускается как фоновая задача)."""
     container = ServiceContainer.get()
 
     try:
         model_path = f"api_uploads/{task_id}/model.png"
-        person_gcs_uri = await container.storage_service.upload_image(model_bytes, model_path)
-        await repo.set_processing(task_id, person_gcs_uri)
-        logger.info(f"[{task_id}] Модель загружена: {person_gcs_uri}, гарментов: {len(garments_bytes)}")
+        person_uri = await container.storage_service.upload_image(model_bytes, model_path)
+        await repo.set_processing(task_id, person_uri)
+        logger.info(f"[{task_id}] Модель загружена: {person_uri}, гарментов: {len(garments_bytes)}")
 
         coros = [
-            _process_single_garment(task_id, i, person_gcs_uri, garment_bytes)
+            _process_single_garment(task_id, i, person_uri, model_bytes, garment_bytes)
             for i, garment_bytes in enumerate(garments_bytes)
         ]
         raw_results = await asyncio.gather(*coros)
@@ -144,7 +147,7 @@ async def process_try_on_task(
             asyncio.create_task(_cleanup_results_after_ttl(task_id, result_uris))
             asyncio.create_task(_notify_admin_panel(task_id, model_bytes, garments_bytes, result_uris))
 
-        await _cleanup_model(person_gcs_uri)
+        await _cleanup_model(person_uri)
 
     except Exception as e:
         logger.exception(f"[{task_id}] Критическая ошибка: {e}")

@@ -1,0 +1,42 @@
+import boto3
+from botocore.config import Config
+
+ACCESS_KEY = "7c7e5b0b03c6c2e8dc89db272bd5152d38e427a8"
+SECRET_KEY = "2mFJmtXQlULuyTrWXbUrP+unmdEKS3btBZyL1Cy3yXY="
+
+endpoint = "https://axyuvt8cxwds.compat.objectstorage.me-dubai-1.oraclecloud.com"
+
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=ACCESS_KEY,
+    aws_secret_access_key=SECRET_KEY,
+    endpoint_url=endpoint,
+    region_name="me-dubai-1",
+    config=Config(
+        signature_version="s3v4",
+        request_checksum_calculation="when_required",
+        response_checksum_validation="when_required",
+        s3={
+            "addressing_style": "path",
+            "payload_signing_enabled": False,
+        },
+    ),
+)
+
+try:
+    print("Пробуем загрузить файл...")
+    body = b"It works perfectly!"
+    s3.put_object(
+        Bucket="vyon_files",
+        Key="test_upload.txt",
+        Body=body,
+        ContentLength=len(body),
+    )
+    print("УСПЕХ! Файл test_upload.txt загружен в бакет.")
+
+    print("Пробуем прочитать файл обратно...")
+    response = s3.get_object(Bucket="vyon_files", Key="test_upload.txt")
+    print("Содержимое:", response["Body"].read().decode("utf-8"))
+
+except Exception as e:
+    print(f"Ошибка: {e}")

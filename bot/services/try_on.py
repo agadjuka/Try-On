@@ -85,7 +85,8 @@ class VertexTryOnService:
 
     def _build_request_body(
         self,
-        person_gcs_uri: str,
+        person_image_uri: Optional[str],
+        person_image_bytes: Optional[bytes],
         garment_bytes: bytes,
         base_steps: int = 32,
         sample_count: int = 1,
@@ -102,7 +103,8 @@ class VertexTryOnService:
         Модель передается через GCS URI, одежда - через base64.
 
         Args:
-            person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
+            person_image_uri: URI изображения модели (обычно gs://..., опционально)
+            person_image_bytes: Байты изображения модели (fallback для non-gs хранилищ)
             garment_bytes: Байты изображения одежды
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
@@ -120,12 +122,21 @@ class VertexTryOnService:
         # Кодируем фото одежды в base64
         garment_base64 = base64.b64encode(garment_bytes).decode('utf-8')
         
+        if person_image_uri:
+            person_image_payload = {"gcsUri": person_image_uri}
+        elif person_image_bytes is not None:
+            person_image_payload = {
+                "bytesBase64Encoded": base64.b64encode(person_image_bytes).decode("utf-8")
+            }
+        else:
+            raise ValueError("Нужно передать person_image_uri или person_image_bytes")
+
         request_body = {
             "instances": [
                 {
                     "personImage": {
                         "image": {
-                            "gcsUri": person_gcs_uri
+                            **person_image_payload
                         }
                     },
                     "productImages": [
@@ -164,8 +175,9 @@ class VertexTryOnService:
 
     async def generate_try_on(
         self,
-        person_gcs_uri: str,
         garment_bytes: bytes,
+        person_image_uri: Optional[str] = None,
+        person_image_bytes: Optional[bytes] = None,
         base_steps: int = 32,
         sample_count: int = 1,
         add_watermark: bool = False,
@@ -178,7 +190,8 @@ class VertexTryOnService:
         Результат возвращается в виде байтов без сохранения в облако.
 
         Args:
-            person_gcs_uri: URI изображения модели в GCS (gs://bucket/path)
+            person_image_uri: URI изображения модели (обычно gs://..., опционально)
+            person_image_bytes: Байты изображения модели (fallback для non-gs хранилищ)
             garment_bytes: Байты изображения одежды
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
@@ -199,7 +212,8 @@ class VertexTryOnService:
         
         access_token = self._get_access_token()
         request_body = self._build_request_body(
-            person_gcs_uri=person_gcs_uri,
+            person_image_uri=person_image_uri,
+            person_image_bytes=person_image_bytes,
             garment_bytes=garment_bytes,
             base_steps=base_steps,
             sample_count=sample_count,
@@ -213,7 +227,10 @@ class VertexTryOnService:
 
         api_url = self._get_api_url()
         logger.info(f"Отправка запроса к Vertex AI API: {api_url}")
-        logger.info(f"Person GCS URI: {person_gcs_uri}")
+        if person_image_uri:
+            logger.info(f"Person image URI: {person_image_uri}")
+        else:
+            logger.info(f"Person image: передано через base64 ({len(person_image_bytes or b'')} байт)")
         logger.info(f"Garment: передано через base64 ({len(garment_bytes)} байт)")
 
         # Используем синхронный requests через asyncio.to_thread, как в старой версии

@@ -10,8 +10,16 @@ class Settings(BaseSettings):
 
     google_cloud_project_id: str
     google_cloud_region: str
-    gcs_bucket_name: str
+    gcs_bucket_name: str = ""
     bot_token: str
+
+    # Хранилище файлов: oracle (S3-compatible Object Storage) | gcs
+    storage_backend: Literal["oracle", "gcs"] = "oracle"
+    oracle_s3_endpoint: str = ""
+    oracle_s3_region: str = ""
+    oracle_access_key_id: str = ""
+    oracle_secret_access_key: str = ""
+    oracle_bucket_name: str = ""
 
     # firestore | sqlite — метаданные пользователей, API-ключи, adminpanel
     database_backend: Literal["firestore", "sqlite"] = "firestore"

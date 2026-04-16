@@ -81,6 +81,7 @@ async def process_single_garment(
     photo_count: int,
     user_id: str,
     model_gcs_uri: str,
+    model_image_bytes: Optional[bytes],
     try_on_service: VertexTryOnService,
 ) -> Optional[bytes]:
     """
@@ -116,12 +117,20 @@ async def process_single_garment(
         logger.info(
             f"Начало генерации примерки {index + 1}/{photo_count}"
         )
-        result_bytes = await try_on_service.generate_try_on(
-            person_gcs_uri=model_gcs_uri,
-            garment_bytes=photo_bytes,
-            user=garment_msg.from_user,
-            bot=bot,
-        )
+        if model_gcs_uri.startswith("gs://"):
+            result_bytes = await try_on_service.generate_try_on(
+                garment_bytes=photo_bytes,
+                person_image_uri=model_gcs_uri,
+                user=garment_msg.from_user,
+                bot=bot,
+            )
+        else:
+            result_bytes = await try_on_service.generate_try_on(
+                garment_bytes=photo_bytes,
+                person_image_bytes=model_image_bytes,
+                user=garment_msg.from_user,
+                bot=bot,
+            )
         logger.info(
             f"Примерка {index + 1}/{photo_count} успешно сгенерирована ({len(result_bytes)} байт)"
         )
@@ -359,6 +368,11 @@ async def handle_garment_photo(
         )
         processing_message_id = processing_message.message_id
 
+        # Для non-gs хранилищ загружаем модель один раз и используем bytesBase64 в запросах Vertex.
+        model_image_bytes: Optional[bytes] = None
+        if not model_gcs_uri.startswith("gs://"):
+            model_image_bytes = await storage_service.download_file(model_gcs_uri)
+
         # Запускаем обработку всех фото параллельно
         logger.info(f"Запуск параллельной генерации для {photo_count} фото")
         tasks = [
@@ -369,6 +383,7 @@ async def handle_garment_photo(
                 photo_count=photo_count,
                 user_id=user_id,
                 model_gcs_uri=model_gcs_uri,
+                model_image_bytes=model_image_bytes,
                 try_on_service=try_on_service,
             )
             for idx, msg in enumerate(garment_messages)
