@@ -6,9 +6,10 @@ import json
 from typing import Optional
 
 import aiohttp
-from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
+
+from bot.core.gcp_credentials import load_cloud_platform_credentials
 from aiogram import Bot
 from aiogram.types import User
 
@@ -31,7 +32,7 @@ class UpscaleService:
     def _get_credentials(self):
         """Получить учетные данные Google Cloud."""
         if self._credentials is None:
-            self._credentials, _ = default()
+            self._credentials = load_cloud_platform_credentials()
         if not self._credentials.valid:
             self._credentials.refresh(Request())
         return self._credentials

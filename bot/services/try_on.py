@@ -6,9 +6,10 @@ import json
 from typing import Dict, Any, Optional
 
 import requests
-from google.auth import default
 from google.auth.transport.requests import Request
 from loguru import logger
+
+from bot.core.gcp_credentials import load_cloud_platform_credentials
 from aiogram import Bot
 from aiogram.types import User
 
@@ -59,9 +60,9 @@ class VertexTryOnService:
             RuntimeError: Если не удалось получить токен
         """
         try:
-            # Инициализируем креденшелы один раз
+            # Явный service account + cloud-platform scope (как у клиентов GCS/Firestore)
             if self._credentials is None:
-                self._credentials, _ = default()
+                self._credentials = load_cloud_platform_credentials()
 
             # При необходимости обновляем (если истёк или ещё не получен)
             if not self._credentials.valid:
