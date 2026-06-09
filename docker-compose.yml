@@ -45,8 +45,6 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
-      - caddy_config:/config
-
-volumes:
+      - caddy_config:/configvolumes:
   caddy_data:
   caddy_config:
