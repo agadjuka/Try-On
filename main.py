@@ -39,8 +39,14 @@ async def startup_event() -> None:
         settings = get_settings()
         logger.info("=" * 60)
         logger.info("Запуск FastAPI (REST API)")
-        logger.info(f"Project ID: {settings.google_cloud_project_id}")
-        logger.info(f"Region: {settings.google_cloud_region}")
+        logger.info(f"Storage: {settings.storage_backend}")
+        logger.info(f"Database: {settings.database_backend}")
+        logger.info(f"Try-on model: {settings.gemini_model}")
+        if settings.google_cloud_project_id and settings.google_cloud_region:
+            logger.info(
+                "Google Cloud config enabled: "
+                f"project={settings.google_cloud_project_id}, region={settings.google_cloud_region}"
+            )
         logger.info("=" * 60)
         await init_service_container_for_api()
         logger.info("Приложение готово к приёму HTTP-запросов")

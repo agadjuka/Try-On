@@ -38,7 +38,7 @@ class ErrorReporter:
         Args:
             user: Пользователь, у которого произошла ошибка
             error: Исключение
-            context: Контекст ошибки (например, "Try-On Generation", "Upscale")
+            context: Контекст ошибки (например, "Try-On Generation")
             raw_response: Сырой ответ от API (JSON строка)
 
         Returns:
@@ -93,7 +93,7 @@ class ErrorReporter:
         Args:
             user: Пользователь, у которого произошла ошибка
             error: Исключение
-            context: Контекст ошибки (например, "Try-On Generation", "Upscale")
+            context: Контекст ошибки (например, "Try-On Generation")
             raw_response: Сырой ответ от API (JSON строка)
         """
         if not self.admin_service:
@@ -151,7 +151,7 @@ class ErrorReporter:
         Args:
             user: Пользователь, у которого произошла ошибка
             error: Исключение
-            context: Контекст ошибки (например, "Try-On Generation", "Upscale")
+            context: Контекст ошибки (например, "Try-On Generation")
             raw_response: Сырой ответ от API (JSON строка)
         """
         asyncio.create_task(

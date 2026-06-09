@@ -123,7 +123,6 @@ async def _return_to_previous_menu(
     if return_to == "result":
         photo_count = state_data.get("try_on_photo_count", 1)
         total_photo_count = state_data.get("try_on_total_photo_count", photo_count)
-        download_menu_open = state_data.get("download_menu_open", False)
         text = (
             get_text("feedback_sent", lang) + "\n\n" + get_text("try_on_ready", lang)
             if with_thanks and photo_count == 1
@@ -145,7 +144,6 @@ async def _return_to_previous_menu(
             reply_markup=get_try_on_result_keyboard(
                 lang=lang,
                 photo_count=photo_count,
-                download_menu_open=download_menu_open,
             ),
         )
         await state.update_data(try_on_result_message_id=result_message.message_id)

@@ -182,17 +182,14 @@ def get_models_list_keyboard(
 def get_try_on_result_keyboard(
     lang: str = "ru",
     photo_count: int = 1,
-    download_menu_open: bool = False,
 ) -> InlineKeyboardMarkup:
     """
     Получить клавиатуру для результата примерки.
-    Кнопка "Новая примерка" сверху, кнопка "Скачать в высоком качестве" на втором месте,
-    остальные кнопки главного меню ниже.
+    Кнопка "Новая примерка" сверху, остальные кнопки главного меню ниже.
 
     Args:
         lang: Язык интерфейса
         photo_count: Количество обработанных фото (1-5)
-        download_menu_open: Открыто ли меню скачивания
 
     Returns:
         Inline клавиатура с результатом примерки
@@ -207,105 +204,7 @@ def get_try_on_result_keyboard(
             callback_data="new_try_on",
         )
     ])
-    
-    # Ряд 2: Кнопка "Скачать в высоком качестве"
-    if photo_count > 1:
-        keyboard.append([
-            InlineKeyboardButton(
-                text=get_text("download_hq", lang),
-                callback_data="toggle_download_menu",
-            )
-        ])
-        
-        # Если меню открыто, добавляем кнопки для каждого фото
-        if download_menu_open:
-            if photo_count == 2:
-                # 2 фото - по одной в ряду
-                keyboard.append([
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=1),
-                        callback_data="download_photo_1",
-                    )
-                ])
-                keyboard.append([
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=2),
-                        callback_data="download_photo_2",
-                    )
-                ])
-            elif photo_count == 3:
-                # 3 фото - в одном ряду
-                keyboard.append([
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=1),
-                        callback_data="download_photo_1",
-                    ),
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=2),
-                        callback_data="download_photo_2",
-                    ),
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=3),
-                        callback_data="download_photo_3",
-                    ),
-                ])
-            elif photo_count == 4:
-                # 4 фото - 2 ряда по 2 кнопки
-                keyboard.append([
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=1),
-                        callback_data="download_photo_1",
-                    ),
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=2),
-                        callback_data="download_photo_2",
-                    ),
-                ])
-                keyboard.append([
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=3),
-                        callback_data="download_photo_3",
-                    ),
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=4),
-                        callback_data="download_photo_4",
-                    ),
-                ])
-            elif photo_count == 5:
-                # 5 фото - 2 ряда (3 + 2)
-                keyboard.append([
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=1),
-                        callback_data="download_photo_1",
-                    ),
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=2),
-                        callback_data="download_photo_2",
-                    ),
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=3),
-                        callback_data="download_photo_3",
-                    ),
-                ])
-                keyboard.append([
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=4),
-                        callback_data="download_photo_4",
-                    ),
-                    InlineKeyboardButton(
-                        text=get_text("photo_number", lang).format(number=5),
-                        callback_data="download_photo_5",
-                    ),
-                ])
-    else:
-        # Для одного фото - просто кнопка (пока не рабочая)
-        keyboard.append([
-            InlineKeyboardButton(
-                text=get_text("download_hq", lang),
-                callback_data="download_photo_single",
-            )
-        ])
-    
+
     # Остальные кнопки главного меню - каждая в отдельном ряду
     keyboard.append([
         InlineKeyboardButton(

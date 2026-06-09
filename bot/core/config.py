@@ -8,8 +8,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Настройки приложения из переменных окружения."""
 
-    google_cloud_project_id: str
-    google_cloud_region: str
+    # Optional legacy Google Cloud settings. Required only for GCS or Firestore;
+    # Gemini try-on uses GEMINI_API_KEY instead.
+    google_cloud_project_id: str = ""
+    google_cloud_region: str = ""
     gcs_bucket_name: str = ""
     bot_token: str
 
@@ -30,7 +32,7 @@ class Settings(BaseSettings):
     oracle_bucket_name: str = ""
 
     # firestore | sqlite — метаданные пользователей, API-ключи, adminpanel
-    database_backend: Literal["firestore", "sqlite"] = "firestore"
+    database_backend: Literal["firestore", "sqlite"] = "sqlite"
     sqlite_path: str = "./data/vyon.db"
     
     # Название базы данных Firestore (только при database_backend=firestore)

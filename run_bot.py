@@ -13,7 +13,6 @@ from bot.database.repo_factory import create_user_repo
 from bot.handlers.router import setup_handlers
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
-from bot.services.upscale import UpscaleService
 
 
 async def main() -> None:
@@ -29,9 +28,10 @@ async def main() -> None:
             f"Ошибка загрузки настроек: {e}\n"
             "Убедитесь, что файл .env существует и содержит все необходимые переменные:\n"
             "- BOT_TOKEN\n"
-            "- GOOGLE_CLOUD_PROJECT_ID\n"
-            "- GOOGLE_CLOUD_REGION\n"
-            "- GCS_BUCKET_NAME"
+            "- GEMINI_API_KEY\n"
+            "- ORACLE_S3_ENDPOINT / ORACLE_S3_REGION\n"
+            "- ORACLE_ACCESS_KEY_ID / ORACLE_SECRET_ACCESS_KEY\n"
+            "- ORACLE_BUCKET_NAME"
         )
         return
 
@@ -44,7 +44,17 @@ async def main() -> None:
         )
         return
 
-    logger.info(f"Конфигурация загружена. Project ID: {settings.google_cloud_project_id}")
+    logger.info(
+        f"Конфигурация загружена. Storage: {settings.storage_backend}, "
+        f"Try-on model: {settings.gemini_model}"
+    )
+    if settings.google_cloud_project_id and settings.google_cloud_region:
+        logger.info(
+            "Google Cloud config enabled: "
+            f"project={settings.google_cloud_project_id}, region={settings.google_cloud_region}"
+        )
+    else:
+        logger.info("Google Cloud config не задан; GCS/Firestore недоступны")
     logger.info(
         f"БД: {settings.database_backend}"
         + (
@@ -58,7 +68,6 @@ async def main() -> None:
     repo = create_user_repo(settings)
     storage_service = CloudStorageService(settings)
     try_on_service = VertexTryOnService(settings)
-    upscale_service = UpscaleService(settings)
 
     # Создаем бота и диспетчер
     bot = Bot(token=settings.bot_token)
@@ -71,7 +80,6 @@ async def main() -> None:
         repo=repo,
         storage_service=storage_service,
         try_on_service=try_on_service,
-        upscale_service=upscale_service,
     )
 
     try:

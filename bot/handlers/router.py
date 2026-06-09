@@ -7,7 +7,6 @@ from aiogram.filters.state import StateFilter
 from bot.database.repo_factory import UserRepository
 from bot.services.storage import CloudStorageService
 from bot.services.try_on import VertexTryOnService
-from bot.services.upscale import UpscaleService
 from bot.states.user_states import ModelStates, TryOnStates, FeedbackStates
 from bot.handlers import (
     start,
@@ -18,7 +17,6 @@ from bot.handlers import (
     try_on,
     try_on_selection,
     try_on_processing,
-    download_menu,
     language,
     privacy,
     debug_photo_file_id,
@@ -35,7 +33,6 @@ def setup_handlers(
     repo: UserRepository,
     storage_service: CloudStorageService,
     try_on_service: VertexTryOnService,
-    upscale_service: UpscaleService,
 ) -> None:
     """
     Настроить все хендлеры.
@@ -46,7 +43,6 @@ def setup_handlers(
         repo: Репозиторий для работы с БД
         storage_service: Сервис для работы с GCS
         try_on_service: Сервис для генерации примерки
-        upscale_service: Сервис для апскейла изображений
     """
     privacy_middleware = PrivacyConsentMiddleware(repo)
     router.message.middleware(privacy_middleware)
@@ -219,30 +215,6 @@ def setup_handlers(
         TryOnStates.waiting_for_garment_photo,
     )
     
-    # Callback: Переключение меню скачивания
-    async def toggle_download_menu_handler(callback, state):
-        lang = await get_user_language(repo, callback.from_user.id)
-        await download_menu.handle_toggle_download_menu(callback, state, bot, lang)
-    
-    router.callback_query.register(
-        toggle_download_menu_handler,
-        F.data == "toggle_download_menu",
-    )
-    
-    # Callback: Скачивание отдельного фото
-    async def download_photo_handler(callback, state):
-        lang = await get_user_language(repo, callback.from_user.id)
-        await download_menu.handle_download_photo(
-            callback, state, bot, storage_service, repo, upscale_service, lang
-        )
-    
-    router.callback_query.register(
-        download_photo_handler,
-        lambda c: c.data and (
-            c.data.startswith("download_photo_") or c.data == "download_photo_single"
-        ),
-    )
-
     # Callback: Открыть меню отзыва
     async def open_feedback_handler(callback, state):
         lang = await get_user_language(repo, callback.from_user.id)

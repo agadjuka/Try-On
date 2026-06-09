@@ -5,8 +5,6 @@ from typing import Optional
 
 import boto3
 from botocore.config import Config
-from google.auth.exceptions import DefaultCredentialsError
-from google.cloud import storage
 
 from bot.core.config import Settings
 
@@ -16,7 +14,7 @@ class CloudStorageService:
 
     def __init__(self, settings: Settings):
         self.settings = settings
-        self._gcs_client: Optional[storage.Client] = None
+        self._gcs_client: Optional[object] = None
         self._s3_client = None
 
     def _primary_backend(self) -> str:
@@ -28,10 +26,19 @@ class CloudStorageService:
             raise ValueError("Для Oracle storage требуется ORACLE_BUCKET_NAME")
         return bucket
 
-    def _get_gcs_client(self) -> storage.Client:
+    def _get_gcs_client(self) -> object:
         if self._gcs_client is None:
+            if not self.settings.google_cloud_project_id:
+                raise ValueError("Для GCS storage требуется GOOGLE_CLOUD_PROJECT_ID")
             try:
+                from google.auth.exceptions import DefaultCredentialsError
+                from google.cloud import storage
+
                 self._gcs_client = storage.Client(project=self.settings.google_cloud_project_id)
+            except ImportError as e:
+                raise ImportError(
+                    "Для GCS storage установите google-cloud-storage и google-auth"
+                ) from e
             except DefaultCredentialsError as e:
                 raise DefaultCredentialsError(
                     "Не найдены учетные данные Google Cloud. "

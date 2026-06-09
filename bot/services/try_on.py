@@ -155,6 +155,53 @@ class VertexTryOnService:
     def _format_response_for_log(result: Dict[str, Any]) -> str:
         return json.dumps(result, indent=2, ensure_ascii=False)
 
+    @staticmethod
+    def _get_usage_count(usage_metadata: Dict[str, Any], camel_key: str, snake_key: str) -> Any:
+        """Вернуть счетчик usageMetadata с учетом camelCase/snake_case."""
+        return usage_metadata.get(camel_key, usage_metadata.get(snake_key))
+
+    @classmethod
+    def _log_usage_metadata(cls, result: Dict[str, Any]) -> None:
+        """Залогировать токены, которые Gemini вернул в usageMetadata."""
+        usage_metadata = result.get("usageMetadata") or result.get("usage_metadata")
+        if not isinstance(usage_metadata, dict):
+            logger.warning("Gemini API не вернул usageMetadata с токенами")
+            return
+
+        prompt_tokens = cls._get_usage_count(
+            usage_metadata, "promptTokenCount", "prompt_token_count"
+        )
+        output_tokens = cls._get_usage_count(
+            usage_metadata, "candidatesTokenCount", "candidates_token_count"
+        )
+        thoughts_tokens = cls._get_usage_count(
+            usage_metadata, "thoughtsTokenCount", "thoughts_token_count"
+        )
+        cached_tokens = cls._get_usage_count(
+            usage_metadata, "cachedContentTokenCount", "cached_content_token_count"
+        )
+        total_tokens = cls._get_usage_count(
+            usage_metadata, "totalTokenCount", "total_token_count"
+        )
+
+        logger.info(
+            "Gemini token usage: "
+            f"input={prompt_tokens}, output={output_tokens}, "
+            f"thoughts={thoughts_tokens}, cached={cached_tokens}, total={total_tokens}"
+        )
+
+        token_details = {
+            "promptTokensDetails": usage_metadata.get("promptTokensDetails")
+            or usage_metadata.get("prompt_tokens_details"),
+            "candidatesTokensDetails": usage_metadata.get("candidatesTokensDetails")
+            or usage_metadata.get("candidates_tokens_details"),
+        }
+        if any(token_details.values()):
+            logger.info(
+                "Gemini token usage details: "
+                f"{json.dumps(token_details, ensure_ascii=False)}"
+            )
+
     def _report_error_async(
         self,
         user: Optional[User],
@@ -254,6 +301,7 @@ class VertexTryOnService:
         try:
             # Выполняем запрос в отдельном потоке
             result = await asyncio.to_thread(_make_request)
+            self._log_usage_metadata(result)
 
             parts = self._get_response_parts(result)
             if not parts:

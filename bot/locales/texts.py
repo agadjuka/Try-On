@@ -113,21 +113,9 @@ TEXTS = {
         "ru": "Произошла ошибка",
         "en": "An error occurred",
     },
-    "download_hq": {
-        "ru": "⬇️ Скачать в высоком качестве",
-        "en": "⬇️ Download in high quality",
-    },
     "photo_number": {
         "ru": "Фото {number}",
         "en": "Photo {number}",
-    },
-    "upscaling": {
-        "ru": "⏳ Увеличиваю качество изображения...",
-        "en": "⏳ Increasing image quality...",
-    },
-    "upscale_error": {
-        "ru": "❌ Ошибка при увеличении качества изображения.",
-        "en": "❌ Error increasing image quality.",
     },
     "start_error": {
         "ru": "Произошла ошибка. Попробуй позже.",

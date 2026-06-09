@@ -2,7 +2,6 @@
 
 from loguru import logger
 
-from bot.admin.firestore_topic_storage import FirestoreTopicStorage
 from bot.admin.sqlite_topic_storage import SqliteTopicStorage
 from bot.admin.topic_storage import BaseTopicStorage
 
@@ -27,6 +26,8 @@ def get_topic_storage() -> BaseTopicStorage:
             if settings.database_backend == "sqlite":
                 _topic_storage = SqliteTopicStorage(settings.sqlite_path)
             else:
+                from bot.admin.firestore_topic_storage import FirestoreTopicStorage
+
                 _topic_storage = FirestoreTopicStorage()
         except Exception as e:
             logger.error(f"Ошибка инициализации хранилища топиков: {e}")

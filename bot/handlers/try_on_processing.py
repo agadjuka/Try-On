@@ -18,7 +18,7 @@ from bot.utils.photo_utils import get_largest_photo, download_photo_to_bytes
 from bot.admin.factory import get_admin_service
 
 
-async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Optional[int], int, int, bool, List[str]]:
+async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Optional[int], int, int, List[str]]:
     """
     Сохранить ID сообщений результатов примерки из FSM.
     
@@ -26,7 +26,7 @@ async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Op
         state: Контекст FSM
         
     Returns:
-        Кортеж (список ID фото, ID сообщения с кнопками, количество успешных фото, общее количество фото, состояние меню, список ID результатов)
+        Кортеж (список ID фото, ID сообщения с кнопками, количество успешных фото, общее количество фото, список ID результатов)
     """
     state_data = await state.get_data()
     photo_count = state_data.get("try_on_photo_count", 1)
@@ -35,7 +35,6 @@ async def _preserve_result_message_ids(state: FSMContext) -> tuple[List[int], Op
         state_data.get("try_on_result_message_id"),
         photo_count,
         state_data.get("try_on_total_photo_count", photo_count),
-        state_data.get("download_menu_open", False),
         state_data.get("saved_result_ids", []),
     )
 
@@ -46,7 +45,6 @@ async def _restore_result_message_ids(
     message_id: Optional[int],
     photo_count: int = 1,
     total_photo_count: int = 1,
-    download_menu_open: bool = False,
     saved_result_ids: List[str] = None,
 ) -> None:
     """
@@ -58,7 +56,6 @@ async def _restore_result_message_ids(
         message_id: ID сообщения с кнопками
         photo_count: Количество успешно обработанных фото
         total_photo_count: Общее количество отправленных фото
-        download_menu_open: Состояние меню скачивания
         saved_result_ids: Список ID сохраненных результатов
     """
     if album_ids or message_id:
@@ -67,7 +64,6 @@ async def _restore_result_message_ids(
             "try_on_result_message_id": message_id,
             "try_on_photo_count": photo_count,
             "try_on_total_photo_count": total_photo_count,
-            "download_menu_open": download_menu_open,
         }
         if saved_result_ids:
             update_data["saved_result_ids"] = saved_result_ids
@@ -213,7 +209,6 @@ async def send_try_on_results(
             reply_markup=get_try_on_result_keyboard(
                 lang=lang,
                 photo_count=len(successful_results),
-                download_menu_open=False,
             ),
         )
         logger.info(f"Сообщение с кнопками отправлено, message_id: {result_message.message_id}")
@@ -224,7 +219,6 @@ async def send_try_on_results(
             try_on_result_message_id=result_message.message_id,
             try_on_photo_count=len(successful_results),
             try_on_total_photo_count=photo_count,
-            download_menu_open=False,
         )
     else:
         # Несколько фото - отправляем альбомом
@@ -246,7 +240,6 @@ async def send_try_on_results(
             reply_markup=get_try_on_result_keyboard(
                 lang=lang,
                 photo_count=len(successful_results),
-                download_menu_open=False,
             ),
         )
         logger.info(f"Сообщение с кнопками отправлено, message_id: {result_message.message_id}")
@@ -258,7 +251,6 @@ async def send_try_on_results(
             try_on_result_message_id=result_message.message_id,
             try_on_photo_count=len(successful_results),
             try_on_total_photo_count=photo_count,
-            download_menu_open=False,
         )
 
     if failed_count > 0:
@@ -438,7 +430,7 @@ async def handle_garment_photo(
 
         # Отправляем результаты пользователю
         if not successful_results:
-            album_ids, msg_id, photo_count, total_count, menu_open, saved_ids = await _preserve_result_message_ids(state)
+            album_ids, msg_id, photo_count, total_count, saved_ids = await _preserve_result_message_ids(state)
             
             await message.answer(
                 get_text("try_on_all_failed", lang),
@@ -446,7 +438,7 @@ async def handle_garment_photo(
             )
             
             await state.clear()
-            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open, saved_ids)
+            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, saved_ids)
             return
 
         # Отправляем результаты пользователю
@@ -477,9 +469,9 @@ async def handle_garment_photo(
 
         # Сохраняем ID результатов перед очисткой состояния
         try:
-            album_ids, msg_id, photo_count, total_count, menu_open, saved_ids = await _preserve_result_message_ids(state)
+            album_ids, msg_id, photo_count, total_count, saved_ids = await _preserve_result_message_ids(state)
             await state.clear()
-            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open, saved_ids)
+            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, saved_ids)
         except Exception as cleanup_error:
             logger.error(f"Ошибка при очистке состояния: {cleanup_error}")
 
@@ -501,9 +493,9 @@ async def handle_garment_photo(
         
         # Сохраняем ID результатов перед очисткой
         try:
-            album_ids, msg_id, photo_count, total_count, menu_open, saved_ids = await _preserve_result_message_ids(state)
+            album_ids, msg_id, photo_count, total_count, saved_ids = await _preserve_result_message_ids(state)
         except Exception:
-            album_ids, msg_id, photo_count, total_count, menu_open, saved_ids = [], None, 1, 1, False, []
+            album_ids, msg_id, photo_count, total_count, saved_ids = [], None, 1, 1, []
         
         try:
             await message.answer(
@@ -515,6 +507,6 @@ async def handle_garment_photo(
         
         try:
             await state.clear()
-            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, menu_open, saved_ids)
+            await _restore_result_message_ids(state, album_ids, msg_id, photo_count, total_count, saved_ids)
         except Exception as clear_error:
             logger.error(f"Не удалось очистить состояние: {clear_error}")
