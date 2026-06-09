@@ -32,8 +32,8 @@ async def _process_single_garment(
     try:
         result_bytes = await container.try_on_service.generate_try_on(
             garment_bytes=garment_bytes,
-            person_image_uri=person_uri if person_uri.startswith("gs://") else None,
-            person_image_bytes=person_image_bytes if not person_uri.startswith("gs://") else None,
+            person_image_uri=person_uri,
+            person_image_bytes=person_image_bytes,
         )
         path = f"api_results/{task_id}/{index}.png"
         gcs_uri = await container.storage_service.upload_image(result_bytes, path)

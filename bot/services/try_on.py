@@ -1,4 +1,4 @@
-"""Сервис для работы с Vertex AI Virtual Try-On API."""
+"""Сервис генерации Virtual Try-On через Gemini API."""
 
 import asyncio
 import base64
@@ -6,10 +6,8 @@ import json
 from typing import Dict, Any, Optional
 
 import requests
-from google.auth.transport.requests import Request
 from loguru import logger
 
-from bot.core.gcp_credentials import load_cloud_platform_credentials
 from aiogram import Bot
 from aiogram.types import User
 
@@ -17,71 +15,53 @@ from bot.core.config import Settings
 
 
 class VertexTryOnService:
-    """Асинхронный сервис для генерации примерки через Vertex AI."""
+    """Асинхронный сервис для генерации примерки через Gemini image API.
+
+    Название класса оставлено прежним, чтобы не менять существующие
+    обработчики и контейнеры, которые уже зависят от этого типа.
+    """
 
     def __init__(self, settings: Settings):
         """
         Инициализировать сервис.
 
         Args:
-            settings: Настройки приложения с параметрами Google Cloud
+            settings: Настройки приложения с параметрами Gemini
         """
         self.settings = settings
-        self.project_id = settings.google_cloud_project_id
-        self.region = settings.google_cloud_region
-        self.model_id = "virtual-try-on-001"
-        # Храним не сам токен, а креденшелы — токен будем получать каждый раз,
-        # чтобы он не протухал при долгой работе контейнера
-        self._credentials = None
+        self.api_key = settings.gemini_api_key
+        self.model_id = settings.gemini_model
+        self.prompt = settings.gemini_try_on_prompt
 
     def _get_api_url(self) -> str:
         """
         Получить URL для API запроса.
 
         Returns:
-            URL эндпоинта Vertex AI
+            URL эндпоинта Gemini API
         """
-        return (
-            f"https://{self.region}-aiplatform.googleapis.com/v1/"
-            f"projects/{self.project_id}/locations/{self.region}/"
-            f"publishers/google/models/{self.model_id}:predict"
-        )
+        return f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_id}:generateContent"
 
-    def _get_access_token(self) -> str:
-        """
-        Получить актуальный access token через Application Default Credentials.
-        Токен НЕ кэшируется в виде строки, каждый раз берём его из креденшелов,
-        которые при необходимости сами обновляются.
+    @staticmethod
+    def _detect_mime_type(image_bytes: bytes) -> str:
+        """Определить MIME type изображения по сигнатуре байтов."""
+        if image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+            return "image/png"
+        if image_bytes.startswith(b"\xff\xd8\xff"):
+            return "image/jpeg"
+        if image_bytes.startswith(b"RIFF") and image_bytes[8:12] == b"WEBP":
+            return "image/webp"
+        return "image/jpeg"
 
-        Returns:
-            Access token для авторизации
-
-        Raises:
-            RuntimeError: Если не удалось получить токен
-        """
-        try:
-            # Явный service account + cloud-platform scope (как у клиентов GCS/Firestore)
-            if self._credentials is None:
-                self._credentials = load_cloud_platform_credentials()
-
-            # При необходимости обновляем (если истёк или ещё не получен)
-            if not self._credentials.valid:
-                self._credentials.refresh(Request())
-
-            token = self._credentials.token
-            if not token:
-                raise RuntimeError("Пустой access token из креденшелов")
-
-            logger.debug("Access token получен из Application Default Credentials")
-            return token
-
-        except Exception as e:
-            logger.error(f"Ошибка при получении access token: {e}")
-            raise RuntimeError(
-                "Не удалось получить access token. "
-                "Убедитесь, что вы авторизованы через 'gcloud auth application-default login' "
-                "или установите переменную окружения GOOGLE_APPLICATION_CREDENTIALS"
-            ) from e
+    @staticmethod
+    def _image_part(image_bytes: bytes) -> Dict[str, Any]:
+        """Сформировать inline_data part для Gemini REST API."""
+        return {
+            "inline_data": {
+                "mime_type": VertexTryOnService._detect_mime_type(image_bytes),
+                "data": base64.b64encode(image_bytes).decode("utf-8"),
+            }
+        }
 
     def _build_request_body(
         self,
@@ -100,11 +80,11 @@ class VertexTryOnService:
     ) -> Dict[str, Any]:
         """
         Создать тело запроса для API.
-        Модель передается через GCS URI, одежда - через base64.
+        Модель и одежда передаются в Gemini через inline_data в одном запросе.
 
         Args:
-            person_image_uri: URI изображения модели (обычно gs://..., опционально)
-            person_image_bytes: Байты изображения модели (fallback для non-gs хранилищ)
+            person_image_uri: URI изображения модели (оставлен для совместимости)
+            person_image_bytes: Байты изображения модели
             garment_bytes: Байты изображения одежды
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
@@ -119,59 +99,87 @@ class VertexTryOnService:
         Returns:
             Словарь с телом запроса
         """
-        # Кодируем фото одежды в base64
-        garment_base64 = base64.b64encode(garment_bytes).decode('utf-8')
-        
-        if person_image_uri:
-            person_image_payload = {"gcsUri": person_image_uri}
-        elif person_image_bytes is not None:
-            person_image_payload = {
-                "bytesBase64Encoded": base64.b64encode(person_image_bytes).decode("utf-8")
-            }
-        else:
-            raise ValueError("Нужно передать person_image_uri или person_image_bytes")
+        if not self.api_key:
+            raise ValueError("Не задан GEMINI_API_KEY")
+
+        if person_image_bytes is None:
+            raise ValueError(
+                "Для Gemini API нужно передать person_image_bytes. "
+                f"URI модели недоступен напрямую: {person_image_uri or 'не указан'}"
+            )
 
         request_body = {
-            "instances": [
+            "contents": [
                 {
-                    "personImage": {
-                        "image": {
-                            **person_image_payload
-                        }
-                    },
-                    "productImages": [
-                        {
-                            "image": {
-                                "bytesBase64Encoded": garment_base64
-                            }
-                        }
-                    ]
+                    "role": "user",
+                    "parts": [
+                        {"text": self.prompt},
+                        # Важно для try-on: сначала фото модели, затем фото одежды.
+                        self._image_part(person_image_bytes),
+                        self._image_part(garment_bytes),
+                    ],
                 }
             ],
-            "parameters": {
-                "baseSteps": base_steps,
-                "sampleCount": sample_count,
-                "addWatermark": add_watermark,
-                "personGeneration": person_generation,
-                "safetySetting": safety_setting,
-                "outputOptions": {
-                    "mimeType": output_mime_type
-                }
-            }
+            "generation_config": {
+                "response_modalities": ["IMAGE"],
+            },
         }
 
-        # Добавляем compressionQuality только для JPEG
-        if output_mime_type == "image/jpeg":
-            request_body["parameters"]["outputOptions"]["compressionQuality"] = compression_quality
-
-        # Добавляем опциональные параметры
-        if storage_uri:
-            request_body["parameters"]["storageUri"] = storage_uri
-
-        if seed and not add_watermark:
-            request_body["parameters"]["seed"] = seed
-
         return request_body
+
+    @staticmethod
+    def _extract_inline_data(part: Dict[str, Any]) -> Optional[str]:
+        """Достать base64 изображения из part с учетом snake_case/camelCase."""
+        inline_data = part.get("inline_data") or part.get("inlineData")
+        if not inline_data:
+            return None
+        return inline_data.get("data")
+
+    @staticmethod
+    def _extract_text(part: Dict[str, Any]) -> Optional[str]:
+        text = part.get("text")
+        return text if isinstance(text, str) and text.strip() else None
+
+    @staticmethod
+    def _get_response_parts(result: Dict[str, Any]) -> list[Dict[str, Any]]:
+        """Вернуть parts первого кандидата из ответа Gemini."""
+        candidates = result.get("candidates") or []
+        if not candidates:
+            return []
+
+        content = candidates[0].get("content") or {}
+        parts = content.get("parts") or []
+        return [part for part in parts if isinstance(part, dict)]
+
+    @staticmethod
+    def _format_response_for_log(result: Dict[str, Any]) -> str:
+        return json.dumps(result, indent=2, ensure_ascii=False)
+
+    def _report_error_async(
+        self,
+        user: Optional[User],
+        bot: Optional[Bot],
+        error: Exception,
+        context: str,
+        raw_response: Optional[str] = None,
+    ) -> None:
+        """Отправить ошибку в админ-панель, если доступны user и bot."""
+        if not user or not bot:
+            return
+
+        try:
+            from bot.admin.error_reporter import get_error_reporter
+
+            error_reporter = get_error_reporter(bot)
+            if error_reporter:
+                error_reporter.send_error_async(
+                    user=user,
+                    error=error,
+                    context=context,
+                    raw_response=raw_response,
+                )
+        except Exception as report_error:
+            logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
 
     async def generate_try_on(
         self,
@@ -186,12 +194,12 @@ class VertexTryOnService:
     ) -> bytes:
         """
         Генерировать изображение примерки асинхронно.
-        Модель передается через GCS URI, одежда - через base64.
+        Модель и одежда отправляются в Gemini одним запросом через inline_data.
         Результат возвращается в виде байтов без сохранения в облако.
 
         Args:
-            person_image_uri: URI изображения модели (обычно gs://..., опционально)
-            person_image_bytes: Байты изображения модели (fallback для non-gs хранилищ)
+            person_image_uri: URI изображения модели (для логирования/совместимости)
+            person_image_bytes: Байты изображения модели
             garment_bytes: Байты изображения одежды
             base_steps: Качество генерации (по умолчанию: 32)
             sample_count: Количество изображений на пару (по умолчанию: 1)
@@ -203,14 +211,13 @@ class VertexTryOnService:
             Байты результата примерки
 
         Raises:
-            ValueError: Если ответ API не содержит predictions
+            ValueError: Если ответ API не содержит изображение
             RuntimeError: При ошибке запроса к API или обработки ответа
         """
         logger.info("=" * 60)
-        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON (одежда через base64)")
+        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON (Gemini API)")
         logger.info("=" * 60)
-        
-        access_token = self._get_access_token()
+
         request_body = self._build_request_body(
             person_image_uri=person_image_uri,
             person_image_bytes=person_image_bytes,
@@ -221,17 +228,16 @@ class VertexTryOnService:
         )
 
         headers = {
-            "Authorization": f"Bearer {access_token}",
+            "x-goog-api-key": self.api_key,
             "Content-Type": "application/json; charset=utf-8"
         }
 
         api_url = self._get_api_url()
-        logger.info(f"Отправка запроса к Vertex AI API: {api_url}")
+        logger.info(f"Отправка запроса к Gemini API: {api_url}")
         if person_image_uri:
             logger.info(f"Person image URI: {person_image_uri}")
-        else:
-            logger.info(f"Person image: передано через base64 ({len(person_image_bytes or b'')} байт)")
-        logger.info(f"Garment: передано через base64 ({len(garment_bytes)} байт)")
+        logger.info(f"Person image: передано через inline_data ({len(person_image_bytes or b'')} байт)")
+        logger.info(f"Garment: передано через inline_data ({len(garment_bytes)} байт)")
 
         # Используем синхронный requests через asyncio.to_thread, как в старой версии
         def _make_request() -> dict:
@@ -249,80 +255,35 @@ class VertexTryOnService:
             # Выполняем запрос в отдельном потоке
             result = await asyncio.to_thread(_make_request)
 
-            if "predictions" not in result:
-                error_msg = "Ответ API не содержит 'predictions'"
-                raw_response = json.dumps(result, indent=2, ensure_ascii=False)
+            parts = self._get_response_parts(result)
+            if not parts:
+                error_msg = "Ответ Gemini API не содержит candidates[0].content.parts"
+                raw_response = self._format_response_for_log(result)
                 logger.error(f"{error_msg}. Ответ: {raw_response}")
-                
-                # Отправляем ошибку в админ-панель
-                if user and bot:
-                    try:
-                        from bot.admin.error_reporter import get_error_reporter
-                        error_reporter = get_error_reporter(bot)
-                        if error_reporter:
-                            error_reporter.send_error_async(
-                                user=user,
-                                error=ValueError(error_msg),
-                                context="Try-On Generation",
-                                raw_response=raw_response,
-                            )
-                    except Exception as report_error:
-                        logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
-                
-                raise ValueError(error_msg)
+                error = ValueError(error_msg)
+                self._report_error_async(user, bot, error, "Try-On Generation", raw_response)
+                raise error
 
-            predictions = result["predictions"]
-            if not predictions:
-                error_msg = "Ответ API содержит пустой список predictions"
-                raw_response = json.dumps(result, indent=2, ensure_ascii=False)
+            texts = [text for part in parts if (text := self._extract_text(part))]
+            for text in texts:
+                logger.info(f"Gemini text response: {text}")
+
+            image_base64 = next(
+                (
+                    inline_data
+                    for part in parts
+                    if (inline_data := self._extract_inline_data(part))
+                ),
+                None,
+            )
+            if not image_base64:
+                error_msg = "Ответ Gemini API не содержит inline_data с изображением"
+                raw_response = self._format_response_for_log(result)
                 logger.error(f"{error_msg}. Ответ: {raw_response}")
-                
-                # Отправляем ошибку в админ-панель
-                if user and bot:
-                    try:
-                        from bot.admin.error_reporter import get_error_reporter
-                        error_reporter = get_error_reporter(bot)
-                        if error_reporter:
-                            error_reporter.send_error_async(
-                                user=user,
-                                error=ValueError(error_msg),
-                                context="Try-On Generation",
-                                raw_response=raw_response,
-                            )
-                    except Exception as report_error:
-                        logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
-                
-                raise ValueError(error_msg)
+                error = ValueError(error_msg)
+                self._report_error_async(user, bot, error, "Try-On Generation", raw_response)
+                raise error
 
-            logger.info(f"Получено {len(predictions)} результатов")
-
-            # Берем первый результат
-            first_prediction = predictions[0]
-
-            if "bytesBase64Encoded" not in first_prediction:
-                error_msg = "Ответ не содержит 'bytesBase64Encoded'"
-                raw_response = json.dumps(first_prediction, indent=2, ensure_ascii=False)
-                logger.error(f"{error_msg}. Ответ: {raw_response}")
-                
-                # Отправляем ошибку в админ-панель
-                if user and bot:
-                    try:
-                        from bot.admin.error_reporter import get_error_reporter
-                        error_reporter = get_error_reporter(bot)
-                        if error_reporter:
-                            error_reporter.send_error_async(
-                                user=user,
-                                error=ValueError(error_msg),
-                                context="Try-On Generation",
-                                raw_response=raw_response,
-                            )
-                    except Exception as report_error:
-                        logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
-                
-                raise ValueError(error_msg)
-
-            # Декодируем base64 в байты
-            image_base64 = first_prediction["bytesBase64Encoded"]
             image_bytes = base64.b64decode(image_base64)
 
             logger.success(f"Результат успешно получен ({len(image_bytes)} байт)")
@@ -343,21 +304,7 @@ class VertexTryOnService:
                     logger.error(f"Текст ответа: {raw_response}")
 
             logger.error(f"Ошибка при запросе к API: {e}")
-            
-            # Отправляем ошибку в админ-панель, если есть user и bot
-            if user and bot:
-                try:
-                    from bot.admin.error_reporter import get_error_reporter
-                    error_reporter = get_error_reporter(bot)
-                    if error_reporter:
-                        error_reporter.send_error_async(
-                            user=user,
-                            error=e,
-                            context="Try-On Generation",
-                            raw_response=raw_response,
-                        )
-                except Exception as report_error:
-                    logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+            self._report_error_async(user, bot, e, "Try-On Generation", raw_response)
             
             raise RuntimeError(
                 f"Ошибка API: {str(e)}. "
@@ -366,19 +313,6 @@ class VertexTryOnService:
 
         except Exception as e:
             logger.error(f"Неожиданная ошибка при генерации: {e}")
-            
-            # Отправляем ошибку в админ-панель, если есть user и bot
-            if user and bot:
-                try:
-                    from bot.admin.error_reporter import get_error_reporter
-                    error_reporter = get_error_reporter(bot)
-                    if error_reporter:
-                        error_reporter.send_error_async(
-                            user=user,
-                            error=e,
-                            context="Try-On Generation",
-                        )
-                except Exception as report_error:
-                    logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
+            self._report_error_async(user, bot, e, "Try-On Generation")
             
             raise RuntimeError(f"Неожиданная ошибка при генерации: {str(e)}") from e
