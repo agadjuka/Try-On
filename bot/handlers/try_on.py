@@ -13,7 +13,6 @@ from bot.keyboards.user_kb import get_back_keyboard
 from bot.handlers.try_on_utils import send_models_album, delete_try_on_selection_messages
 from bot.utils.message_utils import delete_messages
 from bot.locales.texts import get_text
-from bot.services.instruction_photo import show_instruction_photo
 
 
 async def handle_try_on_callback(
@@ -54,8 +53,6 @@ async def handle_try_on_callback(
             # Если нет моделей - просим прислать фото
             from bot.states.user_states import TryOnStates
             
-            await show_instruction_photo(bot, state, callback.from_user.id, lang)
-
             # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,
@@ -159,8 +156,6 @@ async def handle_new_try_on_callback(
             # Если нет моделей - просим прислать фото
             from bot.states.user_states import TryOnStates
             
-            await show_instruction_photo(bot, state, callback.from_user.id, lang)
-
             # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
                 chat_id=callback.from_user.id,

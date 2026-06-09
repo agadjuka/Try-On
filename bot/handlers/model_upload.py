@@ -17,7 +17,6 @@ from bot.utils.model_utils import process_model_photo
 from bot.utils.message_utils import delete_models_menu_messages, delete_messages
 from bot.admin.factory import get_admin_service
 from bot.handlers.models_common import check_models_limit_and_redirect
-from bot.services.instruction_photo import show_instruction_photo, delete_instruction_photo
 
 
 async def handle_add_model_callback(
@@ -51,7 +50,6 @@ async def handle_add_model_callback(
     
     # СНАЧАЛА отправляем новое сообщение
     await state.set_state(ModelStates.waiting_for_model_photo)
-    await show_instruction_photo(bot, state, callback.from_user.id, lang)
     instruction_message = await bot.send_message(
         chat_id=callback.from_user.id,
         text=get_text("upload_model_instr", lang),
@@ -109,7 +107,6 @@ async def handle_add_new_model_from_list(
     old_menu_id = state_data.get("models_menu_message_id")
     
     await state.set_state(ModelStates.waiting_for_model_photo)
-    await show_instruction_photo(bot, state, callback.from_user.id, lang)
     
     # СНАЧАЛА показываем новое сообщение
     instruction_message = await bot.send_message(
@@ -216,9 +213,6 @@ async def handle_model_photo(
                 )
             except Exception as e:
                 logger.warning(f"Не удалось удалить сообщение с инструкцией: {e}")
-
-        await delete_instruction_photo(bot, state, message.from_user.id)
-        
         await state.clear()
         
         await message.answer(

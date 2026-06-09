@@ -1,0 +1,108 @@
+Run appleboy/ssh-action@v1.0.3
+/usr/bin/docker run --name e4c2a314bae0f203448f7bc4f47971417bc68_6e8a8f --label 1e4c2a --workdir /github/workspace --rm -e "INPUT_HOST" -e "INPUT_USERNAME" -e "INPUT_KEY" -e "INPUT_SCRIPT_STOP" -e "INPUT_SCRIPT" -e "INPUT_PORT" -e "INPUT_PASSPHRASE" -e "INPUT_PASSWORD" -e "INPUT_SYNC" -e "INPUT_USE_INSECURE_CIPHER" -e "INPUT_CIPHER" -e "INPUT_TIMEOUT" -e "INPUT_COMMAND_TIMEOUT" -e "INPUT_KEY_PATH" -e "INPUT_FINGERPRINT" -e "INPUT_PROXY_HOST" -e "INPUT_PROXY_PORT" -e "INPUT_PROXY_USERNAME" -e "INPUT_PROXY_PASSWORD" -e "INPUT_PROXY_PASSPHRASE" -e "INPUT_PROXY_TIMEOUT" -e "INPUT_PROXY_KEY" -e "INPUT_PROXY_KEY_PATH" -e "INPUT_PROXY_FINGERPRINT" -e "INPUT_PROXY_CIPHER" -e "INPUT_PROXY_USE_INSECURE_CIPHER" -e "INPUT_ENVS" -e "INPUT_ENVS_FORMAT" -e "INPUT_DEBUG" -e "INPUT_ALLENVS" -e "INPUT_REQUEST_PTY" -e "HOME" -e "GITHUB_JOB" -e "GITHUB_REF" -e "GITHUB_SHA" -e "GITHUB_REPOSITORY" -e "GITHUB_REPOSITORY_OWNER" -e "GITHUB_REPOSITORY_OWNER_ID" -e "GITHUB_RUN_ID" -e "GITHUB_RUN_NUMBER" -e "GITHUB_RETENTION_
+======CMD======
+set -ex
+DEPLOY_DIR="/home/***/bot_project"
+mkdir -p "$DEPLOY_DIR"
+cd "$DEPLOY_DIR"
+pwd
+ls -la
+test -f docker-compose.yml || { echo "ERROR: docker-compose.yml not found after deploy"; exit 1; }
+test -f Dockerfile || { echo "ERROR: Dockerfile not found"; exit 1; }
+test -f .env || { echo "ERROR: missing .env on server (create $DEPLOY_DIR/.env, not in git)"; exit 1; }
+test -f secrets/gcp-sa.json || { echo "ERROR: missing secrets/gcp-sa.json (service account JSON on server)"; exit 1; }
+if ! docker info >/dev/null 2>&1; then
+  echo "ERROR: current user cannot use Docker (add user to group docker: sudo usermod -aG docker $USER)"
+  exit 1
+fi
+if docker compose version >/dev/null 2>&1; then
+  docker compose down
+  docker compose up -d --build
+elif command -v docker-compose >/dev/null 2>&1; then
+  docker-compose down
+  docker-compose up -d --build
+else
+  echo "ERROR: neither 'docker compose' nor 'docker-compose' found"
+  exit 1
+fi
+docker image prune -f
+======END======
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + DEPLOY_DIR=/home/***/bot_project
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + mkdir -p /home/***/bot_project
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+out: /home/***/bot_project
+err: + cd /home/***/bot_project
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + pwd
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + ls -la
+out: total 92
+out: drwxr-xr-x 10 *** *** 4096 Jun  9 06:58 .
+out: drwxr-x---  6 *** *** 4096 Jun  9 06:58 ..
+out: -rw-r--r--  1 *** ***  478 Jun  9 06:58 .dockerignore
+out: -rw-rw-r--  1 *** ***  620 Apr 16 07:55 .env
+out: -rw-r--r--  1 *** *** 1456 Jun  9 06:58 .env.example
+out: drwxr-xr-x  7 *** *** 4096 Jun  9 06:58 .git
+out: drwxr-xr-x  3 *** *** 4096 Jun  9 06:58 .github
+out: -rw-r--r--  1 *** *** 1572 Jun  9 06:58 .gitignore
+out: -rw-r--r--  1 *** ***   56 Jun  9 06:58 Caddyfile
+out: -rw-r--r--  1 *** ***  416 Jun  9 06:58 Dockerfile
+out: drwxr-xr-x  2 *** *** 4096 Jun  9 06:58 Docs
+out: drwxr-xr-x  2 *** *** 4096 Jun  9 06:58 Oracle cloud
+out: -rw-r--r--  1 *** *** 1984 Jun  9 06:58 RunDeploy.py
+out: drwxr-xr-x 13 *** *** 4096 Jun  9 06:58 bot
+out: drwxr-xr-x  2 *** *** 4096 Jun  9 06:58 data
+out: -rw-r--r--  1 *** *** 1169 Jun  9 06:58 docker-compose.yml
+out: -rw-r--r--  1 *** *** 2314 Jun  9 06:58 main.py
+out: -rw-r--r--  1 *** *** 3465 Jun  9 06:58 manage_api_keys.py
+out: -rw-r--r--  1 *** ***  380 Jun  9 06:58 requirements.txt
+out: -rw-r--r--  1 *** *** 4447 Jun  9 06:58 run_bot.py
+out: drwxr-xr-x  2 *** *** 4096 Jun  9 06:58 scripts
+out: drwxrwxr-x  2 *** *** 4096 Apr 16 04:10 secrets
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + test -f docker-compose.yml
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + test -f Dockerfile
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + test -f .env
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + test -f secrets/gcp-sa.json
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + docker info
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + docker compose version
+err: + command -v docker-compose
+err: + DRONE_SSH_PREV_COMMAND_EXIT_CODE=0
+err: + '[' 0 -ne 0 ']'
+err: + docker-compose down
+err: The Compose file './docker-compose.yml' is invalid because:
+err: services.caddy.volumes 'type' is a required property
+2026/06/09 06:58:30 Process exited with status 1
+0s
+Post job cleanup.
+/usr/bin/git version
+git version 2.54.0
+Temporarily overriding HOME='/home/runner/work/_temp/075d26d9-e550-4081-8c7e-02d89ea30ab2' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+/usr/bin/git config --global --add safe.directory /home/runner/work/Try-On/Try-On
+/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url

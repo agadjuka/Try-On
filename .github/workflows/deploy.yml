@@ -40,7 +40,6 @@ jobs:
             test -f docker-compose.yml || { echo "ERROR: docker-compose.yml not found after deploy"; exit 1; }
             test -f Dockerfile || { echo "ERROR: Dockerfile not found"; exit 1; }
             test -f .env || { echo "ERROR: missing .env on server (create $DEPLOY_DIR/.env, not in git)"; exit 1; }
-            test -f secrets/gcp-sa.json || { echo "ERROR: missing secrets/gcp-sa.json (service account JSON on server)"; exit 1; }
 
             if ! docker info >/dev/null 2>&1; then
               echo "ERROR: current user cannot use Docker (add user to group docker: sudo usermod -aG docker $USER)"

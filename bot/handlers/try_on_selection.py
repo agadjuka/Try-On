@@ -15,7 +15,6 @@ from bot.handlers.try_on_utils import delete_try_on_selection_messages
 from bot.utils.model_utils import process_model_photo
 from bot.admin.factory import get_admin_service
 from bot.handlers.models_common import check_models_limit_and_redirect
-from bot.services.instruction_photo import delete_instruction_photo
 
 
 async def handle_model_selection_for_try_on(
@@ -63,7 +62,6 @@ async def handle_model_selection_for_try_on(
 
         await state.update_data(selected_model_gcs_uri=selected_model.gcs_uri)
         await state.set_state(TryOnStates.waiting_for_garment_photo)
-        await delete_instruction_photo(bot, state, callback.from_user.id)
 
         # СНАЧАЛА показываем новое сообщение
         instruction_message = await bot.send_message(
@@ -162,7 +160,6 @@ async def handle_model_photo_for_try_on(
         
         await state.update_data(selected_model_gcs_uri=gcs_uri)
         await state.set_state(TryOnStates.waiting_for_garment_photo)
-        await delete_instruction_photo(bot, state, message.from_user.id)
         
         # СНАЧАЛА показываем новое сообщение
         instruction_message = await bot.send_message(

@@ -7,7 +7,6 @@ from loguru import logger
 
 from bot.keyboards.user_kb import get_main_menu_keyboard
 from bot.locales.texts import get_text
-from bot.services.instruction_photo import INSTRUCTION_PHOTO_MESSAGE_ID_KEY
 
 
 async def handle_back_to_menu(
@@ -36,7 +35,6 @@ async def handle_back_to_menu(
     old_album_ids = state_data.get("album_message_ids", [])
     old_selection_id = state_data.get("selection_message_id")
     garment_instruction_message_id = state_data.get("garment_instruction_message_id")
-    instruction_photo_message_id = state_data.get(INSTRUCTION_PHOTO_MESSAGE_ID_KEY)
     result_message_id = state_data.get("try_on_result_message_id")
     callback_message_id = callback.message.message_id if callback.message else None
     
@@ -60,8 +58,6 @@ async def handle_back_to_menu(
         ids_to_delete.append(old_selection_id)
     if garment_instruction_message_id:
         ids_to_delete.append(garment_instruction_message_id)
-    if instruction_photo_message_id:
-        ids_to_delete.append(instruction_photo_message_id)
     if result_message_id:
         ids_to_delete.append(result_message_id)
     if callback_message_id and callback_message_id not in ids_to_delete:

@@ -19,8 +19,6 @@ from bot.keyboards.user_kb import (
 from bot.locales.texts import get_text
 from bot.utils.message_utils import delete_models_menu_messages, delete_messages
 from bot.utils.model_utils import prepare_models_media_group
-from bot.services.instruction_photo import show_instruction_photo
-from bot.services.instruction_photo import delete_instruction_photo
 
 
 async def handle_my_models_callback(
@@ -65,12 +63,10 @@ async def handle_my_models_callback(
     # Фотографии результатов НЕ удаляем из чата - они остаются для пользователя
     
     try:
-        await delete_instruction_photo(bot, state, callback.from_user.id)
         models = await repo.get_user_models(user_id)
         
         if not models:
             await state.set_state(ModelStates.waiting_for_model_photo)
-            await show_instruction_photo(bot, state, callback.from_user.id, lang)
             
             # СНАЧАЛА показываем новое сообщение
             instruction_message = await bot.send_message(
