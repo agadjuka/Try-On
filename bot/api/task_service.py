@@ -15,8 +15,9 @@ from typing import Optional
 import pytz
 from loguru import logger
 
-from bot.api.task_repo import RESULT_TTL_HOURS
 from bot.database.repo_factory import ApiTaskRepository
+
+RESULT_TTL_HOURS = 1
 from bot.services.container import ServiceContainer
 
 

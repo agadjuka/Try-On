@@ -16,8 +16,8 @@ from loguru import logger
 
 from bot.api.auth import get_api_task_repo, verify_api_key
 from bot.api.schemas import TaskStatus, TryOnStatusResponse, TryOnSubmitResponse
-from bot.api.task_repo import ApiTaskRepo
 from bot.api.task_service import process_try_on_task
+from bot.database.repo_factory import ApiTaskRepository
 from bot.services.container import ServiceContainer
 
 router = APIRouter(prefix="/api/v1", tags=["Virtual Try-On API"])
@@ -108,7 +108,7 @@ async def submit_try_on(
     garment_5: Optional[UploadFile] = File(default=None, description="Фото одежды #5 (файл)"),
     garment_url_5: Optional[str] = Form(default=None, description="Фото одежды #5 (URL)"),
     _key: str = Depends(verify_api_key),
-    repo: ApiTaskRepo = Depends(get_api_task_repo),
+    repo: ApiTaskRepository = Depends(get_api_task_repo),
 ) -> TryOnSubmitResponse:
     """Принять фото модели и одежды, запустить обработку в фоне.
 
@@ -160,7 +160,7 @@ async def get_try_on_status(
     task_id: str,
     request: Request,
     _key: str = Depends(verify_api_key),
-    repo: ApiTaskRepo = Depends(get_api_task_repo),
+    repo: ApiTaskRepository = Depends(get_api_task_repo),
 ) -> TryOnStatusResponse:
     """Опросить статус задачи примерки.
 
@@ -199,7 +199,7 @@ async def get_try_on_status(
 async def download_result(
     task_id: str,
     index: int,
-    repo: ApiTaskRepo = Depends(get_api_task_repo),
+    repo: ApiTaskRepository = Depends(get_api_task_repo),
 ) -> Response:
     """Вернуть PNG-файл результата.
 
