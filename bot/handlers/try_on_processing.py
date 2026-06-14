@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import InputMediaPhoto, Message, BufferedInputFile
 from loguru import logger
 
-from bot.services.try_on import VertexTryOnService
+from bot.services.try_on import TryOnSafetyError, VertexTryOnService
 from bot.services.storage import CloudStorageService
 from bot.services.result_storage import ResultStorageService
 from bot.database.repo_factory import UserRepository
@@ -79,7 +79,7 @@ async def process_single_garment(
     model_gcs_uri: str,
     model_image_bytes: Optional[bytes],
     try_on_service: VertexTryOnService,
-) -> Optional[bytes]:
+) -> Optional[bytes | TryOnSafetyError]:
     """
     Обработать одно фото одежды.
     Фото одежды передается напрямую через base64, без сохранения в облако.
@@ -126,6 +126,11 @@ async def process_single_garment(
 
         return result_bytes
 
+    except TryOnSafetyError as e:
+        logger.warning(
+            f"Фото одежды {index + 1} отклонено системой безопасности: {e}"
+        )
+        return e
     except Exception as e:
         logger.error(
             f"Ошибка при обработке фото одежды {index + 1}: {e}"
@@ -141,6 +146,7 @@ async def send_try_on_results(
     successful_results: List[bytes],
     photo_count: int,
     failed_count: int,
+    safety_failed_count: int,
     bot: Bot,
     storage_service: CloudStorageService,
     repo: UserRepository,
@@ -156,6 +162,7 @@ async def send_try_on_results(
         successful_results: Список успешных результатов (байты)
         photo_count: Общее количество фото
         failed_count: Количество неудачных обработок
+        safety_failed_count: Количество обработок, отклоненных safety-системой
         bot: Экземпляр бота
         storage_service: Сервис для работы с облачным хранилищем
         repo: Репозиторий для работы с БД
@@ -254,8 +261,13 @@ async def send_try_on_results(
         )
 
     if failed_count > 0:
+        failure_key = (
+            "try_on_partial_safety_blocked"
+            if safety_failed_count > 0
+            else "try_on_partial_failure"
+        )
         await message.answer(
-            get_text("try_on_partial_failure", lang).format(failed=failed_count, total=photo_count),
+            get_text(failure_key, lang).format(failed=failed_count, total=photo_count),
         )
     
     # ТОЛЬКО ПОСЛЕ успешной отправки пользователю запускаем отправку в админ-панель в фоне
@@ -409,11 +421,17 @@ async def handle_garment_photo(
         # Фильтруем успешные результаты
         successful_results: List[bytes] = []
         failed_count = 0
+        safety_failed_count = 0
 
         for idx, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Исключение при обработке фото {idx + 1}: {result}")
                 failed_count += 1
+                if isinstance(result, TryOnSafetyError):
+                    safety_failed_count += 1
+            elif isinstance(result, TryOnSafetyError):
+                failed_count += 1
+                safety_failed_count += 1
             elif result is not None:
                 successful_results.append(result)
             else:
@@ -432,8 +450,13 @@ async def handle_garment_photo(
         if not successful_results:
             album_ids, msg_id, photo_count, total_count, saved_ids = await _preserve_result_message_ids(state)
             
+            error_text_key = (
+                "try_on_safety_blocked"
+                if safety_failed_count > 0
+                else "try_on_all_failed"
+            )
             await message.answer(
-                get_text("try_on_all_failed", lang),
+                get_text(error_text_key, lang),
                 reply_markup=get_main_menu_keyboard(lang),
             )
             
@@ -449,6 +472,7 @@ async def handle_garment_photo(
                 successful_results=successful_results,
                 photo_count=photo_count,
                 failed_count=failed_count,
+                safety_failed_count=safety_failed_count,
                 bot=bot,
                 storage_service=storage_service,
                 repo=repo,

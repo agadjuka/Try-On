@@ -80,14 +80,19 @@ class SqliteApiTaskRepo:
             )
             await db.commit()
 
-    async def set_completed(self, task_id: str, result_uris: list[str]) -> None:
+    async def set_completed(
+        self,
+        task_id: str,
+        result_uris: list[str],
+        error: str | None = None,
+    ) -> None:
         await self._ensure()
         expires_at = datetime.utcnow() + timedelta(hours=RESULT_TTL_HOURS)
         now = datetime.utcnow().isoformat()
         async with aiosqlite.connect(self._path) as db:
             await db.execute(
                 """
-                UPDATE api_tasks SET status = ?, completed_at = ?, result_uris = ?, expires_at = ?
+                UPDATE api_tasks SET status = ?, completed_at = ?, result_uris = ?, expires_at = ?, error = ?
                 WHERE task_id = ?
                 """,
                 (
@@ -95,6 +100,7 @@ class SqliteApiTaskRepo:
                     now,
                     json.dumps(result_uris),
                     expires_at.isoformat(),
+                    error,
                     task_id,
                 ),
             )

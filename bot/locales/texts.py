@@ -165,6 +165,30 @@ TEXTS = {
         "ru": "⚠️ Не удалось обработать {failed} фото из {total}.",
         "en": "⚠️ Failed to process {failed} of {total} photos.",
     },
+    "try_on_safety_blocked": {
+        "ru": (
+            "⚠️ К сожалению, не удалось обработать фото, потому что система безопасности "
+            "отклонила изображение из-за слишком откровенного или чувствительного содержания.\n\n"
+            "Пожалуйста, загрузите другое фото."
+        ),
+        "en": (
+            "⚠️ Unfortunately, we could not process the photo because the safety system "
+            "rejected it due to overly revealing or sensitive content.\n\n"
+            "Please upload another photo."
+        ),
+    },
+    "try_on_partial_safety_blocked": {
+        "ru": (
+            "⚠️ Не удалось обработать {failed} фото из {total}: система безопасности "
+            "отклонила изображение из-за слишком откровенного или чувствительного содержания.\n\n"
+            "Пожалуйста, загрузите другое фото."
+        ),
+        "en": (
+            "⚠️ Failed to process {failed} of {total} photos: the safety system rejected "
+            "the image due to overly revealing or sensitive content.\n\n"
+            "Please upload another photo."
+        ),
+    },
     "send_garment_photo_please": {
         "ru": "Пожалуйста, отправьте фото одежды.",
         "en": "Please send a photo of clothing.",

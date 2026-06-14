@@ -67,7 +67,12 @@ class ApiTaskRepo:
             }
         )
 
-    async def set_completed(self, task_id: str, result_uris: list[str]) -> None:
+    async def set_completed(
+        self,
+        task_id: str,
+        result_uris: list[str],
+        error: str | None = None,
+    ) -> None:
         expires_at = datetime.utcnow() + timedelta(hours=RESULT_TTL_HOURS)
         await self._get_client().collection(_TASKS).document(task_id).update(
             {
@@ -75,6 +80,7 @@ class ApiTaskRepo:
                 "completed_at": datetime.utcnow(),
                 "result_uris": result_uris,
                 "expires_at": expires_at,
+                "error": error,
             }
         )
         logger.info(f"Задача {task_id} завершена, результатов: {len(result_uris)}, истекает: {expires_at.isoformat()}")

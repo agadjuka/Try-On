@@ -15,6 +15,23 @@ from aiogram.types import User
 from bot.core.config import Settings
 
 
+SAFETY_BLOCKED_MESSAGE_EN = (
+    "Unfortunately, we could not process the photo because the safety system "
+    "rejected it due to overly revealing or sensitive content. "
+    "Please upload another photo."
+)
+
+
+SAFETY_PARTIAL_BLOCKED_MESSAGE_EN = (
+    "Some photos could not be processed because the safety system rejected them "
+    "due to overly revealing or sensitive content. Please upload other photos."
+)
+
+
+class TryOnSafetyError(RuntimeError):
+    """Raised when the image provider rejects a request or output for safety."""
+
+
 class VertexTryOnService:
     """Асинхронный сервис для генерации примерки через выбранный image API.
 
@@ -248,6 +265,23 @@ class VertexTryOnService:
         return data[0].get("b64_json")
 
     @staticmethod
+    def _is_openai_safety_error(error_detail: Any) -> bool:
+        """Return True for OpenAI image moderation/safety rejections."""
+        if isinstance(error_detail, dict):
+            error = error_detail.get("error")
+            if isinstance(error, dict):
+                code = str(error.get("code") or "")
+                message = str(error.get("message") or "")
+                categories = error.get("moderation_details", {}).get("categories", [])
+                return (
+                    code == "moderation_blocked"
+                    or "safety_violations" in message
+                    or "safety system" in message.lower()
+                    or bool(categories)
+                )
+        return "moderation_blocked" in str(error_detail) or "safety_violations" in str(error_detail)
+
+    @staticmethod
     def _get_usage_count(usage_metadata: Dict[str, Any], camel_key: str, snake_key: str) -> Any:
         """Вернуть счетчик usageMetadata с учетом camelCase/snake_case."""
         return usage_metadata.get(camel_key, usage_metadata.get(snake_key))
@@ -397,6 +431,8 @@ class VertexTryOnService:
 
             logger.error(f"Ошибка при запросе к OpenAI Images API: {e}")
             self._report_error_async(user, bot, e, "Try-On Generation", raw_response)
+            if self._is_openai_safety_error(error_detail):
+                raise TryOnSafetyError(SAFETY_BLOCKED_MESSAGE_EN) from e
             raise RuntimeError(
                 f"Ошибка OpenAI API: {str(e)}. "
                 f"Детали: {error_detail}"

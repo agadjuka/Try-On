@@ -16,6 +16,11 @@ import pytz
 from loguru import logger
 
 from bot.database.repo_factory import ApiTaskRepository
+from bot.services.try_on import (
+    SAFETY_BLOCKED_MESSAGE_EN,
+    SAFETY_PARTIAL_BLOCKED_MESSAGE_EN,
+    TryOnSafetyError,
+)
 
 RESULT_TTL_HOURS = 1
 from bot.services.container import ServiceContainer
@@ -27,7 +32,7 @@ async def _process_single_garment(
     person_uri: str,
     person_image_bytes: bytes,
     garment_bytes: bytes,
-) -> Optional[str]:
+) -> Optional[str | TryOnSafetyError]:
     """Обработать одно фото одежды. Возвращает GCS URI результата или None."""
     container = ServiceContainer.get()
     try:
@@ -40,6 +45,9 @@ async def _process_single_garment(
         gcs_uri = await container.storage_service.upload_image(result_bytes, path)
         logger.info(f"[{task_id}] Результат #{index} сохранён: {gcs_uri}")
         return gcs_uri
+    except TryOnSafetyError as e:
+        logger.warning(f"[{task_id}] Гармент #{index} отклонён системой безопасности: {e}")
+        return e
     except Exception as e:
         logger.error(f"[{task_id}] Ошибка обработки гармента #{index}: {e}")
         return None
@@ -139,12 +147,22 @@ async def process_try_on_task(
         ]
         raw_results = await asyncio.gather(*coros)
 
-        result_uris = [uri for uri in raw_results if uri is not None]
+        result_uris = [uri for uri in raw_results if isinstance(uri, str)]
+        safety_failures = [
+            result for result in raw_results if isinstance(result, TryOnSafetyError)
+        ]
 
         if not result_uris:
-            await repo.set_failed(task_id, "Все попытки обработки завершились ошибкой")
+            if safety_failures:
+                await repo.set_failed(task_id, SAFETY_BLOCKED_MESSAGE_EN)
+            else:
+                await repo.set_failed(task_id, "All try-on attempts failed")
         else:
-            await repo.set_completed(task_id, result_uris)
+            await repo.set_completed(
+                task_id,
+                result_uris,
+                SAFETY_PARTIAL_BLOCKED_MESSAGE_EN if safety_failures else None,
+            )
             asyncio.create_task(_cleanup_results_after_ttl(task_id, result_uris))
             asyncio.create_task(_notify_admin_panel(task_id, model_bytes, garments_bytes, result_uris))
 

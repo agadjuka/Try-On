@@ -3,6 +3,7 @@ ssh -i ssh-key-2026-04-15.key ubuntu@139.185.48.38
 логи
 cd ~/bot_project
 docker-compose logs --tail=100 bot
+docker-compose logs --tail=100 api
 
 
 apicd 
