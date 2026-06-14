@@ -11,3 +11,16 @@ docker-compose logs -f --tail=100 api
 
 
 nano .env
+
+Перезагрузка
+Выполни по порядку:
+
+cd ~/bot_project
+docker-compose down --remove-orphans
+docker rm -f vyon-bot vyon-api vyon-caddy 2>/dev/null || true
+docker ps -a
+
+
+Потом подними заново:
+
+docker-compose up -d --build --force-

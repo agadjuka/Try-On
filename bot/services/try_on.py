@@ -1,8 +1,9 @@
-"""Сервис генерации Virtual Try-On через Gemini API."""
+"""Сервис генерации Virtual Try-On через Gemini или OpenAI Images API."""
 
 import asyncio
 import base64
 import json
+from io import BytesIO
 from typing import Dict, Any, Optional
 
 import requests
@@ -15,7 +16,7 @@ from bot.core.config import Settings
 
 
 class VertexTryOnService:
-    """Асинхронный сервис для генерации примерки через Gemini image API.
+    """Асинхронный сервис для генерации примерки через выбранный image API.
 
     Название класса оставлено прежним, чтобы не менять существующие
     обработчики и контейнеры, которые уже зависят от этого типа.
@@ -26,14 +27,17 @@ class VertexTryOnService:
         Инициализировать сервис.
 
         Args:
-            settings: Настройки приложения с параметрами Gemini
+            settings: Настройки приложения с параметрами image provider
         """
         self.settings = settings
+        self.provider = settings.try_on_provider
         self.api_key = settings.gemini_api_key
+        self.openai_api_key = settings.openai_api_key
         self.model_id = settings.gemini_model
+        self.openai_model_id = settings.openai_image_model
         self.prompt = settings.gemini_try_on_prompt
 
-    def _get_api_url(self) -> str:
+    def _get_gemini_api_url(self) -> str:
         """
         Получить URL для API запроса.
 
@@ -41,6 +45,11 @@ class VertexTryOnService:
             URL эндпоинта Gemini API
         """
         return f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_id}:generateContent"
+
+    @staticmethod
+    def _get_openai_api_url() -> str:
+        """Получить URL OpenAI Images Edit API."""
+        return "https://api.openai.com/v1/images/edits"
 
     @staticmethod
     def _detect_mime_type(image_bytes: bytes) -> str:
@@ -156,6 +165,89 @@ class VertexTryOnService:
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @staticmethod
+    def _openai_file_part(filename: str, image_bytes: bytes) -> tuple[str, BytesIO, str]:
+        """Сформировать file tuple для requests multipart."""
+        mime_type = VertexTryOnService._detect_mime_type(image_bytes)
+        return (
+            filename,
+            BytesIO(image_bytes),
+            mime_type,
+        )
+
+    @staticmethod
+    def _extension_for_mime_type(image_bytes: bytes) -> str:
+        mime_type = VertexTryOnService._detect_mime_type(image_bytes)
+        if mime_type == "image/png":
+            return "png"
+        if mime_type == "image/webp":
+            return "webp"
+        return "jpg"
+
+    def _build_openai_request(
+        self,
+        person_image_bytes: Optional[bytes],
+        garment_bytes: bytes,
+    ) -> tuple[Dict[str, str], list[tuple[str, tuple[str, BytesIO, str]]]]:
+        """Создать multipart data/files для OpenAI Images Edit API."""
+        if not self.openai_api_key:
+            raise ValueError("Не задан OPENAI_API_KEY")
+
+        if person_image_bytes is None:
+            raise ValueError("Для OpenAI Images Edit API нужно передать person_image_bytes")
+
+        data = {
+            "model": self.openai_model_id,
+            "prompt": (
+                f"{self.prompt} Preserve the aspect ratio and framing of the first "
+                "photo whenever possible. Do not add padding or white borders."
+            ),
+            "n": "1",
+            "quality": self.settings.openai_image_quality,
+            "size": self.settings.openai_image_size,
+            "output_format": self.settings.openai_image_output_format,
+        }
+        model_ext = self._extension_for_mime_type(person_image_bytes)
+        garment_ext = self._extension_for_mime_type(garment_bytes)
+        # Важно для try-on: первый reference image - модель, второй - одежда.
+        files = [
+            ("image[]", self._openai_file_part(f"model.{model_ext}", person_image_bytes)),
+            ("image[]", self._openai_file_part(f"garment.{garment_ext}", garment_bytes)),
+        ]
+        return data, files
+
+    @staticmethod
+    def _log_openai_usage(result: Dict[str, Any]) -> None:
+        """Залогировать usage из OpenAI Images API."""
+        usage = result.get("usage")
+        if not isinstance(usage, dict):
+            logger.warning("OpenAI Images API не вернул usage с токенами")
+            return
+
+        input_details = usage.get("input_tokens_details") or {}
+        output_details = usage.get("output_tokens_details") or {}
+        logger.info(
+            "OpenAI image usage: "
+            f"input={usage.get('input_tokens')}, "
+            f"output={usage.get('output_tokens')}, "
+            f"total={usage.get('total_tokens')}, "
+            f"input_text={input_details.get('text_tokens')}, "
+            f"input_image={input_details.get('image_tokens')}, "
+            f"output_text={output_details.get('text_tokens')}, "
+            f"output_image={output_details.get('image_tokens')}"
+        )
+        logger.info(
+            "OpenAI image usage raw: "
+            f"{json.dumps(usage, ensure_ascii=False)}"
+        )
+
+    @staticmethod
+    def _extract_openai_image_base64(result: Dict[str, Any]) -> Optional[str]:
+        data = result.get("data") or []
+        if not data or not isinstance(data[0], dict):
+            return None
+        return data[0].get("b64_json")
+
+    @staticmethod
     def _get_usage_count(usage_metadata: Dict[str, Any], camel_key: str, snake_key: str) -> Any:
         """Вернуть счетчик usageMetadata с учетом camelCase/snake_case."""
         return usage_metadata.get(camel_key, usage_metadata.get(snake_key))
@@ -228,6 +320,93 @@ class VertexTryOnService:
         except Exception as report_error:
             logger.error(f"Ошибка при отправке ошибки в админ-панель: {report_error}")
 
+    async def _generate_openai_try_on(
+        self,
+        garment_bytes: bytes,
+        person_image_uri: Optional[str] = None,
+        person_image_bytes: Optional[bytes] = None,
+        user: Optional[User] = None,
+        bot: Optional[Bot] = None,
+    ) -> bytes:
+        """Генерировать примерку через OpenAI Images Edit API."""
+        logger.info("=" * 60)
+        logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON (OpenAI Images Edit API)")
+        logger.info("=" * 60)
+
+        data, files = self._build_openai_request(
+            person_image_bytes=person_image_bytes,
+            garment_bytes=garment_bytes,
+        )
+        headers = {"Authorization": f"Bearer {self.openai_api_key}"}
+
+        api_url = self._get_openai_api_url()
+        logger.info(f"Отправка запроса к OpenAI Images API: {api_url}")
+        logger.info(f"OpenAI image model: {self.openai_model_id}")
+        logger.info(
+            "OpenAI image settings: "
+            f"quality={self.settings.openai_image_quality}, "
+            f"size={self.settings.openai_image_size}, "
+            f"format={self.settings.openai_image_output_format}"
+        )
+        if person_image_uri:
+            logger.info(f"Person image URI: {person_image_uri}")
+        logger.info(f"Person image: передано как image[0] ({len(person_image_bytes or b'')} байт)")
+        logger.info(f"Garment: передано как image[1] ({len(garment_bytes)} байт)")
+
+        def _make_request() -> dict:
+            response = requests.post(
+                api_url,
+                headers=headers,
+                data=data,
+                files=files,
+                timeout=300,
+            )
+            response.raise_for_status()
+            return response.json()
+
+        try:
+            result = await asyncio.to_thread(_make_request)
+            self._log_openai_usage(result)
+
+            image_base64 = self._extract_openai_image_base64(result)
+            if not image_base64:
+                error_msg = "Ответ OpenAI Images API не содержит data[0].b64_json"
+                raw_response = self._format_response_for_log(result)
+                logger.error(f"{error_msg}. Ответ: {raw_response}")
+                error = ValueError(error_msg)
+                self._report_error_async(user, bot, error, "Try-On Generation", raw_response)
+                raise error
+
+            image_bytes = base64.b64decode(image_base64)
+            logger.success(f"Результат OpenAI успешно получен ({len(image_bytes)} байт)")
+            return image_bytes
+
+        except requests.exceptions.RequestException as e:
+            error_detail = "Неизвестная ошибка"
+            raw_response = None
+
+            if hasattr(e, "response") and e.response is not None:
+                try:
+                    error_detail = e.response.json()
+                    raw_response = json.dumps(error_detail, indent=2, ensure_ascii=False)
+                    logger.error(f"Детали ошибки OpenAI: {raw_response}")
+                except Exception:
+                    error_detail = e.response.text
+                    raw_response = error_detail
+                    logger.error(f"Текст ответа OpenAI: {raw_response}")
+
+            logger.error(f"Ошибка при запросе к OpenAI Images API: {e}")
+            self._report_error_async(user, bot, e, "Try-On Generation", raw_response)
+            raise RuntimeError(
+                f"Ошибка OpenAI API: {str(e)}. "
+                f"Детали: {error_detail}"
+            ) from e
+
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка при OpenAI генерации: {e}")
+            self._report_error_async(user, bot, e, "Try-On Generation")
+            raise RuntimeError(f"Неожиданная ошибка при OpenAI генерации: {str(e)}") from e
+
     async def generate_try_on(
         self,
         garment_bytes: bytes,
@@ -261,6 +440,15 @@ class VertexTryOnService:
             ValueError: Если ответ API не содержит изображение
             RuntimeError: При ошибке запроса к API или обработки ответа
         """
+        if self.provider == "openai":
+            return await self._generate_openai_try_on(
+                garment_bytes=garment_bytes,
+                person_image_uri=person_image_uri,
+                person_image_bytes=person_image_bytes,
+                user=user,
+                bot=bot,
+            )
+
         logger.info("=" * 60)
         logger.info("НАЧАЛО ГЕНЕРАЦИИ TRY-ON (Gemini API)")
         logger.info("=" * 60)
@@ -279,7 +467,7 @@ class VertexTryOnService:
             "Content-Type": "application/json; charset=utf-8"
         }
 
-        api_url = self._get_api_url()
+        api_url = self._get_gemini_api_url()
         logger.info(f"Отправка запроса к Gemini API: {api_url}")
         if person_image_uri:
             logger.info(f"Person image URI: {person_image_uri}")

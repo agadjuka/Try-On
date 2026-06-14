@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     gcs_bucket_name: str = ""
     bot_token: str
 
+    # Virtual Try-On provider: gemini (current) or openai (GPT Image edits).
+    try_on_provider: Literal["gemini", "openai"] = "gemini"
+
     # Gemini API (Nano Banana) for Virtual Try-On image generation.
     gemini_api_key: str = ""
     gemini_model: str = "gemini-3.1-flash-image"
@@ -22,6 +25,13 @@ class Settings(BaseSettings):
         "The first photo is of a model, the second photo is of clothes. "
         "I need you to try the clothes on the model. Generate an image."
     )
+
+    # OpenAI Images Edit API for Virtual Try-On.
+    openai_api_key: str = ""
+    openai_image_model: str = "gpt-image-2"
+    openai_image_quality: Literal["low", "medium", "high", "auto"] = "low"
+    openai_image_size: str = "auto"
+    openai_image_output_format: Literal["png", "jpeg", "webp"] = "png"
 
     # Хранилище файлов: oracle (S3-compatible Object Storage) | gcs
     storage_backend: Literal["oracle", "gcs"] = "oracle"

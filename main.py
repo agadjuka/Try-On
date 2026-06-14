@@ -41,7 +41,15 @@ async def startup_event() -> None:
         logger.info("Запуск FastAPI (REST API)")
         logger.info(f"Storage: {settings.storage_backend}")
         logger.info(f"Database: {settings.database_backend}")
-        logger.info(f"Try-on model: {settings.gemini_model}")
+        logger.info(f"Try-on provider: {settings.try_on_provider}")
+        if settings.try_on_provider == "gemini":
+            logger.info(f"Try-on model: {settings.gemini_model}")
+        else:
+            logger.info(
+                "Try-on model: "
+                f"{settings.openai_image_model} "
+                f"(quality={settings.openai_image_quality}, size={settings.openai_image_size})"
+            )
         if settings.google_cloud_project_id and settings.google_cloud_region:
             logger.info(
                 "Google Cloud config enabled: "
